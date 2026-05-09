@@ -1,0 +1,23 @@
+:root {
+  --warm-paper: #f7f1e6;
+  --warm-ink: #2a2218;
+  --warm-accent: #7a5c3a;
+  --warm-soft: #ede6d8;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; padding: 0; }
+
+body {
+  background: var(--warm-paper);
+  color: var(--warm-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}

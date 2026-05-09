@@ -1,0 +1,7 @@
+node_modules/
+.env
+_legacy_poc/dist/
+frontend/dist/
+backend/__pycache__/
+.vscode/
+*.log
