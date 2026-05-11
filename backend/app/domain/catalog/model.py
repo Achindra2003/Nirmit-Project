@@ -7,7 +7,7 @@ from app.schemas.state import Dimensions, RoomType, Vibe
 
 
 class CatalogItem(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="ignore", frozen=True)
 
     sku: str
     asset_url: str
@@ -22,6 +22,14 @@ class CatalogItem(BaseModel):
     build_price_inr: int | None = None
     materials: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
+    # Render hints carried through to the frontend so a single .glb can be
+    # tinted / surfaced differently per SKU (catalog of 3k items, ~80 actual
+    # 3D meshes — variants share the GLB and differentiate via material/tint).
+    tint_hex: str | None = None
+    size_label: str | None = None
+    material_label: str | None = None
+    finish_label: str | None = None
+    roughness_hint: float | None = None
 
 
 class CatalogQuery(BaseModel):

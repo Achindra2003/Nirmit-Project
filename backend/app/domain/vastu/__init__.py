@@ -1,7 +1,31 @@
-"""Vastu spatial reasoning. Phase 2 ports the cultural rules from
-_legacy_poc/src/lib/cultural/culturalContext.ts into pure-python rules with
-explainable reasoning so /generate can produce the 'why this was made for you'
-Vastu bullets without the LLM hallucinating.
+"""Vastu spatial reasoning. Pure-Python rules engine — no LLM, no IO.
 
-Until then this package is intentionally empty.
+Each rule is data, not procedure. The solver reads rules to bias placement
+scoring; the Ranker reads applied rules to surface them in the
+"why this was made for you" reasoning.
+
+Vastu in CLAUDE.md §2 is "foundational spatial logic," not a toggle. We model
+it as a set of zoning preferences that the solver respects when the user has
+opted in via Intake.vastu_matters.
 """
+from app.domain.vastu.rules import (
+    VastuApplied,
+    VastuRule,
+    VastuZone,
+    applicable_rules,
+    apply_rules,
+    point_zone,
+    preferred_zone_for_category,
+    zone_center_mm,
+)
+
+__all__ = [
+    "VastuApplied",
+    "VastuRule",
+    "VastuZone",
+    "applicable_rules",
+    "apply_rules",
+    "point_zone",
+    "preferred_zone_for_category",
+    "zone_center_mm",
+]

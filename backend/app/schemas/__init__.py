@@ -17,6 +17,7 @@ from app.schemas.state import (
     Reasoning,
     RoomState,
     RoomType,
+    StrictModel,
     Vibe,
     Vision,
 )
@@ -40,6 +41,7 @@ __all__ = [
     "Reasoning",
     "RoomState",
     "RoomType",
+    "StrictModel",
     "Vibe",
     "Vision",
 ]

@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nirmit — निर्मित</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&family=Tiro+Devanagari+Hindi:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+:root {
+  --paper:    #F2EBDD;
+  --paper-2:  #EAE2D0;
+  --paper-3:  #F8F3E8;
+  --ink:      #1F1B16;
+  --ink-2:    #5D544A;
+  --ink-3:    #8C8170;
+  --line:     #D9CFB9;
+  --line-2:   #C8BFA8;
+  --terra:    #C2502E;
+  --terra-dk: #9E3A1B;
+  --walnut:   #5B3B26;
+  --leaf:     #6B7A4A;
+
+  --fd: 'Cormorant Garamond', Georgia, serif;
+  --fh: 'Tiro Devanagari Hindi', serif;
+  --fb: 'DM Sans', system-ui, sans-serif;
+  --fm: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing: border-box; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body {
+  font-family: var(--fb); color: var(--ink); background: var(--paper);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+input, textarea, button, select { font-family: var(--fb); color: inherit; }
+
+/* Paper texture — subtle grid + vignette */
+.paper {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(31,27,22,0.025), transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(31,27,22,0.04), transparent 65%),
+    var(--paper);
+}
+.paper::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.18;
+}
+.paper > * { position: relative; }
+
+::-webkit-scrollbar { width: 5px; height:5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+
+/* Type utilities */
+.eyebrow {
+  font-family: var(--fm); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3);
+}
+.serif-italic { font-family: var(--fd); font-style: italic; font-weight: 400; }
+
+/* Range slider */
+input[type=range] {
+  -webkit-appearance: none; width: 100%; height: 1px;
+  background: var(--ink); outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--terra); cursor: pointer;
+  border: 3px solid var(--paper); box-shadow: 0 0 0 1px var(--terra);
+}
+
+/* Animations */
+@keyframes appear { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform: translateY(0); } }
+@keyframes fade   { from { opacity:0; } to { opacity:1; } }
+@keyframes slideUp { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
+@keyframes draw   { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+@keyframes pulse  { 0%,100% { opacity:.55; } 50% { opacity:1; } }
+@keyframes blink  { 0%,49% { opacity:1; } 50%,100% { opacity:0; } }
+@keyframes spin   { to { transform: rotate(360deg); } }
+
+.appear   { animation: appear .55s cubic-bezier(.22,.7,0,1.05) both; }
+.appear-2 { animation: appear .55s cubic-bezier(.22,.7,0,1.05) .1s both; }
+.appear-3 { animation: appear .55s cubic-bezier(.22,.7,0,1.05) .22s both; }
+.appear-4 { animation: appear .55s cubic-bezier(.22,.7,0,1.05) .34s both; }
+.appear-5 { animation: appear .55s cubic-bezier(.22,.7,0,1.05) .46s both; }
+.fade     { animation: fade .35s ease both; }
+.slide-up { animation: slideUp .5s cubic-bezier(.22,.7,0,1.05) both; }
+
+.draw-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 2.4s ease forwards; }
+
+/* Underline-link */
+.lnk {
+  position: relative; cursor: pointer; display: inline-flex; align-items: baseline; gap: 8px;
+  color: var(--ink); text-decoration: none; padding-bottom: 3px;
+  border-bottom: 1px solid var(--ink); transition: color .25s ease, border-color .25s ease;
+}
+.lnk:hover { color: var(--terra); border-color: var(--terra); }
+.lnk-arrow { display:inline-block; transition: transform .3s ease; }
+.lnk:hover .lnk-arrow { transform: translateX(4px); }
+
+/* No global "styles" obj — we use inline objects throughout for clarity */
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo, Fragment } = React;
+
+/* ─────────────────────────────────────────────────────────────
+   SHARED UI
+   ───────────────────────────────────────────────────────────── */
+
+function Logo({ tone='ink', size='md' }) {
+  const fs = { sm:14, md:18, lg:26 }[size];
+  const c = tone === 'paper' ? 'var(--paper)' : 'var(--ink)';
+  const c2 = tone === 'paper' ? 'rgba(242,235,221,.6)' : 'var(--ink-3)';
+  return (
+    <div style={{ display:'flex', alignItems:'baseline', gap:10, userSelect:'none' }}>
+      <span style={{ fontFamily:'var(--fd)', fontSize:fs*1.1, fontWeight:500, letterSpacing:'0.02em', color:c }}>Nirmit</span>
+      <span style={{ fontFamily:'var(--fh)', fontSize:fs*0.78, color:c2, letterSpacing:'0.04em' }}>निर्मित</span>
+    </div>
+  );
+}
+
+function Eyebrow({ children, color }) {
+  return <span className="eyebrow" style={{ color: color || 'var(--ink-3)' }}>{children}</span>;
+}
+
+function HiPair({ en, hi, sz=14, hsz, weight=400, color='var(--ink)' }) {
+  return (
+    <span style={{ display:'inline-flex', alignItems:'baseline', gap:8 }}>
+      <span style={{ fontSize:sz, fontWeight:weight, color }}>{en}</span>
+      {hi && <span style={{ fontFamily:'var(--fh)', fontSize: hsz || sz*0.78, color:'var(--ink-3)' }}>{hi}</span>}
+    </span>
+  );
+}
+
+function PrimaryLink({ children, onClick, big }) {
+  return (
+    <a className="lnk" onClick={onClick} style={{
+      fontFamily:'var(--fd)', fontStyle:'italic', fontWeight:500,
+      fontSize: big ? 22 : 17, letterSpacing:'0.005em',
+    }}>
+      {children}
+      <span className="lnk-arrow">→</span>
+    </a>
+  );
+}
+
+function GhostBtn({ children, onClick, style:s={} }) {
+  return (
+    <button onClick={onClick} style={{
+      background:'transparent', border:'1px solid var(--ink)', cursor:'pointer',
+      padding:'12px 28px', fontFamily:'var(--fb)', fontSize:13, fontWeight:500,
+      letterSpacing:'0.04em', color:'var(--ink)', textTransform:'uppercase',
+      transition:'all .25s ease', ...s,
+    }}
+    onMouseEnter={e=>{ e.currentTarget.style.background='var(--ink)'; e.currentTarget.style.color='var(--paper)'; }}
+    onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--ink)'; }}
+    >{children}</button>
+  );
+}
+
+function FilledBtn({ children, onClick, disabled, style:s={} }) {
+  return (
+    <button onClick={disabled?undefined:onClick} disabled={disabled} style={{
+      background:'var(--ink)', color:'var(--paper)', border:'none', cursor:disabled?'default':'pointer',
+      padding:'14px 32px', fontFamily:'var(--fb)', fontSize:13, fontWeight:500,
+      letterSpacing:'0.04em', textTransform:'uppercase',
+      opacity:disabled?.32:1, transition:'all .25s ease', ...s,
+    }}
+    onMouseEnter={e=>{ if(!disabled){ e.currentTarget.style.background='var(--terra)'; }}}
+    onMouseLeave={e=>{ if(!disabled){ e.currentTarget.style.background='var(--ink)'; }}}
+    >{children}</button>
+  );
+}
+
+/* Top chrome — used on most screens */
+function TopBar({ active, onNav, dark, light }) {
+  const items = [
+    ['cover','I.','The Studio'],
+    ['consult','II.','Consultation'],
+    ['draft','III.','Drafting'],
+    ['reveal','IV.','The Reveal'],
+    ['studio','V.','The Workspace'],
+    ['handoff','VI.','The Handoff'],
+  ];
+  const tone = dark ? 'paper' : 'ink';
+  const inkC = dark ? 'var(--paper)' : 'var(--ink)';
+  const dimC = dark ? 'rgba(242,235,221,.5)' : 'var(--ink-3)';
+  return (
+    <div style={{ height:60, padding:'0 40px', display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0, borderBottom:`1px solid ${dark?'rgba(242,235,221,.12)':'var(--line)'}` }}>
+      <div onClick={()=>onNav('cover')} style={{ cursor:'pointer' }}><Logo tone={tone} size="sm"/></div>
+      <div style={{ display:'flex', gap:28, alignItems:'center' }}>
+        {items.map(([id,n,label]) => (
+          <div key={id} onClick={()=>onNav(id)} style={{ cursor:'pointer', display:'flex', alignItems:'baseline', gap:5 }}>
+            <span className="eyebrow" style={{ color: active===id ? 'var(--terra)' : dimC, fontSize:9.5 }}>{n}</span>
+            <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, color: active===id ? inkC : dimC, fontWeight:500 }}>{label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="eyebrow" style={{ color: dimC }}>Mumbai · No. 0042</div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ARCHITECTURAL FLOOR PLAN COMPONENT (shared)
+   ───────────────────────────────────────────────────────────── */
+
+function FloorPlan({ S=24, drawAnim=false, stage=99, showAnnotations=true, accent='var(--terra)' }) {
+  // Room: 12 × 14 ft.  S = px per foot.
+  const RW = 12*S, RH = 14*S, PAD = 56;
+  const VW = RW + PAD*2, VH = RH + PAD*2;
+
+  // helper to fade in based on stage progress (used for animated drafting)
+  const showAt = step => drawAnim ? (stage >= step ? { opacity:1, transition:'opacity .8s ease' } : { opacity:0 }) : { opacity:1 };
+
+  return (
+    <svg width="100%" height="100%" viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="xMidYMid meet" style={{ overflow:'visible' }}>
+      <defs>
+        <pattern id="hatch" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="var(--ink)" strokeWidth="0.6" opacity="0.55"/>
+        </pattern>
+        <pattern id="hatchTerra" x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="5" stroke="var(--terra)" strokeWidth="0.7" opacity="0.55"/>
+        </pattern>
+        <pattern id="hatchLeaf" x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="5" stroke="var(--leaf)" strokeWidth="0.7" opacity="0.7"/>
+        </pattern>
+      </defs>
+
+      <g transform={`translate(${PAD},${PAD})`}>
+        {/* Outer dimension lines */}
+        <g style={showAt(1)}>
+          <line x1={0} y1={-26} x2={RW} y2={-26} stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <line x1={0} y1={-30} x2={0} y2={-22} stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <line x1={RW} y1={-30} x2={RW} y2={-22} stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <text x={RW/2} y={-32} textAnchor="middle" fontFamily="var(--fm)" fontSize="9" fill="var(--ink-2)" letterSpacing="0.1em">12'-0"</text>
+
+          <line x1={-26} y1={0} x2={-26} y2={RH} stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <line x1={-30} y1={0} x2={-22} y2={0} stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <line x1={-30} y1={RH} x2={-22} y2={RH} stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <text x={-30} y={RH/2} textAnchor="middle" fontFamily="var(--fm)" fontSize="9" fill="var(--ink-2)" letterSpacing="0.1em" transform={`rotate(-90, -30, ${RH/2})`}>14'-0"</text>
+        </g>
+
+        {/* Walls — drawn first */}
+        {drawAnim ? (
+          <rect width={RW} height={RH} fill="none" stroke="var(--ink)" strokeWidth="3"
+            className="draw-line"
+            style={{ animationDelay:'.1s' }}/>
+        ) : (
+          <rect width={RW} height={RH} fill="none" stroke="var(--ink)" strokeWidth="3"/>
+        )}
+
+        {/* Wall thickness — inside hatching (load with walls) */}
+        <g style={showAt(1)}>
+          <rect x="0" y="0" width={RW} height="3" fill="var(--ink)" opacity="0.85"/>
+          <rect x="0" y={RH-3} width={RW} height="3" fill="var(--ink)" opacity="0.85"/>
+          <rect x="0" y="0" width="3" height={RH} fill="var(--ink)" opacity="0.85"/>
+          <rect x={RW-3} y="0" width="3" height={RH} fill="var(--ink)" opacity="0.85"/>
+        </g>
+
+        {/* Window — north wall */}
+        <g style={showAt(1)}>
+          <rect x={84} y={-3} width={96} height={6} fill="var(--paper)" stroke="var(--ink)" strokeWidth="1"/>
+          <line x1={84} y1={0} x2={180} y2={0} stroke="var(--ink)" strokeWidth="0.5"/>
+          {showAnnotations && <text x={132} y={-12} textAnchor="middle" fontFamily="var(--fm)" fontSize="8" fill="var(--ink-3)" letterSpacing="0.1em">WINDOW · 4'-0"</text>}
+        </g>
+
+        {/* Door — south wall, swings inward */}
+        <g style={showAt(1)}>
+          <rect x={48} y={RH-3} width={48} height={6} fill="var(--paper)" stroke="var(--ink)" strokeWidth="1"/>
+          <path d={`M 48 ${RH-3} A 48 48 0 0 0 96 ${RH-51}`} fill="none" stroke="var(--ink-3)" strokeWidth="0.6" strokeDasharray="2 3"/>
+          <line x1={48} y1={RH-3} x2={48} y2={RH-51} stroke="var(--ink-3)" strokeWidth="0.8"/>
+          {showAnnotations && <text x={72} y={RH+18} textAnchor="middle" fontFamily="var(--fm)" fontSize="8" fill="var(--ink-3)" letterSpacing="0.1em">DOOR · 2'-0"</text>}
+        </g>
+
+        {/* Furniture group */}
+        {/* TV Unit — north wall */}
+        <g style={showAt(2)}>
+          <rect x={42} y={6} width={120} height={26} fill="url(#hatch)" stroke="var(--ink)" strokeWidth="1"/>
+          <text x={102} y={23} textAnchor="middle" fontFamily="var(--fd)" fontStyle="italic" fontSize="11" fill="var(--ink)">TV unit</text>
+        </g>
+
+        {/* Mandir — NE corner */}
+        <g style={showAt(4)}>
+          <rect x={RW-58} y={6} width={50} height={50} fill="url(#hatchTerra)" stroke="var(--terra)" strokeWidth="1.4"/>
+          <text x={RW-33} y={32} textAnchor="middle" fontFamily="var(--fd)" fontStyle="italic" fontSize="11" fill="var(--terra-dk)">Mandir</text>
+          <text x={RW-33} y={45} textAnchor="middle" fontFamily="var(--fh)" fontSize="9" fill="var(--terra-dk)">मन्दिर</text>
+          {/* compass blip */}
+          <circle cx={RW-12} cy={12} r="1.5" fill="var(--terra)"/>
+        </g>
+
+        {/* Bookshelf — west wall */}
+        <g style={showAt(2)}>
+          <rect x={6} y={88} width={20} height={120} fill="url(#hatch)" stroke="var(--ink)" strokeWidth="1"/>
+          <text x={16} y={150} textAnchor="middle" fontFamily="var(--fd)" fontStyle="italic" fontSize="10" fill="var(--ink)" transform={`rotate(-90, 16, 150)`}>Books</text>
+        </g>
+
+        {/* WFH desk — east wall */}
+        <g style={showAt(3)}>
+          <rect x={RW-44} y={120} width={38} height={88} fill="url(#hatchLeaf)" stroke="var(--leaf)" strokeWidth="1"/>
+          <text x={RW-25} y={168} textAnchor="middle" fontFamily="var(--fd)" fontStyle="italic" fontSize="10" fill="var(--leaf)">Desk</text>
+          {/* chair */}
+          <circle cx={RW-72} cy={164} r="14" fill="none" stroke="var(--ink-3)" strokeWidth="0.8" strokeDasharray="2 2"/>
+        </g>
+
+        {/* Sofa — south, big */}
+        <g style={showAt(2)}>
+          <rect x={20} y={RH-110} width={210} height={64} rx="6" fill="url(#hatch)" stroke="var(--ink)" strokeWidth="1.2"/>
+          {/* cushion divisions */}
+          <line x1={90} y1={RH-110} x2={90} y2={RH-46} stroke="var(--ink)" strokeWidth="0.6"/>
+          <line x1={160} y1={RH-110} x2={160} y2={RH-46} stroke="var(--ink)" strokeWidth="0.6"/>
+          <text x={125} y={RH-72} textAnchor="middle" fontFamily="var(--fd)" fontStyle="italic" fontSize="13" fill="var(--ink)">Sofa · 9'-0"</text>
+        </g>
+
+        {/* Coffee table */}
+        <g style={showAt(3)}>
+          <rect x={75} y={RH-178} width={100} height={48} rx="4" fill="var(--paper-2)" stroke="var(--ink)" strokeWidth="1"/>
+          <text x={125} y={RH-149} textAnchor="middle" fontFamily="var(--fd)" fontStyle="italic" fontSize="10" fill="var(--ink-2)">Coffee</text>
+        </g>
+
+        {/* Plant — SW */}
+        <g style={showAt(4)}>
+          <circle cx={20} cy={RH-22} r="14" fill="none" stroke="var(--leaf)" strokeWidth="1.2"/>
+          <circle cx={20} cy={RH-22} r="9" fill="none" stroke="var(--leaf)" strokeWidth="0.8" strokeDasharray="1 1.5"/>
+        </g>
+
+        {/* North arrow — small, outside top right */}
+        <g transform={`translate(${RW+18}, -24)`}>
+          <circle cx="0" cy="0" r="14" fill="var(--paper)" stroke="var(--ink)" strokeWidth="0.8"/>
+          <polygon points="0,-9 3,3 0,0 -3,3" fill="var(--ink)"/>
+          <text x="0" y="-10.5" textAnchor="middle" fontFamily="var(--fm)" fontSize="7" fill="var(--ink)" fontWeight="600">N</text>
+        </g>
+      </g>
+
+      {/* Title block — bottom right, like a real drawing */}
+      <g transform={`translate(${VW-150}, ${VH-44})`}>
+        <line x1="0" y1="0" x2="120" y2="0" stroke="var(--ink-3)" strokeWidth="0.5"/>
+        <text x="0" y="14" fontFamily="var(--fm)" fontSize="8" fill="var(--ink-3)" letterSpacing="0.12em">PLAN · LIVING ROOM</text>
+        <text x="0" y="26" fontFamily="var(--fm)" fontSize="8" fill="var(--ink-3)" letterSpacing="0.12em">SCALE 1:48 · No. 0042-A</text>
+      </g>
+    </svg>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   I. COVER
+   ───────────────────────────────────────────────────────────── */
+
+function CoverScreen({ onNav }) {
+  return (
+    <div className="paper" style={{ height:'100vh', display:'flex', flexDirection:'column' }}>
+      <TopBar active="cover" onNav={onNav}/>
+
+      {/* Hero */}
+      <div style={{ flex:1, display:'grid', gridTemplateColumns:'1.05fr 1fr', minHeight:0 }}>
+
+        {/* Left — editorial type */}
+        <div style={{ padding:'0 0 64px 64px', display:'flex', flexDirection:'column', justifyContent:'center', position:'relative' }}>
+
+          <div className="appear" style={{ marginBottom:24 }}>
+            <Eyebrow>Folio Nº 01 · A Practice in Indian Interiors</Eyebrow>
+          </div>
+
+          <h1 className="appear-2" style={{
+            fontFamily:'var(--fd)', fontSize:104, lineHeight:0.96, fontWeight:500,
+            letterSpacing:'-0.022em', color:'var(--ink)', marginBottom:18, maxWidth:'14ch',
+          }}>
+            Drawing your<br/>
+            <span style={{ fontStyle:'italic', fontWeight:400, color:'var(--terra)' }}>home,</span> with you.
+          </h1>
+
+          <div className="appear-3" style={{ display:'flex', alignItems:'baseline', gap:14, marginBottom:42 }}>
+            <span style={{ fontFamily:'var(--fh)', fontSize:24, color:'var(--ink-2)' }}>आपका घर,</span>
+            <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:24, color:'var(--ink-2)', fontWeight:400 }}>your hand.</span>
+          </div>
+
+          <p className="appear-4" style={{ fontSize:16.5, lineHeight:1.7, color:'var(--ink-2)', marginBottom:48, maxWidth:'42ch' }}>
+            Nirmit is a drawing practice. You tell us about your flat, your family, and the shape of your evenings. We draw three rooms for you. You pick what to build — and walk away with the plans, the materials, the prices, and a quotation any carpenter can read in Hindi.
+          </p>
+
+          <div className="appear-5" style={{ display:'flex', alignItems:'center', gap:36 }}>
+            <PrimaryLink onClick={()=>onNav('consult')} big>Begin a consultation</PrimaryLink>
+            <span className="eyebrow">No fees · No lock-in · 12 minutes</span>
+          </div>
+
+          {/* Drop-cap signature */}
+          <div className="appear-5" style={{ position:'absolute', bottom:48, left:64, display:'flex', alignItems:'baseline', gap:18 }}>
+            <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, color:'var(--ink-3)' }}>Drawn this season in</span>
+            <span style={{ fontFamily:'var(--fd)', fontSize:15, color:'var(--ink)' }}>Mumbai · Pune · Bangalore · Hyderabad · Chennai · Delhi</span>
+          </div>
+        </div>
+
+        {/* Right — animated section drawing */}
+        <div style={{ padding:'24px 64px 64px 24px', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
+          <CoverSectionDrawing/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* The animated cross-section sketch on the cover — a simplified Indian living room
+   drawn in elevation, with hand-marginalia notes. Self-animating.            */
+function CoverSectionDrawing() {
+  const W = 580, H = 460;
+  return (
+    <div style={{ width:'100%', maxWidth:W, position:'relative' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ overflow:'visible' }}>
+        {/* Floor line */}
+        <line x1="20" y1="380" x2={W-20} y2="380" stroke="var(--ink)" strokeWidth="2" className="draw-line"/>
+
+        {/* Wall back */}
+        <line x1="40" y1="380" x2="40" y2="60" stroke="var(--ink)" strokeWidth="2" className="draw-line" style={{ animationDelay:'.4s' }}/>
+        <line x1={W-40} y1="380" x2={W-40} y2="60" stroke="var(--ink)" strokeWidth="2" className="draw-line" style={{ animationDelay:'.4s' }}/>
+        <line x1="40" y1="60" x2={W-40} y2="60" stroke="var(--ink)" strokeWidth="2" className="draw-line" style={{ animationDelay:'.7s' }}/>
+
+        {/* Sofa elevation */}
+        <g style={{ animation:'fade .8s ease 1.4s both' }}>
+          <rect x="120" y="295" width="220" height="85" fill="url(#hatch)" stroke="var(--ink)" strokeWidth="1.2"/>
+          {/* back cushion */}
+          <rect x="120" y="270" width="220" height="40" fill="var(--paper-2)" stroke="var(--ink)" strokeWidth="1"/>
+          {/* legs */}
+          <line x1="130" y1="380" x2="130" y2="388" stroke="var(--ink)" strokeWidth="1"/>
+          <line x1="330" y1="380" x2="330" y2="388" stroke="var(--ink)" strokeWidth="1"/>
+        </g>
+
+        {/* TV unit elevation */}
+        <g style={{ animation:'fade .8s ease 1.8s both' }}>
+          <rect x="370" y="280" width="170" height="100" fill="none" stroke="var(--ink)" strokeWidth="1.2"/>
+          {/* TV on top */}
+          <rect x="395" y="200" width="120" height="74" fill="var(--ink)" opacity="0.9"/>
+          <line x1="395" y1="280" x2="540" y2="280" stroke="var(--ink)" strokeWidth="0.8"/>
+          {/* shelves */}
+          <line x1="370" y1="320" x2="540" y2="320" stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="2 2"/>
+          <line x1="370" y1="350" x2="540" y2="350" stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="2 2"/>
+        </g>
+
+        {/* Mandir niche */}
+        <g style={{ animation:'fade .8s ease 2.2s both' }}>
+          <rect x="60" y="180" width="50" height="100" fill="url(#hatchTerra)" stroke="var(--terra)" strokeWidth="1.4"/>
+          <line x1="60" y1="200" x2="110" y2="200" stroke="var(--terra)" strokeWidth="0.8"/>
+          {/* tiny diya */}
+          <circle cx="85" cy="225" r="3" fill="var(--terra)"/>
+        </g>
+
+        {/* Pendant light */}
+        <g style={{ animation:'fade .8s ease 2.5s both' }}>
+          <line x1="225" y1="60" x2="225" y2="155" stroke="var(--ink)" strokeWidth="0.8"/>
+          <path d="M 200 155 L 250 155 L 240 175 L 210 175 Z" fill="var(--paper-3)" stroke="var(--ink)" strokeWidth="1"/>
+          {/* light pool */}
+          <ellipse cx="225" cy="290" rx="50" ry="6" fill="var(--terra)" opacity="0.08"/>
+        </g>
+
+        {/* Plant */}
+        <g style={{ animation:'fade .8s ease 2.8s both' }}>
+          <rect x="30" y="350" width="22" height="30" fill="none" stroke="var(--leaf)" strokeWidth="1"/>
+          <path d="M 32 350 Q 30 320 41 305 Q 52 320 50 350" fill="none" stroke="var(--leaf)" strokeWidth="1.2"/>
+          <path d="M 36 348 Q 32 335 28 322" fill="none" stroke="var(--leaf)" strokeWidth="0.8"/>
+        </g>
+
+        {/* Person silhouette — for human scale */}
+        <g style={{ animation:'fade .8s ease 3.1s both' }}>
+          <circle cx={W-60} cy="320" r="6" fill="var(--ink-2)"/>
+          <path d={`M ${W-66} 326 L ${W-66} 360 L ${W-54} 360 L ${W-54} 326 Z`} fill="var(--ink-2)"/>
+          <line x1={W-60} y1="360" x2={W-60} y2="378" stroke="var(--ink-2)" strokeWidth="2"/>
+        </g>
+
+        {/* Dimension lines and ceiling height */}
+        <g style={{ animation:'fade .6s ease 3.3s both' }}>
+          <line x1="20" y1="60" x2="20" y2="380" stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <line x1="16" y1="60" x2="24" y2="60" stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <line x1="16" y1="380" x2="24" y2="380" stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <text x="14" y="220" textAnchor="middle" fontFamily="var(--fm)" fontSize="9" fill="var(--ink-3)" transform="rotate(-90, 14, 220)" letterSpacing="0.1em">10'-0" CEIL.</text>
+        </g>
+
+        {/* Marginalia — appearing at the end */}
+        <g style={{ animation:'fade .8s ease 3.6s both' }}>
+          <text x="60" y="172" fontFamily="var(--fd)" fontStyle="italic" fontSize="13" fill="var(--terra-dk)">मन्दिर — northeast,</text>
+          <text x="60" y="186" fontFamily="var(--fd)" fontStyle="italic" fontSize="13" fill="var(--terra-dk)">for the morning sun</text>
+          <line x1="115" y1="200" x2="142" y2="195" stroke="var(--terra-dk)" strokeWidth="0.6"/>
+          <circle cx="142" cy="195" r="1.5" fill="var(--terra-dk)"/>
+        </g>
+        <g style={{ animation:'fade .8s ease 4s both' }}>
+          <text x="220" y="408" fontFamily="var(--fd)" fontStyle="italic" fontSize="13" fill="var(--ink-2)">9 ft sofa — for movie nights</text>
+          <line x1="220" y1="404" x2="225" y2="382" stroke="var(--ink-2)" strokeWidth="0.6"/>
+        </g>
+
+        {/* Title block */}
+        <g style={{ animation:'fade .6s ease 4.4s both' }}>
+          <line x1="20" y1="430" x2="200" y2="430" stroke="var(--ink-3)" strokeWidth="0.5"/>
+          <text x="20" y="446" fontFamily="var(--fm)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.14em">SECTION A–A · LIVING ROOM</text>
+          <text x="20" y="458" fontFamily="var(--fm)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.14em">SCALE 1:30 · DRAFT</text>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   II. CONSULTATION
+   ───────────────────────────────────────────────────────────── */
+
+const VIBES = [
+  { id:'gather',    name:'The Gathering',  hi:'सभा',     desc:'Warm, dense, lived-in.',         depth:'For homes that fill up easily — children, parents, neighbours, plates.' },
+  { id:'breath',    name:'The Breath',     hi:'विश्राम',   desc:'Open, light, restrained.',       depth:'Less furniture, more air. The luxury of empty floor.' },
+  { id:'keeper',    name:'The Keeper',     hi:'संग्रह',    desc:'Storage-first. Heritage tones.',  depth:'Closed cabinetry. A place for everything you have collected.' },
+  { id:'studio',    name:'The Studio',     hi:'कक्ष',     desc:'Quiet, considered, urban.',      depth:'Clean lines, good materials, nothing extra.' },
+  { id:'bazaar',    name:'The Bazaar',     hi:'बाज़ार',    desc:'Pattern, jewel tones, story.',    depth:'Dense colour, textile, things from places. Indian-maximalist, executed with restraint.' },
+];
+
+const ROOMS = [['living','Living Room','बैठक'],['bed','Bedroom','शयन कक्ष'],['kitchen','Kitchen','रसोई'],['dining','Dining','भोजन कक्ष'],['study','Study','अध्ययन कक्ष']];
+const SIZES = [
+  { id:'compact',  en:'Compact',  hi:'≤10×10', desc:'A snug city flat' },
+  { id:'standard', en:'Standard', hi:'10×14',  desc:'Most 2BHKs in metros' },
+  { id:'large',    en:'Large',    hi:'16×18',  desc:'Generous, well-proportioned' },
+  { id:'open',     en:'Open',     hi:'18ft+',  desc:'Combined living-dining' },
+];
+
+function ConsultScreen({ onNav, brief, setBrief }) {
+  const [page, setPage] = useState(0);
+
+  const PAGES = [
+    {
+      title:'What feeling?',
+      hi:'क्या भाव?',
+      sub:'Not the style. The feeling.',
+      kind:'vibe',
+    },
+    {
+      title:'Which room, how big?',
+      hi:'कौन सा कमरा, कितना बड़ा?',
+      sub:'A rough sense is enough — we will refine it later.',
+      kind:'room',
+    },
+    {
+      title:'Who lives here?',
+      hi:'यहाँ कौन रहता है?',
+      sub:'Tell us in your own words. The more you say, the more personal the drawing.',
+      kind:'who',
+    },
+    {
+      title:'Budget, and where?',
+      hi:'बजट, और कहाँ?',
+      sub:'For furniture and finishing. Installation is separate.',
+      kind:'budget',
+    },
+  ];
+
+  const validate = () => {
+    if (page===0) return !!brief.vibe;
+    if (page===1) return !!brief.room && !!brief.size;
+    if (page===2) return !!(brief.who && brief.who.trim().length>4);
+    if (page===3) return !!brief.city;
+    return true;
+  };
+
+  const next = () => {
+    if (page < PAGES.length-1) setPage(p => p+1);
+    else onNav('draft');
+  };
+
+  const prev = () => page>0 ? setPage(p=>p-1) : onNav('cover');
+
+  const P = PAGES[page];
+
+  return (
+    <div className="paper" style={{ height:'100vh', display:'flex', flexDirection:'column' }}>
+      <TopBar active="consult" onNav={onNav}/>
+
+      <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 1.4fr', minHeight:0 }}>
+
+        {/* LEFT — Question */}
+        <div style={{ padding:'88px 56px 56px', display:'flex', flexDirection:'column', justifyContent:'space-between', borderRight:'1px solid var(--line)' }}>
+          <div>
+            <div className="appear" style={{ marginBottom:32 }}>
+              <Eyebrow>Page {String(page+1).padStart(2,'0')} of 04 · {P.hi}</Eyebrow>
+            </div>
+            <h2 key={`q${page}`} className="slide-up" style={{
+              fontFamily:'var(--fd)', fontSize:64, fontWeight:500, lineHeight:1.0,
+              letterSpacing:'-0.018em', marginBottom:14,
+            }}>
+              {P.title.split(',').map((part,i,arr) => (
+                <Fragment key={i}>{i>0 && ', '}<span style={i===arr.length-1?{fontStyle:'italic', fontWeight:400, color:'var(--terra)'}:undefined}>{part}</span></Fragment>
+              ))}
+            </h2>
+            <div className="slide-up" style={{ animationDelay:'.1s', fontFamily:'var(--fd)', fontStyle:'italic', fontSize:18, color:'var(--ink-2)', maxWidth:'34ch' }}>{P.sub}</div>
+          </div>
+
+          {/* Trail */}
+          <div className="appear-3" style={{ display:'flex', flexDirection:'column', gap:9, marginTop:42 }}>
+            <Eyebrow>So far</Eyebrow>
+            <ConsultTrail brief={brief} page={page}/>
+          </div>
+        </div>
+
+        {/* RIGHT — Answer surface */}
+        <div style={{ padding:'72px 80px 40px', display:'flex', flexDirection:'column', minHeight:0, overflow:'hidden' }}>
+          <div key={`a${page}`} style={{ flex:1, minHeight:0, animation:'slideUp .55s cubic-bezier(.22,.7,0,1.05) both', animationDelay:'.15s' }}>
+            {P.kind==='vibe'    && <VibeAnswer    brief={brief} setBrief={setBrief}/>}
+            {P.kind==='room'    && <RoomAnswer    brief={brief} setBrief={setBrief}/>}
+            {P.kind==='who'     && <WhoAnswer     brief={brief} setBrief={setBrief}/>}
+            {P.kind==='budget'  && <BudgetAnswer  brief={brief} setBrief={setBrief}/>}
+          </div>
+
+          <div className="appear-4" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderTop:'1px solid var(--line)', paddingTop:28, marginTop:24 }}>
+            <a className="lnk" onClick={prev} style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:15, borderColor:'transparent', color:'var(--ink-3)' }}>
+              <span style={{ display:'inline-block', transform:'scaleX(-1)' }}>→</span> {page===0?'Back to cover':'Previous'}
+            </a>
+            <PrimaryLink onClick={validate() ? next : undefined}>
+              <span style={{ opacity: validate()?1:.32, transition:'opacity .25s' }}>
+                {page<3 ? 'Continue' : 'Begin drafting'}
+              </span>
+            </PrimaryLink>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConsultTrail({ brief, page }) {
+  const items = [
+    { i:0, label:'Feeling',    val: brief.vibe ? VIBES.find(v=>v.id===brief.vibe).name : null },
+    { i:1, label:'Room',       val: brief.room ? `${ROOMS.find(r=>r[0]===brief.room)[1]} · ${(SIZES.find(s=>s.id===brief.size)||{}).en||''}` : null },
+    { i:2, label:'Lives here', val: brief.who ? truncate(brief.who, 40) : null },
+    { i:3, label:'Budget',     val: brief.city ? `${formatBudget(brief.budget)} · ${brief.city}` : null },
+  ];
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+      {items.map(it => (
+        <div key={it.i} style={{ display:'flex', alignItems:'baseline', gap:12, opacity: it.val ? 1 : .35 }}>
+          <span className="eyebrow" style={{ minWidth:80, fontSize:9.5 }}>{it.label}</span>
+          <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:15, color: it.i===page ? 'var(--terra-dk)' : 'var(--ink)' }}>
+            {it.val || (it.i===page ? '…' : '—')}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function truncate(s, n) { return s.length>n ? s.slice(0, n-1)+'…' : s; }
+function formatBudget(v) {
+  if (v >= 500000) return '₹5L+';
+  if (v >= 100000) return `₹${(v/100000).toFixed(1).replace('.0','')}L`;
+  return `₹${(v/1000).toFixed(0)}K`;
+}
+
+function VibeAnswer({ brief, setBrief }) {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:0, height:'100%' }}>
+      {VIBES.map((v, i) => (
+        <div key={v.id} onClick={()=>setBrief({...brief, vibe:v.id})}
+          style={{
+            padding:'20px 0', borderTop: i===0 ? '1px solid var(--line)' : 'none', borderBottom:'1px solid var(--line)',
+            cursor:'pointer', display:'grid', gridTemplateColumns:'30px 1fr 1.4fr 24px', gap:18, alignItems:'baseline',
+            transition:'background .22s ease', position:'relative',
+            background: brief.vibe===v.id ? 'var(--paper-3)' : 'transparent',
+          }}
+          onMouseEnter={e=>{ if(brief.vibe!==v.id) e.currentTarget.style.background='rgba(248,243,232,0.6)'; }}
+          onMouseLeave={e=>{ if(brief.vibe!==v.id) e.currentTarget.style.background='transparent'; }}
+        >
+          <span style={{ fontFamily:'var(--fm)', fontSize:11, color:'var(--ink-3)', letterSpacing:'0.1em' }}>{String(i+1).padStart(2,'0')}</span>
+          <div>
+            <div style={{ fontFamily:'var(--fd)', fontSize:24, fontWeight:500, color: brief.vibe===v.id ? 'var(--terra)' : 'var(--ink)', display:'flex', alignItems:'baseline', gap:10 }}>
+              <span style={{ fontStyle:'italic', fontWeight:400 }}>{v.name}</span>
+              <span style={{ fontFamily:'var(--fh)', fontSize:14, color:'var(--ink-3)' }}>{v.hi}</span>
+            </div>
+            <div style={{ fontSize:12.5, color:'var(--ink-3)', marginTop:3 }}>{v.desc}</div>
+          </div>
+          <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, color:'var(--ink-2)', lineHeight:1.55 }}>
+            {v.depth}
+          </div>
+          <div style={{ alignSelf:'center', justifySelf:'end' }}>
+            {brief.vibe===v.id ? (
+              <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="var(--terra)"/><path d="M6 10l3 3 5-6" stroke="var(--paper)" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="none" stroke="var(--line-2)" strokeWidth="1"/></svg>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RoomAnswer({ brief, setBrief }) {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:48, height:'100%' }}>
+      {/* Room type */}
+      <div>
+        <Eyebrow>Room</Eyebrow>
+        <div style={{ display:'flex', gap:0, marginTop:14, borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)' }}>
+          {ROOMS.map(([id, en, hi], i) => (
+            <div key={id} onClick={()=>setBrief({...brief, room:id})}
+              style={{
+                flex:1, padding:'18px 12px', cursor:'pointer', textAlign:'center',
+                borderLeft: i>0 ? '1px solid var(--line)' : 'none',
+                background: brief.room===id ? 'var(--ink)' : 'transparent',
+                color: brief.room===id ? 'var(--paper)' : 'var(--ink)',
+                transition:'all .25s ease',
+              }}>
+              <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:18, fontWeight:500 }}>{en}</div>
+              <div style={{ fontFamily:'var(--fh)', fontSize:11, marginTop:4, opacity:.6 }}>{hi}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Size */}
+      <div>
+        <Eyebrow>Size</Eyebrow>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginTop:14 }}>
+          {SIZES.map(rs => {
+            const sel = brief.size===rs.id;
+            // Visual proportional rectangle
+            const dims = { compact:[36,36], standard:[40,56], large:[58,66], open:[72,72] }[rs.id];
+            return (
+              <div key={rs.id} onClick={()=>setBrief({...brief, size:rs.id})}
+                style={{
+                  padding:'24px 14px 16px', cursor:'pointer', textAlign:'center',
+                  border:`1px solid ${sel?'var(--terra)':'var(--line)'}`,
+                  background: sel ? 'var(--paper-3)' : 'transparent',
+                  transition:'all .25s ease', position:'relative',
+                }}>
+                <div style={{ height:80, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }}>
+                  <div style={{ width:dims[0], height:dims[1], border:`1.5px solid ${sel?'var(--terra)':'var(--ink-2)'}`, position:'relative' }}>
+                    {/* tiny door */}
+                    <div style={{ position:'absolute', bottom:-1, left:6, width:8, height:2, background: sel?'var(--terra)':'var(--ink-2)' }}/>
+                  </div>
+                </div>
+                <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:18, fontWeight:500, color: sel?'var(--terra)':'var(--ink)' }}>{rs.en}</div>
+                <div style={{ fontFamily:'var(--fm)', fontSize:10, color:'var(--ink-3)', marginTop:3, letterSpacing:'0.08em' }}>{rs.hi} ft</div>
+                <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:11.5, color:'var(--ink-3)', marginTop:8, lineHeight:1.45 }}>{rs.desc}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WhoAnswer({ brief, setBrief }) {
+  const [chips] = useState([
+    'Young children','Elderly parent','Work from home','Frequent guests','Pets','Just the two of us','Vastu matters','Joint family',
+  ]);
+  const toggleChip = c => {
+    const arr = brief.chips || [];
+    setBrief({ ...brief, chips: arr.includes(c) ? arr.filter(x=>x!==c) : [...arr, c] });
+  };
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%', gap:32 }}>
+      <div style={{ position:'relative' }}>
+        <textarea
+          value={brief.who||''}
+          onChange={e=>setBrief({...brief, who:e.target.value})}
+          placeholder="A family of four — my son is four years old. My mother-in-law visits often and stays in this room sometimes. We watch movies together. I work some evenings. We accumulate a lot of toys."
+          style={{
+            width:'100%', height:200, border:'none', borderBottom:'1px solid var(--line)',
+            background:'transparent', resize:'none', outline:'none',
+            fontFamily:'var(--fd)', fontSize:24, lineHeight:1.5, fontWeight:400, color:'var(--ink)',
+            padding:'8px 0',
+          }}
+        />
+        <div style={{ position:'absolute', right:0, bottom:8, fontFamily:'var(--fm)', fontSize:10, color:'var(--ink-3)' }}>
+          {(brief.who||'').length} CH.
+        </div>
+      </div>
+
+      <div>
+        <Eyebrow>Or pick what fits — optional</Eyebrow>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:14 }}>
+          {chips.map(c => {
+            const on = (brief.chips||[]).includes(c);
+            return (
+              <div key={c} onClick={()=>toggleChip(c)}
+                style={{
+                  padding:'9px 18px', cursor:'pointer',
+                  border:`1px solid ${on?'var(--terra)':'var(--line)'}`,
+                  background: on ? 'var(--terra)' : 'transparent',
+                  color: on ? 'var(--paper)' : 'var(--ink-2)',
+                  fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, fontWeight:500,
+                  transition:'all .2s ease', borderRadius:0,
+                }}>{c}</div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BudgetAnswer({ brief, setBrief }) {
+  const cities = ['Mumbai','Pune','Bangalore','Delhi','Hyderabad','Chennai','Kolkata'];
+  const v = brief.budget || 300000;
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:56, height:'100%' }}>
+
+      <div>
+        <Eyebrow>Budget — furniture and finishing</Eyebrow>
+        <div style={{ display:'flex', alignItems:'baseline', gap:18, marginTop:18, marginBottom:30 }}>
+          <span style={{ fontFamily:'var(--fd)', fontSize:88, fontWeight:500, lineHeight:1, color:'var(--terra)', letterSpacing:'-0.025em' }}>
+            {formatBudget(v)}
+          </span>
+          <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:18, color:'var(--ink-3)' }}>
+            ≈ {Math.round(v/100000*1.18 * 100)/100} lakh after taxes
+          </span>
+        </div>
+        <input type="range" min="75000" max="500000" step="25000" value={v} onChange={e=>setBrief({...brief, budget:+e.target.value})}/>
+        <div style={{ display:'flex', justifyContent:'space-between', marginTop:14, fontFamily:'var(--fm)', fontSize:10, color:'var(--ink-3)', letterSpacing:'0.08em' }}>
+          <span>75K · ESSENTIALS</span>
+          <span>1.5L · FAMILY</span>
+          <span>3L · COMPLETE</span>
+          <span>5L+ · PREMIUM</span>
+        </div>
+      </div>
+
+      <div>
+        <Eyebrow>City</Eyebrow>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:0, marginTop:14, borderTop:'1px solid var(--line)' }}>
+          {cities.map((c,i) => (
+            <div key={c} onClick={()=>setBrief({...brief, city:c})}
+              style={{
+                flex:'1 1 0', minWidth:120, padding:'18px 12px', cursor:'pointer', textAlign:'center',
+                borderRight: i<cities.length-1 ? '1px solid var(--line)' : 'none',
+                borderBottom:'1px solid var(--line)',
+                background: brief.city===c ? 'var(--ink)' : 'transparent',
+                color: brief.city===c ? 'var(--paper)' : 'var(--ink)',
+                transition:'all .2s ease',
+              }}>
+              <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:17, fontWeight:500 }}>{c}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   III. DRAFTING
+   ───────────────────────────────────────────────────────────── */
+
+const DRAFT_NOTES = [
+  { stage:1, txt:'12 × 14 ft. Mumbai 2nd floor. Window faces east.',                   pos:[36, 18] },
+  { stage:1, txt:'Family of four. Mother-in-law visits.',                              pos:[36, 36] },
+  { stage:2, txt:'Sofa: south wall, 9 feet. For movie nights.',                        pos:[24, 88] },
+  { stage:3, txt:'Coffee table — generous. Small enough to step around.',              pos:[18, 78] },
+  { stage:3, txt:'Desk along east wall. Window-light, out of the sightline.',          pos:[78, 50] },
+  { stage:4, txt:'मन्दिर — northeast corner. East-facing for the morning sun.',          pos:[78, 14], terra:true },
+  { stage:4, txt:'Storage built behind every panel. Toys disappear.',                  pos:[18, 38] },
+  { stage:5, txt:'Marine ply, BWR grade. Mumbai humidity.',                            pos:[18, 56] },
+  { stage:5, txt:'Total: ₹2,84,000. Sixteen thousand under budget.',                   pos:[24, 96] },
+];
+
+const DRAFT_STAGES = [
+  { en:'Reading the room',           hi:'कमरा पढ़ना' },
+  { en:'Placing the major pieces',   hi:'मुख्य फ़र्निचर' },
+  { en:'Arranging the smaller ones', hi:'छोटे तत्व' },
+  { en:'Honouring Vastu, lining up the light', hi:'वास्तु और प्रकाश' },
+  { en:'Materials, prices, totals',  hi:'सामग्री और मूल्य' },
+];
+
+function DraftScreen({ onNav }) {
+  const [stage, setStage] = useState(0);
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    let s = 0;
+    const iv = setInterval(() => {
+      s++;
+      if (s >= DRAFT_STAGES.length+1) {
+        clearInterval(iv);
+        if (!doneRef.current) {
+          doneRef.current = true;
+          setTimeout(() => onNav('reveal'), 1400);
+        }
+      }
+      setStage(s);
+    }, 2200);
+    return () => clearInterval(iv);
+  }, [onNav]);
+
+  const visibleNotes = DRAFT_NOTES.filter(n => n.stage <= stage);
+
+  return (
+    <div className="paper" style={{ height:'100vh', display:'flex', flexDirection:'column' }}>
+      <TopBar active="draft" onNav={onNav}/>
+
+      <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 360px', gap:0, minHeight:0 }}>
+
+        {/* Drawing surface */}
+        <div style={{ position:'relative', padding:'40px 24px 40px 56px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+          {/* Plan */}
+          <div style={{ width:'100%', height:'100%', maxHeight:560, position:'relative' }}>
+            <FloorPlan S={26} drawAnim stage={Math.min(stage, 5)}/>
+
+            {/* Marginalia overlay */}
+            {visibleNotes.map((n, i) => (
+              <div key={i} className="fade" style={{
+                position:'absolute', left:`${n.pos[0]}%`, top:`${n.pos[1]}%`,
+                fontFamily:'var(--fd)', fontStyle:'italic', fontSize:13.5,
+                color: n.terra ? 'var(--terra-dk)' : 'var(--ink-2)',
+                maxWidth:230, lineHeight:1.4,
+                textShadow:'0 0 12px var(--paper)',
+              }}>{n.txt}</div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right margin — narration */}
+        <div style={{ borderLeft:'1px solid var(--line)', padding:'48px 36px 40px', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
+
+          <div>
+            <Eyebrow>The architect's notes</Eyebrow>
+            <div style={{ marginTop:14, fontFamily:'var(--fd)', fontStyle:'italic', fontSize:34, fontWeight:500, lineHeight:1.1, color:'var(--ink)', minHeight:90 }}>
+              {stage === 0 && 'Beginning to draw…'}
+              {stage > 0 && stage <= DRAFT_STAGES.length && DRAFT_STAGES[stage-1].en}
+              {stage > DRAFT_STAGES.length && 'Three rooms ready.'}
+            </div>
+            <div style={{ fontFamily:'var(--fh)', fontSize:16, color:'var(--ink-3)', marginTop:8 }}>
+              {stage > 0 && stage <= DRAFT_STAGES.length && DRAFT_STAGES[stage-1].hi}
+            </div>
+          </div>
+
+          {/* Stage list */}
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <Eyebrow>Working steps</Eyebrow>
+            {DRAFT_STAGES.map((s, i) => {
+              const done = stage > i+1;
+              const current = stage === i+1;
+              return (
+                <div key={i} style={{ display:'flex', alignItems:'baseline', gap:14 }}>
+                  <span style={{ fontFamily:'var(--fm)', fontSize:10, color: done?'var(--terra)':current?'var(--ink)':'var(--ink-3)', minWidth:24 }}>
+                    {String(i+1).padStart(2,'0')}
+                  </span>
+                  <div style={{ flex:1, height:1, background: done?'var(--terra)':current?'var(--ink-2)':'var(--line)', marginRight:12, transition:'background .4s' }}/>
+                  <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, color: done?'var(--ink)':current?'var(--ink)':'var(--ink-3)', flex:'0 0 auto', maxWidth:'60%', textAlign:'right' }}>
+                    {s.en}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   IV. THE REVEAL — letters & spreads
+   ───────────────────────────────────────────────────────────── */
+
+const VISIONS = [
+  {
+    n:'I',
+    name:'The Gathering',
+    hi:'सभा',
+    cost:'₹2,84,000',
+    cushion:'+₹16,000 unused',
+    palette:['#C2502E','#8E5A35','#D9C09C','#3A2D24'],
+    materials:['Marine ply (BWR grade)','Teak veneer, oiled','Cotton-linen upholstery','Brass fittings'],
+    letter:[
+      'For your evenings I drew the sofa first — oversized, deep, the one your boy will fall asleep on during movie nights. Nine feet, three cushions.',
+      'The mandir sits in the northeast where the morning light first enters. Behind every panel I tucked storage; the toys disappear when you want them to.',
+      'The desk I placed on the east wall, just out of the main sightline. You can work there in the evenings without taking the room from the family.',
+      'Cost runs ₹2,84,000. Sixteen thousand under your figure — keep it for the rug.',
+    ],
+    foot:'A room that fills up. That is its job.',
+  },
+  {
+    n:'II',
+    name:'The Breath',
+    hi:'विश्राम',
+    cost:'₹2,41,000',
+    cushion:'+₹59,000 unused',
+    palette:['#E8E1D2','#A89E8A','#3F3A33','#C2502E'],
+    materials:['Wall-hung cabinetry','Limewashed walls','Cane and oak','Linen, undyed'],
+    letter:[
+      'The opposite instinct: less. I removed the second cabinet, raised everything off the floor, kept the centre empty. The room reads larger because it is emptier.',
+      'Storage I built into walls, not into objects. The mandir is a backlit niche — subtle, intentional. The sofa is a 2.5-seater, low and lean.',
+      'You will lose some places to put things. You will gain a room that breathes.',
+      'Cost runs ₹2,41,000. Use the savings on the right pendant light.',
+    ],
+    foot:'A room that holds quiet. That is its job.',
+  },
+  {
+    n:'III',
+    name:'The Keeper',
+    hi:'संग्रह',
+    cost:'₹2,96,000',
+    cushion:'-₹4,000 (within budget)',
+    palette:['#5B3B26','#8E6A47','#D7BC93','#332115'],
+    materials:['Floor-to-ceiling MDF','Walnut veneer, matte','Bouclé and velvet','Soft-close hydraulics'],
+    letter:[
+      'A storage-first room. Floor-to-ceiling on every available wall, drawer beneath every cushion, soft-close on every panel. Six years from now this room absorbs everything your family accumulates without becoming cluttered.',
+      'The trade-off is density — the room feels held, not airy. In return, nothing is ever out of place.',
+      'I chose walnut veneer for warmth at this density. The mandir gets its own dedicated cabinet — closed when not in use.',
+      'Cost runs ₹2,96,000. Almost on the line.',
+    ],
+    foot:'A room that holds everything. That is its job.',
+  },
+];
+
+function RevealScreen({ onNav }) {
+  const [vi, setVi] = useState(0);
+  const v = VISIONS[vi];
+
+  return (
+    <div className="paper" style={{ height:'100vh', display:'flex', flexDirection:'column' }}>
+      <TopBar active="reveal" onNav={onNav}/>
+
+      {/* Tabs / numerals */}
+      <div style={{ padding:'28px 56px 18px', display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+        <Eyebrow>Three rooms drawn for you · {v.cushion}</Eyebrow>
+        <div style={{ display:'flex', gap:32 }}>
+          {VISIONS.map((vv, i) => (
+            <div key={i} onClick={()=>setVi(i)} style={{ cursor:'pointer', display:'flex', alignItems:'baseline', gap:10 }}>
+              <span style={{ fontFamily:'var(--fm)', fontSize:11, letterSpacing:'0.16em', color: vi===i?'var(--terra)':'var(--ink-3)' }}>{vv.n}.</span>
+              <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:17, fontWeight:500, color: vi===i?'var(--ink)':'var(--ink-3)', borderBottom: vi===i?'1px solid var(--ink)':'1px solid transparent', paddingBottom:3, transition:'all .25s' }}>
+                {vv.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Spread */}
+      <div key={vi} style={{ flex:1, display:'grid', gridTemplateColumns:'1.15fr 1fr', gap:0, minHeight:0, animation:'fade .4s ease' }}>
+
+        {/* LEFT — render */}
+        <div style={{ padding:'8px 28px 40px 56px', display:'flex', flexDirection:'column', minHeight:0 }}>
+          {/* Render canvas */}
+          <div style={{ flex:1, position:'relative', background:'var(--paper-2)', overflow:'hidden', minHeight:0 }}>
+            <RoomRender vision={v}/>
+            {/* Caption corner */}
+            <div style={{ position:'absolute', left:24, bottom:24, color:'var(--paper)', display:'flex', flexDirection:'column', gap:4 }}>
+              <span className="eyebrow" style={{ color:'rgba(242,235,221,.65)', fontSize:9.5 }}>VIEW · ENTRANCE</span>
+              <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:24, fontWeight:500 }}>{v.name}</span>
+              <span style={{ fontFamily:'var(--fh)', fontSize:14, color:'rgba(242,235,221,.7)' }}>{v.hi}</span>
+            </div>
+            {/* View pills bottom right */}
+            <div style={{ position:'absolute', right:24, bottom:24, display:'flex', gap:0, border:'1px solid rgba(242,235,221,.3)' }}>
+              {['Entrance','Living','Plan'].map((t,i) => (
+                <div key={t} style={{ padding:'8px 16px', fontFamily:'var(--fm)', fontSize:10, letterSpacing:'0.1em', color: i===0 ? 'var(--paper)' : 'rgba(242,235,221,.6)', background: i===0 ? 'rgba(242,235,221,.15)' : 'transparent', borderLeft: i>0?'1px solid rgba(242,235,221,.3)':'none', cursor:'pointer' }}>{t.toUpperCase()}</div>
+              ))}
+            </div>
+          </div>
+
+          {/* Materials strip */}
+          <div style={{ marginTop:20, display:'flex', justifyContent:'space-between', gap:20 }}>
+            <div style={{ flex:1 }}>
+              <Eyebrow>Palette</Eyebrow>
+              <div style={{ display:'flex', gap:6, marginTop:10 }}>
+                {v.palette.map((c,i) => (
+                  <div key={i} style={{ width:42, height:42, background:c, border:'1px solid rgba(0,0,0,.06)' }}/>
+                ))}
+              </div>
+            </div>
+            <div style={{ flex:2 }}>
+              <Eyebrow>Materials</Eyebrow>
+              <div style={{ marginTop:10, display:'flex', flexWrap:'wrap', gap:'4px 18px' }}>
+                {v.materials.map(m => <span key={m} style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, color:'var(--ink-2)' }}>{m}</span>)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — letter */}
+        <div style={{ padding:'12px 56px 40px 36px', borderLeft:'1px solid var(--line)', display:'flex', flexDirection:'column', justifyContent:'space-between', position:'relative', overflow:'auto' }}>
+
+          <div>
+            <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:21, color:'var(--ink-3)', marginBottom:18 }}>
+              <span style={{ fontStyle:'normal', fontWeight:500 }}>To Priya,</span>
+            </div>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
+              {v.letter.map((p, i) => (
+                <p key={i} style={{ fontFamily:'var(--fd)', fontSize: i===0?22:18, lineHeight:1.55, color:'var(--ink)', fontWeight: i===0?500:400, fontStyle: i===0?'normal':'italic' }}>
+                  {p}
+                </p>
+              ))}
+            </div>
+
+            <div style={{ marginTop:32, fontFamily:'var(--fd)', fontStyle:'italic', fontSize:17, color:'var(--terra-dk)' }}>
+              {v.foot}
+            </div>
+
+            <div style={{ marginTop:36, display:'flex', alignItems:'baseline', gap:8 }}>
+              <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:16, color:'var(--ink-3)' }}>—</span>
+              <Logo size="sm"/>
+            </div>
+          </div>
+
+          {/* Bottom — total + CTA */}
+          <div style={{ marginTop:36, paddingTop:28, borderTop:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'flex-end' }}>
+            <div>
+              <Eyebrow>Total estimate</Eyebrow>
+              <div style={{ fontFamily:'var(--fd)', fontSize:42, fontWeight:500, color:'var(--ink)', marginTop:4, letterSpacing:'-0.02em' }}>{v.cost}</div>
+              <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:13, color:'var(--ink-3)', marginTop:2 }}>{v.cushion}</div>
+            </div>
+            <PrimaryLink onClick={()=>onNav('studio')}>Take this one further</PrimaryLink>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Room render — abstract, type-led "render" with the right palette per vision.
+   No fake AI render. Just a beautiful, intentional placeholder.              */
+function RoomRender({ vision }) {
+  const dark = vision.palette[3] || '#2a2018';
+  const mid  = vision.palette[1] || '#7a5a3a';
+  const lit  = vision.palette[2] || '#d8c8a8';
+  const acc  = vision.palette[0] || '#c2502e';
+  return (
+    <div style={{ position:'absolute', inset:0, background: `linear-gradient(180deg, ${dark} 0%, ${dark} 38%, ${mid} 39%, ${mid} 100%)` }}>
+      <svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" style={{ position:'absolute', inset:0, width:'100%', height:'100%' }}>
+        <defs>
+          <linearGradient id={`light-${vision.n}`} x1="50%" y1="0%" x2="50%" y2="100%">
+            <stop offset="0%" stopColor={lit} stopOpacity="0.5"/>
+            <stop offset="100%" stopColor={lit} stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+
+        {/* Window light pour from north */}
+        <rect x="180" y="0" width="180" height="400" fill={`url(#light-${vision.n})`}/>
+
+        {/* Floor inset (perspective) */}
+        <polygon points="0,300 600,300 540,400 60,400" fill={mid} opacity="0.5"/>
+        <line x1="60" y1="400" x2="540" y2="400" stroke={dark} strokeWidth="0.5"/>
+
+        {/* Back wall accents — frames */}
+        <rect x="180" y="80" width="60" height="80" fill="none" stroke={lit} strokeWidth="0.8" opacity="0.6"/>
+        <rect x="260" y="100" width="50" height="60" fill="none" stroke={lit} strokeWidth="0.8" opacity="0.6"/>
+
+        {/* Mandir niche */}
+        <rect x="500" y="100" width="60" height="120" fill={dark} opacity="0.7"/>
+        <rect x="510" y="110" width="40" height="100" fill="none" stroke={acc} strokeWidth="1"/>
+        <circle cx="530" cy="170" r="3" fill={acc}/>
+
+        {/* Sofa block */}
+        <rect x="100" y="220" width="280" height="80" fill={dark} opacity="0.85"/>
+        <rect x="100" y="200" width="280" height="35" fill={dark} opacity="0.95"/>
+        {/* cushion lines */}
+        <line x1="195" y1="220" x2="195" y2="300" stroke={lit} strokeWidth="0.5" opacity="0.4"/>
+        <line x1="290" y1="220" x2="290" y2="300" stroke={lit} strokeWidth="0.5" opacity="0.4"/>
+
+        {/* Coffee table — small */}
+        <rect x="180" y="320" width="120" height="20" fill={lit} opacity="0.5"/>
+
+        {/* Plant */}
+        <circle cx="50" cy="280" r="20" fill={lit} opacity="0.4"/>
+        <rect x="44" y="295" width="12" height="20" fill={dark}/>
+
+        {/* Pendant */}
+        <line x1="240" y1="0" x2="240" y2="80" stroke={lit} strokeWidth="0.6" opacity="0.6"/>
+        <ellipse cx="240" cy="85" rx="22" ry="6" fill={lit} opacity="0.7"/>
+        <ellipse cx="240" cy="200" rx="80" ry="14" fill={acc} opacity="0.06"/>
+
+        {/* Person silhouette — scale */}
+        <circle cx="450" cy="240" r="6" fill={dark}/>
+        <rect x="444" y="246" width="12" height="36" fill={dark}/>
+
+        {/* Cinematic vignette */}
+        <radialGradient id={`vig-${vision.n}`} cx="50%" cy="55%" r="65%">
+          <stop offset="60%" stopColor="#000" stopOpacity="0"/>
+          <stop offset="100%" stopColor="#000" stopOpacity="0.5"/>
+        </radialGradient>
+        <rect width="600" height="400" fill={`url(#vig-${vision.n})`}/>
+      </svg>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   V. THE WORKSPACE (Planner + AI)
+   ───────────────────────────────────────────────────────────── */
+
+const STUDIO_INIT = [
+  { role:'ai',   text:'I have your room open. The mandir faces northeast for the morning light, the centre is held empty for the boy to play, the sofa is oversized for evenings together. Tell me what to refine.' },
+  { role:'user', text:'Make the sofa bigger. Dark leather.' },
+  { role:'ai',   text:'Done. A 9-foot 3-seater in deep brown PU leather. The walkway in front is still 36 inches — generous enough. ₹38,000 instead of ₹22,000. New total: ₹3,00,000, exactly on budget. I would not upgrade further unless we trade something else down.' },
+];
+
+function StudioScreen({ onNav }) {
+  const [view, setView] = useState('plan');
+  const [edit, setEdit] = useState(false);
+  const [msgs, setMsgs] = useState(STUDIO_INIT);
+  const [input, setInput] = useState('');
+  const [thinking, setThinking] = useState(false);
+  const scrollRef = useRef();
+
+  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [msgs, thinking]);
+
+  const send = () => {
+    const q = input.trim();
+    if (!q) return;
+    setInput('');
+    setMsgs(p => [...p, { role:'user', text:q }]);
+    setThinking(true);
+    setTimeout(() => {
+      setThinking(false);
+      setMsgs(p => [...p, { role:'ai', text:`I have noted that — "${q}". Give me a moment to work it into the layout and update the cost.` }]);
+    }, 1100);
+  };
+
+  return (
+    <div className="paper" style={{ height:'100vh', display:'flex', flexDirection:'column' }}>
+      {/* Studio header — different from cover, more workspace-like */}
+      <div style={{ height:62, padding:'0 36px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid var(--line)' }}>
+        <div onClick={()=>onNav('cover')} style={{ cursor:'pointer' }}><Logo size="sm"/></div>
+
+        <div style={{ display:'flex', alignItems:'baseline', gap:14 }}>
+          <Eyebrow>Drawing No. 0042 · </Eyebrow>
+          <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:18, fontWeight:500 }}>Living Room — Thane</span>
+          <span style={{ fontFamily:'var(--fm)', fontSize:11, color:'var(--ink-3)' }}>12'-0" × 14'-0"</span>
+        </div>
+
+        <div style={{ display:'flex', gap:14, alignItems:'center' }}>
+          {/* Cost meter */}
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', minWidth:160 }}>
+            <div style={{ fontFamily:'var(--fm)', fontSize:9.5, color:'var(--ink-3)', letterSpacing:'0.1em' }}>RUNNING ESTIMATE · 95%</div>
+            <div style={{ fontFamily:'var(--fd)', fontSize:20, fontWeight:500, color:'var(--terra)', marginTop:2 }}>₹2,84,000</div>
+            <div style={{ width:160, height:1, background:'var(--line)', marginTop:6, position:'relative' }}>
+              <div style={{ position:'absolute', left:0, top:0, height:1, width:'95%', background:'var(--terra)' }}/>
+              <div style={{ position:'absolute', left:'100%', top:-3, width:1, height:7, background:'var(--ink-3)' }}/>
+              <div style={{ position:'absolute', left:'100%', top:9, fontFamily:'var(--fm)', fontSize:9, color:'var(--ink-3)', transform:'translateX(-50%)' }}>BUDGET</div>
+            </div>
+          </div>
+          <GhostBtn onClick={()=>onNav('handoff')}>Hand off →</GhostBtn>
+        </div>
+      </div>
+
+      <div style={{ flex:1, display:'grid', gridTemplateColumns:'1fr 380px', minHeight:0 }}>
+
+        {/* Canvas */}
+        <div style={{ position:'relative', overflow:'hidden', borderRight:'1px solid var(--line)' }}>
+          {/* Tools overlay top-left */}
+          <div style={{ position:'absolute', top:24, left:24, display:'flex', flexDirection:'column', gap:0, border:'1px solid var(--line)', background:'var(--paper-3)', zIndex:5 }}>
+            {[['plan','Plan','योजना'],['elev','Elevation','उठान'],['3d','3D View','त्रि‑आ.']].map((t,i) => (
+              <div key={t[0]} onClick={()=>setView(t[0])} style={{
+                padding:'12px 18px', cursor:'pointer', display:'flex', flexDirection:'column', gap:2,
+                background: view===t[0]?'var(--ink)':'transparent',
+                color: view===t[0]?'var(--paper)':'var(--ink)',
+                borderBottom: i<2?'1px solid var(--line)':'none',
+                transition:'all .2s ease',
+              }}>
+                <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, fontWeight:500 }}>{t[1]}</span>
+                <span style={{ fontFamily:'var(--fh)', fontSize:10, opacity:.7 }}>{t[2]}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Tools overlay bottom-left — manual edit */}
+          <div style={{ position:'absolute', bottom:24, left:24, display:'flex', alignItems:'center', gap:14, zIndex:5 }}>
+            <div onClick={()=>setEdit(!edit)} style={{
+              cursor:'pointer', padding:'10px 16px', border:'1px solid var(--ink)',
+              background: edit?'var(--terra)':'var(--paper-3)',
+              color: edit?'var(--paper)':'var(--ink)',
+              fontFamily:'var(--fm)', fontSize:10, letterSpacing:'0.14em',
+              transition:'all .2s ease',
+            }}>{edit ? '✎ EDITING' : '✎ EDIT MANUALLY'}</div>
+            {edit && (
+              <div className="fade" style={{ display:'flex', gap:0, border:'1px solid var(--ink)', background:'var(--paper-3)' }}>
+                {['Move','Rotate','Replace','Remove'].map((a,i) => (
+                  <div key={a} style={{ padding:'10px 16px', fontFamily:'var(--fm)', fontSize:10, letterSpacing:'0.12em', color:'var(--ink)', cursor:'pointer', borderLeft:i>0?'1px solid var(--line)':'none' }}>{a.toUpperCase()}</div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Compass top-right */}
+          <div style={{ position:'absolute', top:24, right:24, zIndex:5, width:54, height:54, border:'1px solid var(--ink)', borderRadius:'50%', background:'var(--paper-3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ position:'relative' }}>
+              <div style={{ position:'absolute', top:-22, left:-2, fontFamily:'var(--fm)', fontSize:9, color:'var(--terra)', fontWeight:600 }}>N</div>
+              <svg width="20" height="20" viewBox="0 0 20 20"><polygon points="10,2 13,12 10,9 7,12" fill="var(--terra)"/><polygon points="10,18 7,8 10,11 13,8" fill="var(--ink-3)"/></svg>
+            </div>
+          </div>
+
+          {/* Plan / view content */}
+          <div style={{ position:'absolute', inset:0, padding:'20px 60px 70px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            {view==='plan' && <FloorPlan S={32}/>}
+            {view==='elev' && <ElevationDrawing/>}
+            {view==='3d'   && <ThreeDPlaceholder/>}
+          </div>
+        </div>
+
+        {/* Right — AI conversation panel */}
+        <div style={{ display:'flex', flexDirection:'column', overflow:'hidden' }}>
+          {/* Heading */}
+          <div style={{ padding:'18px 24px', borderBottom:'1px solid var(--line)' }}>
+            <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between' }}>
+              <div>
+                <Eyebrow>Marginalia · the architect</Eyebrow>
+                <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:18, fontWeight:500, marginTop:4, display:'flex', alignItems:'baseline', gap:8 }}>
+                  Working with you
+                  <span style={{ fontFamily:'var(--fh)', fontSize:13, color:'var(--ink-3)' }}>आपके साथ</span>
+                </div>
+              </div>
+              <div style={{ width:8, height:8, borderRadius:'50%', background:'var(--terra)', animation:'pulse 2s ease infinite' }}/>
+            </div>
+          </div>
+
+          {/* Conversation as exchanged letters */}
+          <div ref={scrollRef} style={{ flex:1, overflow:'auto', padding:'20px 24px', display:'flex', flexDirection:'column', gap:18 }}>
+            {msgs.map((m,i) => <Message key={i} m={m}/>)}
+            {thinking && <ThinkingDots/>}
+          </div>
+
+          {/* Suggestions */}
+          <div style={{ padding:'8px 24px 4px', display:'flex', flexWrap:'wrap', gap:6 }}>
+            {['Bigger sofa','More storage','Show me other mandir options','What if budget was 4L?','Switch to teak'].map(s => (
+              <div key={s} onClick={()=>setInput(s)} style={{
+                padding:'7px 14px', fontFamily:'var(--fd)', fontStyle:'italic', fontSize:12.5,
+                border:'1px solid var(--line)', cursor:'pointer', color:'var(--ink-2)',
+                transition:'all .18s ease', whiteSpace:'nowrap',
+              }}
+              onMouseEnter={e=>{ e.currentTarget.style.borderColor='var(--terra)'; e.currentTarget.style.color='var(--terra-dk)'; }}
+              onMouseLeave={e=>{ e.currentTarget.style.borderColor='var(--line)'; e.currentTarget.style.color='var(--ink-2)'; }}
+              >{s}</div>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div style={{ padding:'14px 24px 22px', display:'flex', alignItems:'center', gap:0, borderTop:'1px solid var(--line)' }}>
+            <input
+              value={input} onChange={e=>setInput(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&send()}
+              placeholder="Tell me what to refine…"
+              style={{ flex:1, border:'none', borderBottom:'1px solid var(--ink)', background:'transparent', padding:'10px 0', fontFamily:'var(--fd)', fontStyle:'italic', fontSize:16, outline:'none' }}
+            />
+            <button onClick={send} style={{ background:'transparent', border:'none', cursor:'pointer', fontFamily:'var(--fd)', fontStyle:'italic', fontSize:18, color:'var(--terra)', padding:'10px 0 10px 18px' }}>
+              ↵ Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Message({ m }) {
+  const isAi = m.role === 'ai';
+  return (
+    <div className="fade" style={{ display:'flex', flexDirection:'column', gap:6, padding: isAi ? 0 : '0 0 0 24px' }}>
+      <span className="eyebrow" style={{ fontSize:9, color: isAi?'var(--terra)':'var(--ink-3)' }}>
+        {isAi ? '— Nirmit' : '— You'}
+      </span>
+      <div style={{
+        fontFamily:'var(--fd)', fontSize: isAi ? 15.5 : 15, lineHeight:1.55,
+        fontStyle: isAi ? 'normal' : 'italic',
+        color: isAi ? 'var(--ink)' : 'var(--ink-2)',
+        paddingLeft: isAi ? 0 : 10,
+        borderLeft: isAi ? 'none' : '1px solid var(--ink-3)',
+      }}>{m.text}</div>
+    </div>
+  );
+}
+
+function ThinkingDots() {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+      <span className="eyebrow" style={{ fontSize:9, color:'var(--terra)' }}>— Nirmit</span>
+      <div style={{ display:'flex', gap:5, padding:'4px 0' }}>
+        {[0,1,2].map(i => <div key={i} style={{ width:6, height:6, borderRadius:'50%', background:'var(--ink-3)', animation:`pulse 1.2s ease ${i*0.18}s infinite` }}/>)}
+      </div>
+    </div>
+  );
+}
+
+function ElevationDrawing() {
+  return (
+    <svg viewBox="0 0 700 380" width="100%" style={{ maxHeight:'100%' }}>
+      <line x1="20" y1="340" x2="680" y2="340" stroke="var(--ink)" strokeWidth="2"/>
+      <line x1="40" y1="340" x2="40" y2="40" stroke="var(--ink)" strokeWidth="2"/>
+      <line x1="660" y1="340" x2="660" y2="40" stroke="var(--ink)" strokeWidth="2"/>
+      <line x1="40" y1="40" x2="660" y2="40" stroke="var(--ink)" strokeWidth="2"/>
+
+      {/* TV unit elevation */}
+      <rect x="120" y="240" width="240" height="100" fill="none" stroke="var(--ink)" strokeWidth="1"/>
+      <rect x="150" y="155" width="180" height="80" fill="var(--ink)" opacity="0.85"/>
+      {/* shelves */}
+      <line x1="120" y1="280" x2="360" y2="280" stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="2 2"/>
+      <line x1="120" y1="310" x2="360" y2="310" stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="2 2"/>
+
+      {/* Mandir */}
+      <rect x="540" y="100" width="80" height="170" fill="url(#hatchTerra)" stroke="var(--terra)" strokeWidth="1.4"/>
+      <line x1="540" y1="120" x2="620" y2="120" stroke="var(--terra)" strokeWidth="0.8"/>
+      <circle cx="580" cy="170" r="4" fill="var(--terra)"/>
+
+      {/* Pendant */}
+      <line x1="280" y1="40" x2="280" y2="120" stroke="var(--ink)" strokeWidth="0.8"/>
+      <path d="M 254 120 L 306 120 L 296 145 L 264 145 Z" fill="var(--paper-3)" stroke="var(--ink)" strokeWidth="1"/>
+      <ellipse cx="280" cy="265" rx="70" ry="8" fill="var(--terra)" opacity="0.07"/>
+
+      {/* Person silhouette */}
+      <circle cx="430" cy="290" r="6" fill="var(--ink-2)"/>
+      <rect x="424" y="296" width="12" height="36" fill="var(--ink-2)"/>
+
+      {/* Dimensions */}
+      <line x1="20" y1="40" x2="20" y2="340" stroke="var(--ink-3)" strokeWidth="0.5"/>
+      <text x="14" y="190" textAnchor="middle" fontFamily="var(--fm)" fontSize="9" fill="var(--ink-3)" transform="rotate(-90, 14, 190)" letterSpacing="0.1em">10'-0" CEIL.</text>
+
+      <text x="350" y="370" textAnchor="middle" fontFamily="var(--fm)" fontSize="10" fill="var(--ink-3)" letterSpacing="0.14em">ELEVATION A · NORTH WALL</text>
+    </svg>
+  );
+}
+
+function ThreeDPlaceholder() {
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:18 }}>
+      <div style={{ width:340, height:200, background:'var(--ink)', position:'relative', overflow:'hidden' }}>
+        <RoomRender vision={VISIONS[0]}/>
+      </div>
+      <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, color:'var(--ink-3)' }}>
+        3D rendered in WebGL · drag to orbit
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   VI. THE HANDOFF
+   ───────────────────────────────────────────────────────────── */
+
+function HandoffScreen({ onNav }) {
+  return (
+    <div className="paper" style={{ height:'100vh', display:'flex', flexDirection:'column' }}>
+      <TopBar active="handoff" onNav={onNav}/>
+
+      <div style={{ flex:1, overflowY:'auto', padding:'48px 56px' }}>
+
+        <div className="appear" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:36 }}>
+          <div>
+            <Eyebrow>Drawing No. 0042 · Issued for construction</Eyebrow>
+            <h2 style={{ fontFamily:'var(--fd)', fontSize:54, fontWeight:500, lineHeight:1, marginTop:14, letterSpacing:'-0.02em' }}>
+              Your room, <span style={{ fontStyle:'italic', color:'var(--terra)' }}>handed off.</span>
+            </h2>
+            <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:16, color:'var(--ink-2)', marginTop:8 }}>
+              The Gathering · Living Room · 12'×14' · Mumbai · ₹2,84,000
+            </div>
+          </div>
+          <div style={{ textAlign:'right' }}>
+            <Eyebrow>Issued</Eyebrow>
+            <div style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:18, marginTop:6 }}>08 May 2026</div>
+            <div style={{ fontFamily:'var(--fm)', fontSize:10, color:'var(--ink-3)', marginTop:4, letterSpacing:'0.1em' }}>NM · 2026 · 0042 · A</div>
+          </div>
+        </div>
+
+        <div className="appear-2" style={{ display:'grid', gridTemplateColumns:'1.4fr 1fr', gap:48 }}>
+
+          {/* LEFT — A4 drawing set preview */}
+          <div style={{ background:'var(--paper-3)', border:'1px solid var(--line)', padding:32, position:'relative' }}>
+            {/* Title block — runs top */}
+            <div style={{ borderBottom:'2px solid var(--ink)', paddingBottom:14, marginBottom:24, display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+              <div>
+                <Logo size="md"/>
+              </div>
+              <div className="eyebrow">Sheet 1 of 7 · Cover</div>
+            </div>
+
+            {/* Mini floor plan */}
+            <div style={{ height:280, marginBottom:24, padding:8, border:'1px dashed var(--line-2)' }}>
+              <FloorPlan S={18} showAnnotations={false}/>
+            </div>
+
+            {/* Summary table */}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px 32px', marginBottom:28 }}>
+              {[
+                ['Project','Living Room — Thane'],
+                ['Client','Priya & Rohan'],
+                ['City','Mumbai'],
+                ['Vibe','The Gathering'],
+                ['Floor area','168 sq.ft'],
+                ['Total','₹2,84,000'],
+                ['Budget','₹3,00,000'],
+                ['Cushion','+₹16,000'],
+              ].map(([k,v]) => (
+                <div key={k} style={{ display:'flex', alignItems:'baseline', gap:12, borderBottom:'1px dotted var(--line-2)', padding:'4px 0' }}>
+                  <span className="eyebrow" style={{ flex:'0 0 90px' }}>{k}</span>
+                  <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:15, color:'var(--ink)', fontWeight:500 }}>{v}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* BOQ */}
+            <div style={{ marginBottom:24 }}>
+              <Eyebrow>Bill of Quantities · sheet 4</Eyebrow>
+              <table style={{ width:'100%', borderCollapse:'collapse', marginTop:10, fontFamily:'var(--fd)', fontSize:13 }}>
+                <thead>
+                  <tr style={{ borderBottom:'1px solid var(--ink)' }}>
+                    {['#','Item','Dimensions','Buy','Build'].map(h => (
+                      <th key={h} style={{ textAlign:'left', padding:'6px 8px', fontFamily:'var(--fm)', fontSize:9.5, color:'var(--ink-3)', letterSpacing:'0.1em', fontWeight:500 }}>{h.toUpperCase()}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['1','Sofa, 9-ft, dark leather','108×36×34"','₹38,000','—'],
+                    ['2','TV unit','64×18×22"','₹18,000','₹11,000'],
+                    ['3','Bookshelf, west wall','48×12×72"','₹14,000','₹8,500'],
+                    ['4','Coffee table','40×24×16"','₹8,500','₹5,200'],
+                    ['5','Mandir, NE niche','24×12×48"','₹12,000','₹7,000'],
+                    ['6','WFH desk','38×24×30"','₹9,500','₹6,200'],
+                  ].map(row => (
+                    <tr key={row[0]} style={{ borderBottom:'1px dotted var(--line-2)' }}>
+                      {row.map((c,i) => (
+                        <td key={i} style={{ padding:'6px 8px', color: i===4&&c!=='—'?'var(--leaf)':'var(--ink)', fontStyle: i===1?'italic':'normal' }}>{c}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Carpenter section — set apart */}
+            <div style={{ background:'var(--paper-2)', border:'1px solid var(--terra)', padding:24, marginBottom:0 }}>
+              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:14 }}>
+                <Eyebrow color="var(--terra-dk)">Carpenter section · बढ़ई के लिए</Eyebrow>
+                <span style={{ fontFamily:'var(--fm)', fontSize:9.5, color:'var(--terra-dk)', letterSpacing:'0.1em' }}>SHEET 6 · HINDI SPECS</span>
+              </div>
+              <div style={{ fontFamily:'var(--fh)', fontSize:14, color:'var(--ink)', lineHeight:1.9 }}>
+                <div><strong style={{ fontWeight:500 }}>टीवी यूनिट:</strong> 160 × 45 × 55 cm · 18mm BWR प्लाई · टीक विनियर · Hettich soft-close चैनल · दरवाज़े का गैप 2mm</div>
+                <div style={{ marginTop:8 }}><strong style={{ fontWeight:500 }}>बुकशेल्फ़:</strong> 120 × 30 × 180 cm · BWR प्लाई · मैट मेलामाइन · गोल कोने (5mm radius) · 4 शेल्फ, समायोज्य</div>
+                <div style={{ marginTop:8 }}><strong style={{ fontWeight:500 }}>मन्दिर निच:</strong> उत्तर-पूर्व कोना · 60 × 30 × 120 cm · पीछे LED स्ट्रिप · टीक फ़्रेम · पूर्व-मुखी</div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ marginTop:24, display:'flex', justifyContent:'space-between', alignItems:'baseline', paddingTop:14, borderTop:'1px solid var(--ink)', fontFamily:'var(--fm)', fontSize:9.5, color:'var(--ink-3)', letterSpacing:'0.1em' }}>
+              <span>NIRMIT · NM-2026-0042</span>
+              <span>Prices valid 30 days · Verify at purchase · Installation extra</span>
+            </div>
+          </div>
+
+          {/* RIGHT — handoff actions */}
+          <div className="appear-3" style={{ display:'flex', flexDirection:'column', gap:18 }}>
+
+            <div style={{ marginBottom:8 }}>
+              <Eyebrow>Send to</Eyebrow>
+              <h3 style={{ fontFamily:'var(--fd)', fontSize:30, fontWeight:500, marginTop:8, lineHeight:1.1 }}>The way each person needs it.</h3>
+            </div>
+
+            {/* Carpenter — primary */}
+            <HandoffCard
+              kind="primary"
+              hindi="बढ़ई के लिए"
+              title="Your carpenter"
+              sub="Hindi technical specs, dimensions, and floor plan. The pages Suresh-bhai needs — and nothing more."
+              meta="3 sheets · A4 · Hindi"
+              cta="Print or share"
+            />
+
+            {/* Family */}
+            <HandoffCard
+              hindi="परिवार के लिए"
+              title="The family"
+              sub="The full drawing set. Renders, palette, materials, totals — beautiful enough to print and keep."
+              meta="7 sheets · A4 · English"
+              cta="Download PDF"
+            />
+
+            {/* WhatsApp */}
+            <HandoffCard
+              hindi="व्हाट्सऐप"
+              title="A single image"
+              sub="One render plus the running estimate. Under 2 MB. For sending to a parent who has been asking."
+              meta="1 image · ≤2 MB"
+              cta="Save as image"
+            />
+
+            {/* Share section */}
+            <div style={{ marginTop:14, padding:'18px 20px', border:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div>
+                <Eyebrow>Share by link</Eyebrow>
+                <div style={{ fontFamily:'var(--fm)', fontSize:11, color:'var(--ink-2)', marginTop:6, letterSpacing:'0.04em' }}>nirmit.in/r/0042-thane</div>
+              </div>
+              <a className="lnk" style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, fontWeight:500 }}>Copy</a>
+            </div>
+
+            <div style={{ marginTop:14, fontFamily:'var(--fd)', fontStyle:'italic', fontSize:13, color:'var(--ink-3)', lineHeight:1.6 }}>
+              No lock-in. We do not sell the furniture. We do not take a cut. The drawings are yours — to keep, to share, to hand to whichever carpenter you trust.
+            </div>
+
+            <div style={{ marginTop:18 }}>
+              <a className="lnk" onClick={()=>onNav('studio')} style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, color:'var(--ink-3)', borderColor:'transparent' }}>
+                <span style={{ display:'inline-block', transform:'scaleX(-1)' }}>→</span> Back to the workspace
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HandoffCard({ kind, hindi, title, sub, meta, cta }) {
+  const primary = kind==='primary';
+  return (
+    <div style={{
+      padding:'22px 24px',
+      border: primary ? '1px solid var(--terra)' : '1px solid var(--line)',
+      background: primary ? 'var(--paper-3)' : 'transparent',
+      cursor:'pointer', transition:'all .25s ease', display:'flex', justifyContent:'space-between', gap:20,
+    }}
+    onMouseEnter={e=>{ if(!primary) e.currentTarget.style.borderColor='var(--ink)'; }}
+    onMouseLeave={e=>{ if(!primary) e.currentTarget.style.borderColor='var(--line)'; }}
+    >
+      <div style={{ flex:1 }}>
+        <div style={{ display:'flex', alignItems:'baseline', gap:10, marginBottom:6 }}>
+          <span style={{ fontFamily:'var(--fh)', fontSize:13, color: primary?'var(--terra-dk)':'var(--ink-3)' }}>{hindi}</span>
+          <span style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:21, fontWeight:500 }}>{title}</span>
+          {primary && <span style={{ fontFamily:'var(--fm)', fontSize:9, color:'var(--terra)', letterSpacing:'0.12em', padding:'2px 7px', border:'1px solid var(--terra)' }}>RECOMMENDED</span>}
+        </div>
+        <div style={{ fontFamily:'var(--fd)', fontSize:14.5, color:'var(--ink-2)', lineHeight:1.6, marginBottom:10, maxWidth:'52ch' }}>{sub}</div>
+        <span className="eyebrow">{meta}</span>
+      </div>
+      <div style={{ alignSelf:'center', display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8 }}>
+        <a className="lnk" style={{ fontFamily:'var(--fd)', fontStyle:'italic', fontSize:14, fontWeight:500, color: primary?'var(--terra-dk)':'var(--ink)', borderColor: primary?'var(--terra-dk)':'var(--ink)' }}>
+          {cta} <span className="lnk-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   APP ROUTER
+   ───────────────────────────────────────────────────────────── */
+
+function App() {
+  const [screen, setScreen] = useState('cover');
+  const [brief, setBrief] = useState({
+    vibe: 'gather', room: 'living', size: 'standard',
+    who: '',
+    chips: ['Young children','Vastu matters'],
+    budget: 300000,
+    city: 'Mumbai',
+  });
+
+  const onNav = useCallback((s) => {
+    setScreen(s);
+    // Reset scroll
+    const root = document.getElementById('root');
+    if (root) root.scrollTop = 0;
+  }, []);
+
+  return (
+    <div data-screen-label={`0${{cover:1,consult:2,draft:3,reveal:4,studio:5,handoff:6}[screen]} ${{cover:'Cover',consult:'Consultation',draft:'Drafting',reveal:'Reveal',studio:'Studio',handoff:'Handoff'}[screen]}`} style={{ position:'fixed', inset:0, overflow:'hidden' }}>
+      <div key={screen} style={{ position:'absolute', inset:0, animation:'fade .35s ease both' }}>
+        {screen==='cover'   && <CoverScreen   onNav={onNav}/>}
+        {screen==='consult' && <ConsultScreen onNav={onNav} brief={brief} setBrief={setBrief}/>}
+        {screen==='draft'   && <DraftScreen   onNav={onNav}/>}
+        {screen==='reveal'  && <RevealScreen  onNav={onNav}/>}
+        {screen==='studio'  && <StudioScreen  onNav={onNav}/>}
+        {screen==='handoff' && <HandoffScreen onNav={onNav}/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

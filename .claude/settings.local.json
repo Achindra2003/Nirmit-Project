@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//mnt/c/Users/achindras/Documents/Capstone Project Research/nirmit-project/**)",
+      "Bash(dir \"C:\\\\\\\\Users\\\\\\\\achindras\\\\\\\\Documents\\\\\\\\Capstone Project Research\\\\\\\\nirmit-project\\\\\\\\frontend\")",
+      "Bash(npm install *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(p.dependencies['framer-motion']\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(python -c \"from app.main import app; print\\('import ok'\\)\")",
+      "Bash(python -m pip show langchain-core)",
+      "Bash(python -m pip install -e \".[dev]\")",
+      "Bash(python -c \"from app.main import app; print\\('Backend imports OK'\\)\")"
+    ]
+  }
+}

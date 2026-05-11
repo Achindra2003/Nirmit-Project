@@ -1,0 +1,2912 @@
+[
+  {
+    "sku": "CABINET-0001",
+    "asset_url": "bathroomCabinet.glb",
+    "name_en": "Bathroom Cabinet",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "cabinet",
+    "rooms": [],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "DRAWER-0002",
+    "asset_url": "bathroomCabinetDrawer.glb",
+    "name_en": "Bathroom Cabinet Drawer",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "drawer",
+    "rooms": [
+      "bedroom",
+      "living"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "MIRROR-0003",
+    "asset_url": "bathroomMirror.glb",
+    "name_en": "Wall Mirror",
+    "name_hi": null,
+    "category": "fixture",
+    "sub_category": "mirror",
+    "rooms": [
+      "bathroom",
+      "bedroom"
+    ],
+    "vibes": [
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 600,
+      "depth_mm": 30,
+      "height_mm": 900
+    },
+    "price_inr": 3300,
+    "build_price_inr": 2250,
+    "materials": [
+      "metal_chrome",
+      "metal_brass",
+      "metal_matte_black"
+    ],
+    "tags": [
+      "bedroom",
+      "essential"
+    ]
+  },
+  {
+    "sku": "FIXTURE-0004",
+    "asset_url": "bathtub.glb",
+    "name_en": "Bathtub",
+    "name_hi": null,
+    "category": "fixture",
+    "sub_category": "fixture",
+    "rooms": [
+      "bathroom",
+      "bedroom",
+      "dining",
+      "kids",
+      "kitchen",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "warm_traditional",
+      "modern_minimal",
+      "earthy_crafted",
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 1500,
+      "depth_mm": 700,
+      "height_mm": 550
+    },
+    "price_inr": 25300,
+    "build_price_inr": 16550,
+    "materials": [
+      "tile_ceramic"
+    ],
+    "tags": [
+      "bathroom",
+      "luxury"
+    ]
+  },
+  {
+    "sku": "BED_BUNK-0005",
+    "asset_url": "bedBunk.glb",
+    "name_en": "Bunk Bed",
+    "name_hi": null,
+    "category": "sleeping",
+    "sub_category": "bed_bunk",
+    "rooms": [
+      "bedroom",
+      "kids"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 2000,
+      "height_mm": 1700
+    },
+    "price_inr": 22800,
+    "build_price_inr": 15100,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "kids",
+      "space-saving"
+    ]
+  },
+  {
+    "sku": "BED_KING-0006",
+    "asset_url": "bedDouble.glb",
+    "name_en": "King Bed",
+    "name_hi": null,
+    "category": "sleeping",
+    "sub_category": "bed_king",
+    "rooms": [
+      "bedroom"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 2000,
+      "depth_mm": 2400,
+      "height_mm": 1100
+    },
+    "price_inr": 35800,
+    "build_price_inr": 23550,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "wood_rosewood",
+      "white_laminate",
+      "grey_laminate"
+    ],
+    "tags": [
+      "luxury",
+      "master-bedroom"
+    ]
+  },
+  {
+    "sku": "BED_SINGLE-0007",
+    "asset_url": "bedSingle.glb",
+    "name_en": "Single Bed",
+    "name_hi": null,
+    "category": "sleeping",
+    "sub_category": "bed_single",
+    "rooms": [
+      "bedroom",
+      "kids"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 2000,
+      "height_mm": 900
+    },
+    "price_inr": 14800,
+    "build_price_inr": 9900,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "compact",
+      "kids",
+      "guest"
+    ]
+  },
+  {
+    "sku": "BED_QUEEN-0008",
+    "asset_url": "bed_queen.glb",
+    "name_en": "Queen Bed",
+    "name_hi": null,
+    "category": "sleeping",
+    "sub_category": "bed_queen",
+    "rooms": [
+      "bedroom"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 2000,
+      "depth_mm": 2100,
+      "height_mm": 1100
+    },
+    "price_inr": 28800,
+    "build_price_inr": 19000,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "wood_rosewood",
+      "white_laminate",
+      "grey_laminate"
+    ],
+    "tags": [
+      "standard",
+      "bedroom"
+    ]
+  },
+  {
+    "sku": "BENCH-0009",
+    "asset_url": "bench.glb",
+    "name_en": "Wooden Bench",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "bench",
+    "rooms": [
+      "dining",
+      "living"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1500,
+      "depth_mm": 450,
+      "height_mm": 450
+    },
+    "price_inr": 5400,
+    "build_price_inr": 3650,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "entryway",
+      "dining"
+    ]
+  },
+  {
+    "sku": "DIWAN-0010",
+    "asset_url": "benchCushion.glb",
+    "name_en": "Diwan",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "diwan",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 1800,
+      "depth_mm": 750,
+      "height_mm": 400
+    },
+    "price_inr": 12400,
+    "build_price_inr": 8200,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "traditional",
+      "indian",
+      "multi-use"
+    ]
+  },
+  {
+    "sku": "BOOKSHELF-0011",
+    "asset_url": "bookcaseClosed.glb",
+    "name_en": "Closed Bookshelf",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "bookshelf",
+    "rooms": [
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 800,
+      "depth_mm": 350,
+      "height_mm": 1800
+    },
+    "price_inr": 9000,
+    "build_price_inr": 6025,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "study",
+      "storage"
+    ]
+  },
+  {
+    "sku": "BOOKSHELF-0012",
+    "asset_url": "bookcaseClosedDoors.glb",
+    "name_en": "Bookshelf with Cabinet",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "bookshelf",
+    "rooms": [
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 800,
+      "depth_mm": 350,
+      "height_mm": 1800
+    },
+    "price_inr": 9500,
+    "build_price_inr": 6350,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "study",
+      "storage"
+    ]
+  },
+  {
+    "sku": "BOOKSHELF-0013",
+    "asset_url": "bookcaseClosedWide.glb",
+    "name_en": "Wide Closed Bookshelf",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "bookshelf",
+    "rooms": [
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1200,
+      "depth_mm": 350,
+      "height_mm": 1800
+    },
+    "price_inr": 11500,
+    "build_price_inr": 7650,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "study",
+      "storage"
+    ]
+  },
+  {
+    "sku": "BOOKSHELF-0014",
+    "asset_url": "bookcaseOpen.glb",
+    "name_en": "Open Bookshelf",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "bookshelf",
+    "rooms": [
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 300,
+      "height_mm": 1800
+    },
+    "price_inr": 8500,
+    "build_price_inr": 5700,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "study",
+      "display"
+    ]
+  },
+  {
+    "sku": "CABINET-0015",
+    "asset_url": "bookcaseOpenLow.glb",
+    "name_en": "Low Open Shelf",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "cabinet",
+    "rooms": [],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 300,
+      "height_mm": 900
+    },
+    "price_inr": 5500,
+    "build_price_inr": 3750,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "display",
+      "compact"
+    ]
+  },
+  {
+    "sku": "BOOKSHELF-0016",
+    "asset_url": "bookshelf.glb",
+    "name_en": "Bookshelf",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "bookshelf",
+    "rooms": [
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 300,
+      "height_mm": 1800
+    },
+    "price_inr": 8500,
+    "build_price_inr": 5700,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "study",
+      "storage"
+    ]
+  },
+  {
+    "sku": "BOOKSHELF-0017",
+    "asset_url": "bookshelf_cabinet.glb",
+    "name_en": "Bookshelf Cabinet",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "bookshelf",
+    "rooms": [
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 300,
+      "height_mm": 1800
+    },
+    "price_inr": 8500,
+    "build_price_inr": 5700,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "study",
+      "storage"
+    ]
+  },
+  {
+    "sku": "CABINET_BED-0018",
+    "asset_url": "cabinetBed.glb",
+    "name_en": "Cabinet Bed",
+    "name_hi": null,
+    "category": "sleeping",
+    "sub_category": "cabinet_bed",
+    "rooms": [
+      "bedroom"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 2000,
+      "height_mm": 1000
+    },
+    "price_inr": 18800,
+    "build_price_inr": 12500,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "space-saving",
+      "multi-use",
+      "studio"
+    ]
+  },
+  {
+    "sku": "TV_UNIT-0019",
+    "asset_url": "cabinetTelevision.glb",
+    "name_en": "TV Unit",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "tv_unit",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1500,
+      "depth_mm": 400,
+      "height_mm": 500
+    },
+    "price_inr": 10000,
+    "build_price_inr": 6675,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "living",
+      "entertainment"
+    ]
+  },
+  {
+    "sku": "TV_UNIT-0020",
+    "asset_url": "cabinetTelevisionDoors.glb",
+    "name_en": "TV Unit with Doors",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "tv_unit",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1500,
+      "depth_mm": 400,
+      "height_mm": 500
+    },
+    "price_inr": 11500,
+    "build_price_inr": 7650,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "living",
+      "entertainment"
+    ]
+  },
+  {
+    "sku": "CHAIR-0021",
+    "asset_url": "chair.glb",
+    "name_en": "Chair",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "chair",
+    "rooms": [
+      "bedroom",
+      "living"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 500,
+      "depth_mm": 500,
+      "height_mm": 850
+    },
+    "price_inr": 4400,
+    "build_price_inr": 3000,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "seating"
+    ]
+  },
+  {
+    "sku": "CHAIR-0022",
+    "asset_url": "chairCushion.glb",
+    "name_en": "Accent Chair",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "chair",
+    "rooms": [
+      "bedroom",
+      "living"
+    ],
+    "vibes": [
+      "light_airy",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 600,
+      "depth_mm": 650,
+      "height_mm": 850
+    },
+    "price_inr": 6400,
+    "build_price_inr": 4300,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "fabric_silk_blend",
+      "leather_pu",
+      "leather_genuine"
+    ],
+    "tags": [
+      "accent",
+      "living"
+    ]
+  },
+  {
+    "sku": "DESK_CHAIR-0023",
+    "asset_url": "chairDesk.glb",
+    "name_en": "Office Chair",
+    "name_hi": null,
+    "category": "work",
+    "sub_category": "desk_chair",
+    "rooms": [
+      "bedroom",
+      "study"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 500,
+      "depth_mm": 500,
+      "height_mm": 1000
+    },
+    "price_inr": 5900,
+    "build_price_inr": 3975,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "wfh",
+      "ergonomic"
+    ]
+  },
+  {
+    "sku": "DRAWER-0024",
+    "asset_url": "chest_drawers.glb",
+    "name_en": "Chest of Drawers",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "drawer",
+    "rooms": [
+      "bedroom",
+      "living"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 800,
+      "depth_mm": 450,
+      "height_mm": 1100
+    },
+    "price_inr": 10500,
+    "build_price_inr": 7000,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "bedroom",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "COAT_RACK-0025",
+    "asset_url": "coatRack.glb",
+    "name_en": "Coat Rack",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "coat_rack",
+    "rooms": [],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 500,
+      "depth_mm": 500,
+      "height_mm": 1800
+    },
+    "price_inr": 4000,
+    "build_price_inr": 2775,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "entryway",
+      "utility"
+    ]
+  },
+  {
+    "sku": "COFFEE_TABLE-0026",
+    "asset_url": "coffee_table.glb",
+    "name_en": "Coffee Table",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "coffee_table",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 600,
+      "height_mm": 400
+    },
+    "price_inr": 6900,
+    "build_price_inr": 4625,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "living",
+      "center-table"
+    ]
+  },
+  {
+    "sku": "KITCHEN-0027",
+    "asset_url": "counter_l.glb",
+    "name_en": "L-Shaped Kitchen Counter",
+    "name_hi": null,
+    "category": "kitchen",
+    "sub_category": "kitchen",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1800,
+      "depth_mm": 1500,
+      "height_mm": 850
+    },
+    "price_inr": 29200,
+    "build_price_inr": 19400,
+    "materials": [
+      "wood_teak",
+      "white_laminate",
+      "grey_laminate",
+      "granite_black",
+      "marble_white"
+    ],
+    "tags": [
+      "modular",
+      "family-kitchen"
+    ]
+  },
+  {
+    "sku": "DESK-0028",
+    "asset_url": "desk.glb",
+    "name_en": "Study Desk",
+    "name_hi": null,
+    "category": "work",
+    "sub_category": "desk",
+    "rooms": [
+      "bedroom",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 500,
+      "height_mm": 750
+    },
+    "price_inr": 7400,
+    "build_price_inr": 4950,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "wfh",
+      "study",
+      "compact"
+    ]
+  },
+  {
+    "sku": "DESK_CORNER-0029",
+    "asset_url": "deskCorner.glb",
+    "name_en": "Corner Desk",
+    "name_hi": null,
+    "category": "work",
+    "sub_category": "desk_corner",
+    "rooms": [
+      "bedroom",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1400,
+      "depth_mm": 1400,
+      "height_mm": 750
+    },
+    "price_inr": 12400,
+    "build_price_inr": 8200,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "wfh",
+      "corner"
+    ]
+  },
+  {
+    "sku": "TABLE-0030",
+    "asset_url": "dining_chair.glb",
+    "name_en": "Dining Chair",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "table",
+    "rooms": [
+      "dining"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 450,
+      "depth_mm": 450,
+      "height_mm": 900
+    },
+    "price_inr": 3200,
+    "build_price_inr": 2220,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "essential"
+    ]
+  },
+  {
+    "sku": "FAN-0031",
+    "asset_url": "fan.glb",
+    "name_en": "Ceiling Fan",
+    "name_hi": null,
+    "category": "fixture",
+    "sub_category": "fan",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "kitchen",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1200,
+      "depth_mm": 1200,
+      "height_mm": 300
+    },
+    "price_inr": 3800,
+    "build_price_inr": 2575,
+    "materials": [
+      "metal_chrome",
+      "metal_brass",
+      "metal_matte_black"
+    ],
+    "tags": [
+      "essential",
+      "all-rooms"
+    ]
+  },
+  {
+    "sku": "KITCHEN_CABINET-0032",
+    "asset_url": "kitchenCabinet.glb",
+    "name_en": "Kitchen Cabinet",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "kitchen_cabinet",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "KITCHEN_CABINET-0033",
+    "asset_url": "kitchenCabinetCornerInner.glb",
+    "name_en": "Kitchen Cabinet Corner Inner",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "kitchen_cabinet",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "KITCHEN_CABINET-0034",
+    "asset_url": "kitchenCabinetCornerRound.glb",
+    "name_en": "Kitchen Cabinet Corner Round",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "kitchen_cabinet",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "KITCHEN_CABINET-0035",
+    "asset_url": "kitchenCabinetDrawer.glb",
+    "name_en": "Kitchen Cabinet Drawer",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "kitchen_cabinet",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "KITCHEN_CABINET-0036",
+    "asset_url": "kitchenCabinetUpper.glb",
+    "name_en": "Kitchen Cabinet Upper",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "kitchen_cabinet",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "KITCHEN_CABINET-0037",
+    "asset_url": "kitchenCabinetUpperCorner.glb",
+    "name_en": "Kitchen Cabinet Upper Corner",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "kitchen_cabinet",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "KITCHEN_CABINET-0038",
+    "asset_url": "kitchenCabinetUpperDouble.glb",
+    "name_en": "Kitchen Cabinet Upper Double",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "kitchen_cabinet",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "KITCHEN_CABINET-0039",
+    "asset_url": "kitchenCabinetUpperLow.glb",
+    "name_en": "Kitchen Cabinet Upper Low",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "kitchen_cabinet",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "LAMP-0040",
+    "asset_url": "lampRoundFloor.glb",
+    "name_en": "Floor Lamp",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "lamp",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 300,
+      "depth_mm": 300,
+      "height_mm": 1500
+    },
+    "price_inr": 3000,
+    "build_price_inr": 1950,
+    "materials": [
+      "metal_chrome",
+      "metal_brass",
+      "metal_matte_black"
+    ],
+    "tags": [
+      "lighting",
+      "ambient"
+    ]
+  },
+  {
+    "sku": "TABLE_ROUND-0041",
+    "asset_url": "lampRoundTable.glb",
+    "name_en": "Round Table",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "table_round",
+    "rooms": [
+      "dining"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 900,
+      "height_mm": 750
+    },
+    "price_inr": 10400,
+    "build_price_inr": 6900,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "compact",
+      "conversation"
+    ]
+  },
+  {
+    "sku": "CEILING_LIGHT-0042",
+    "asset_url": "lampSquareCeiling.glb",
+    "name_en": "Ceiling Light",
+    "name_hi": null,
+    "category": "fixture",
+    "sub_category": "ceiling_light",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "kitchen",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 400,
+      "depth_mm": 400,
+      "height_mm": 200
+    },
+    "price_inr": 2800,
+    "build_price_inr": 1925,
+    "materials": [
+      "metal_chrome",
+      "metal_brass",
+      "metal_matte_black"
+    ],
+    "tags": [
+      "lighting",
+      "essential"
+    ]
+  },
+  {
+    "sku": "DINING_TABLE-0043",
+    "asset_url": "lampSquareTable.glb",
+    "name_en": "4-Seater Dining Table",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "dining_table",
+    "rooms": [
+      "dining"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1200,
+      "depth_mm": 900,
+      "height_mm": 750
+    },
+    "price_inr": 14400,
+    "build_price_inr": 9500,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "compact",
+      "nuclear-family"
+    ]
+  },
+  {
+    "sku": "LAMP-0044",
+    "asset_url": "lampWall.glb",
+    "name_en": "Wall Lamp",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "lamp",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 150,
+      "depth_mm": 200,
+      "height_mm": 300
+    },
+    "price_inr": 2000,
+    "build_price_inr": 1300,
+    "materials": [
+      "metal_chrome",
+      "metal_brass",
+      "metal_matte_black"
+    ],
+    "tags": [
+      "lighting"
+    ]
+  },
+  {
+    "sku": "LOUNGE_CHAIR-0045",
+    "asset_url": "loungeChair.glb",
+    "name_en": "Lounge Chair",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "lounge_chair",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "light_airy",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 700,
+      "depth_mm": 700,
+      "height_mm": 900
+    },
+    "price_inr": 9900,
+    "build_price_inr": 6575,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "fabric_silk_blend",
+      "leather_pu",
+      "leather_genuine"
+    ],
+    "tags": [
+      "accent",
+      "living"
+    ]
+  },
+  {
+    "sku": "SOFA-0046",
+    "asset_url": "loungeDesignSofa.glb",
+    "name_en": "2-Seater Sofa",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "sofa",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "light_airy",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1400,
+      "depth_mm": 800,
+      "height_mm": 850
+    },
+    "price_inr": 16400,
+    "build_price_inr": 10800,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "fabric_silk_blend",
+      "leather_pu",
+      "leather_genuine"
+    ],
+    "tags": [
+      "modern",
+      "compact",
+      "living"
+    ]
+  },
+  {
+    "sku": "SOFA_L-0047",
+    "asset_url": "loungeDesignSofaCorner.glb",
+    "name_en": "L-Shaped Sofa",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "sofa_l",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "light_airy",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 2100,
+      "depth_mm": 1600,
+      "height_mm": 850
+    },
+    "price_inr": 45400,
+    "build_price_inr": 29650,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "fabric_silk_blend",
+      "leather_pu",
+      "leather_genuine"
+    ],
+    "tags": [
+      "modern",
+      "family",
+      "living"
+    ]
+  },
+  {
+    "sku": "SOFA-0048",
+    "asset_url": "loungeSofaLong.glb",
+    "name_en": "3-Seater Sofa",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "sofa",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "light_airy",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1800,
+      "depth_mm": 800,
+      "height_mm": 850
+    },
+    "price_inr": 22400,
+    "build_price_inr": 14700,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "fabric_silk_blend",
+      "leather_pu",
+      "leather_genuine"
+    ],
+    "tags": [
+      "modern",
+      "compact",
+      "living"
+    ]
+  },
+  {
+    "sku": "OTTOMAN-0049",
+    "asset_url": "loungeSofaOttoman.glb",
+    "name_en": "Storage Ottoman",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "ottoman",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 400,
+      "height_mm": 450
+    },
+    "price_inr": 4400,
+    "build_price_inr": 3000,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "living",
+      "multi-use"
+    ]
+  },
+  {
+    "sku": "OTTOMAN-0050",
+    "asset_url": "ottoman.glb",
+    "name_en": "Ottoman",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "ottoman",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 500,
+      "depth_mm": 500,
+      "height_mm": 450
+    },
+    "price_inr": 3400,
+    "build_price_inr": 2350,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "accent",
+      "footrest"
+    ]
+  },
+  {
+    "sku": "CABINET-0051",
+    "asset_url": "overhead_cabinet.glb",
+    "name_en": "Overhead Cabinet",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "cabinet",
+    "rooms": [],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "PILLOW-0052",
+    "asset_url": "pillow.glb",
+    "name_en": "Pillow",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "pillow",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 450,
+      "depth_mm": 150,
+      "height_mm": 450
+    },
+    "price_inr": 600,
+    "build_price_inr": 390,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "textile",
+      "accent"
+    ]
+  },
+  {
+    "sku": "PILLOW-0053",
+    "asset_url": "pillowBlue.glb",
+    "name_en": "Pillow Blue",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "pillow",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 450,
+      "depth_mm": 150,
+      "height_mm": 450
+    },
+    "price_inr": 600,
+    "build_price_inr": 390,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "textile",
+      "accent"
+    ]
+  },
+  {
+    "sku": "PILLOW-0054",
+    "asset_url": "pillowBlueLong.glb",
+    "name_en": "Pillow Blue Long",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "pillow",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 450,
+      "depth_mm": 150,
+      "height_mm": 450
+    },
+    "price_inr": 600,
+    "build_price_inr": 390,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "textile",
+      "accent"
+    ]
+  },
+  {
+    "sku": "PILLOW-0055",
+    "asset_url": "pillowLong.glb",
+    "name_en": "Pillow Long",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "pillow",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 450,
+      "depth_mm": 150,
+      "height_mm": 450
+    },
+    "price_inr": 600,
+    "build_price_inr": 390,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "textile",
+      "accent"
+    ]
+  },
+  {
+    "sku": "PLANT-0056",
+    "asset_url": "plantSmall1.glb",
+    "name_en": "Plant Small1",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "plant",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "warm_traditional",
+      "modern_minimal",
+      "earthy_crafted",
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 300,
+      "depth_mm": 300,
+      "height_mm": 600
+    },
+    "price_inr": 800,
+    "build_price_inr": 520,
+    "materials": [],
+    "tags": [
+      "greenery",
+      "natural"
+    ]
+  },
+  {
+    "sku": "PLANT-0057",
+    "asset_url": "plantSmall2.glb",
+    "name_en": "Plant Small2",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "plant",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "warm_traditional",
+      "modern_minimal",
+      "earthy_crafted",
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 300,
+      "depth_mm": 300,
+      "height_mm": 600
+    },
+    "price_inr": 800,
+    "build_price_inr": 520,
+    "materials": [],
+    "tags": [
+      "greenery",
+      "natural"
+    ]
+  },
+  {
+    "sku": "PLANT-0058",
+    "asset_url": "plantSmall3.glb",
+    "name_en": "Plant Small3",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "plant",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "warm_traditional",
+      "modern_minimal",
+      "earthy_crafted",
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 300,
+      "depth_mm": 300,
+      "height_mm": 600
+    },
+    "price_inr": 800,
+    "build_price_inr": 520,
+    "materials": [],
+    "tags": [
+      "greenery",
+      "natural"
+    ]
+  },
+  {
+    "sku": "MANDIR_CHOWKI-0059",
+    "asset_url": "pooja_chowki.glb",
+    "name_en": "Pooja Chowki",
+    "name_hi": null,
+    "category": "mandir",
+    "sub_category": "mandir_chowki",
+    "rooms": [
+      "living",
+      "pooja"
+    ],
+    "vibes": [
+      "light_airy",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 450,
+      "depth_mm": 350,
+      "height_mm": 150
+    },
+    "price_inr": 2600,
+    "build_price_inr": 1900,
+    "materials": [
+      "wood_teak",
+      "wood_walnut",
+      "marble_white",
+      "metal_brass"
+    ],
+    "tags": [
+      "essential",
+      "portable"
+    ]
+  },
+  {
+    "sku": "MANDIR_FLOOR-0060",
+    "asset_url": "pooja_floor.glb",
+    "name_en": "Floor Pooja Mandir",
+    "name_hi": null,
+    "category": "mandir",
+    "sub_category": "mandir_floor",
+    "rooms": [
+      "living",
+      "pooja"
+    ],
+    "vibes": [
+      "light_airy",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 500,
+      "height_mm": 1000
+    },
+    "price_inr": 15600,
+    "build_price_inr": 10350,
+    "materials": [
+      "wood_teak",
+      "wood_walnut",
+      "marble_white",
+      "metal_brass"
+    ],
+    "tags": [
+      "traditional",
+      "mandir",
+      "statement"
+    ]
+  },
+  {
+    "sku": "MANDIR_WALL-0061",
+    "asset_url": "pooja_wall.glb",
+    "name_en": "Wall-Mounted Pooja Unit",
+    "name_hi": null,
+    "category": "mandir",
+    "sub_category": "mandir_wall",
+    "rooms": [
+      "living",
+      "pooja"
+    ],
+    "vibes": [
+      "light_airy",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 600,
+      "depth_mm": 300,
+      "height_mm": 500
+    },
+    "price_inr": 7100,
+    "build_price_inr": 4825,
+    "materials": [
+      "wood_teak",
+      "wood_walnut",
+      "marble_white",
+      "metal_brass"
+    ],
+    "tags": [
+      "traditional",
+      "mandir",
+      "space-saving"
+    ]
+  },
+  {
+    "sku": "PLANT-0062",
+    "asset_url": "pottedPlant.glb",
+    "name_en": "Potted Plant",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "plant",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "warm_traditional",
+      "modern_minimal",
+      "earthy_crafted",
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 300,
+      "depth_mm": 300,
+      "height_mm": 600
+    },
+    "price_inr": 800,
+    "build_price_inr": 520,
+    "materials": [],
+    "tags": [
+      "greenery",
+      "natural"
+    ]
+  },
+  {
+    "sku": "OTTOMAN-0063",
+    "asset_url": "pouffe.glb",
+    "name_en": "Pouffe",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "ottoman",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 400,
+      "depth_mm": 400,
+      "height_mm": 400
+    },
+    "price_inr": 2900,
+    "build_price_inr": 2025,
+    "materials": [
+      "fabric_cotton",
+      "fabric_linen",
+      "fabric_velvet",
+      "leather_pu"
+    ],
+    "tags": [
+      "accent",
+      "portable"
+    ]
+  },
+  {
+    "sku": "DECOR-0064",
+    "asset_url": "rugDoormat.glb",
+    "name_en": "Doormat",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "decor",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted"
+    ],
+    "dimensions": {
+      "width_mm": 600,
+      "depth_mm": 400,
+      "height_mm": 20
+    },
+    "price_inr": 600,
+    "build_price_inr": 390,
+    "materials": [
+      "fabric_jute"
+    ],
+    "tags": [
+      "entryway"
+    ]
+  },
+  {
+    "sku": "RUG-0065",
+    "asset_url": "rugRectangle.glb",
+    "name_en": "Rectangular Rug",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "rug",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 2000,
+      "depth_mm": 1500,
+      "height_mm": 20
+    },
+    "price_inr": 4000,
+    "build_price_inr": 2600,
+    "materials": [
+      "fabric_cotton",
+      "fabric_jute"
+    ],
+    "tags": [
+      "floor",
+      "textile"
+    ]
+  },
+  {
+    "sku": "RUG-0066",
+    "asset_url": "rugRound.glb",
+    "name_en": "Round Rug",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "rug",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 1500,
+      "depth_mm": 1500,
+      "height_mm": 20
+    },
+    "price_inr": 3500,
+    "build_price_inr": 2275,
+    "materials": [
+      "fabric_cotton",
+      "fabric_jute"
+    ],
+    "tags": [
+      "floor",
+      "textile"
+    ]
+  },
+  {
+    "sku": "RUG-0067",
+    "asset_url": "rugSquare.glb",
+    "name_en": "Square Rug",
+    "name_hi": null,
+    "category": "decor",
+    "sub_category": "rug",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 1500,
+      "depth_mm": 1500,
+      "height_mm": 20
+    },
+    "price_inr": 3000,
+    "build_price_inr": 1950,
+    "materials": [
+      "fabric_cotton",
+      "fabric_jute"
+    ],
+    "tags": [
+      "floor",
+      "textile"
+    ]
+  },
+  {
+    "sku": "SHOE_RACK-0068",
+    "asset_url": "shoe_rack.glb",
+    "name_en": "Shoe Rack",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "shoe_rack",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 350,
+      "height_mm": 1200
+    },
+    "price_inr": 6000,
+    "build_price_inr": 4075,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "entryway",
+      "compact"
+    ]
+  },
+  {
+    "sku": "BED-0069",
+    "asset_url": "sideTable.glb",
+    "name_en": "Side Table",
+    "name_hi": null,
+    "category": "sleeping",
+    "sub_category": "bed",
+    "rooms": [
+      "bedroom"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 450,
+      "depth_mm": 400,
+      "height_mm": 500
+    },
+    "price_inr": 4300,
+    "build_price_inr": 3075,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "bedroom",
+      "compact"
+    ]
+  },
+  {
+    "sku": "DRAWER-0070",
+    "asset_url": "sideTableDrawers.glb",
+    "name_en": "Bedside Table with Drawers",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "drawer",
+    "rooms": [
+      "bedroom",
+      "living"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 450,
+      "depth_mm": 400,
+      "height_mm": 550
+    },
+    "price_inr": 5000,
+    "build_price_inr": 3425,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "bedroom",
+      "essential"
+    ]
+  },
+  {
+    "sku": "CABINET-0071",
+    "asset_url": "SimpleCabinet.glb",
+    "name_en": "Simple Cabinet",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "cabinet",
+    "rooms": [],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 400,
+      "height_mm": 1500
+    },
+    "price_inr": 7500,
+    "build_price_inr": 5050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "storage",
+      "versatile"
+    ]
+  },
+  {
+    "sku": "CHAIR-0072",
+    "asset_url": "stoolBar.glb",
+    "name_en": "Bar Stool",
+    "name_hi": null,
+    "category": "seating",
+    "sub_category": "chair",
+    "rooms": [
+      "bedroom",
+      "kitchen",
+      "living"
+    ],
+    "vibes": [
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 400,
+      "depth_mm": 400,
+      "height_mm": 750
+    },
+    "price_inr": 3400,
+    "build_price_inr": 2350,
+    "materials": [
+      "metal_chrome",
+      "metal_brass",
+      "metal_matte_black"
+    ],
+    "tags": [
+      "kitchen",
+      "bar"
+    ]
+  },
+  {
+    "sku": "TABLE-0073",
+    "asset_url": "tableCloth.glb",
+    "name_en": "Table with Cloth",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "table",
+    "rooms": [
+      "dining"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1000,
+      "depth_mm": 1000,
+      "height_mm": 750
+    },
+    "price_inr": 8400,
+    "build_price_inr": 5600,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "traditional",
+      "covered"
+    ]
+  },
+  {
+    "sku": "COFFEE_TABLE-0074",
+    "asset_url": "tableCoffeeGlass.glb",
+    "name_en": "Glass Coffee Table",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "coffee_table",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 600,
+      "height_mm": 400
+    },
+    "price_inr": 7400,
+    "build_price_inr": 4950,
+    "materials": [
+      "metal_chrome",
+      "metal_brass",
+      "metal_matte_black"
+    ],
+    "tags": [
+      "living",
+      "glass"
+    ]
+  },
+  {
+    "sku": "COFFEE_TABLE-0075",
+    "asset_url": "tableCoffeeGlassSquare.glb",
+    "name_en": "Glass Coffee Table (Square)",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "coffee_table",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 800,
+      "depth_mm": 800,
+      "height_mm": 400
+    },
+    "price_inr": 7900,
+    "build_price_inr": 5275,
+    "materials": [
+      "metal_chrome",
+      "metal_brass",
+      "metal_matte_black"
+    ],
+    "tags": [
+      "living",
+      "center-table",
+      "glass"
+    ]
+  },
+  {
+    "sku": "COFFEE_TABLE-0076",
+    "asset_url": "tableCoffeeSquare.glb",
+    "name_en": "Coffee Table (Square)",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "coffee_table",
+    "rooms": [
+      "living"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 700,
+      "depth_mm": 700,
+      "height_mm": 400
+    },
+    "price_inr": 6400,
+    "build_price_inr": 4300,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "living",
+      "center-table"
+    ]
+  },
+  {
+    "sku": "DINING_TABLE-0077",
+    "asset_url": "tableCross.glb",
+    "name_en": "6-Seater Dining Table",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "dining_table",
+    "rooms": [
+      "dining"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1800,
+      "depth_mm": 900,
+      "height_mm": 750
+    },
+    "price_inr": 18400,
+    "build_price_inr": 12100,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "family",
+      "entertaining"
+    ]
+  },
+  {
+    "sku": "DINING_TABLE-0078",
+    "asset_url": "tableGlass.glb",
+    "name_en": "Glass Dining Table",
+    "name_hi": null,
+    "category": "dining",
+    "sub_category": "dining_table",
+    "rooms": [
+      "dining"
+    ],
+    "vibes": [
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1200,
+      "depth_mm": 900,
+      "height_mm": 750
+    },
+    "price_inr": 16400,
+    "build_price_inr": 10800,
+    "materials": [
+      "metal_chrome",
+      "metal_brass",
+      "metal_matte_black"
+    ],
+    "tags": [
+      "modern",
+      "glass"
+    ]
+  },
+  {
+    "sku": "FIXTURE-0079",
+    "asset_url": "televisionModern.glb",
+    "name_en": "Modern TV",
+    "name_hi": null,
+    "category": "fixture",
+    "sub_category": "fixture",
+    "rooms": [
+      "bedroom",
+      "dining",
+      "kids",
+      "kitchen",
+      "living",
+      "study"
+    ],
+    "vibes": [
+      "warm_traditional",
+      "modern_minimal",
+      "earthy_crafted",
+      "light_airy"
+    ],
+    "dimensions": {
+      "width_mm": 1200,
+      "depth_mm": 50,
+      "height_mm": 700
+    },
+    "price_inr": 35300,
+    "build_price_inr": 23050,
+    "materials": [],
+    "tags": [
+      "entertainment"
+    ]
+  },
+  {
+    "sku": "KITCHEN-0080",
+    "asset_url": "trolley.glb",
+    "name_en": "Kitchen Trolley",
+    "name_hi": null,
+    "category": "kitchen",
+    "sub_category": "kitchen",
+    "rooms": [
+      "kitchen"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 900,
+      "depth_mm": 500,
+      "height_mm": 850
+    },
+    "price_inr": 10200,
+    "build_price_inr": 7050,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "white_laminate"
+    ],
+    "tags": [
+      "portable",
+      "compact"
+    ]
+  },
+  {
+    "sku": "WARDROBE-0081",
+    "asset_url": "wardrobe_2d.glb",
+    "name_en": "2-Door Wardrobe",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "wardrobe",
+    "rooms": [
+      "bedroom",
+      "kids"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1200,
+      "depth_mm": 600,
+      "height_mm": 2100
+    },
+    "price_inr": 16500,
+    "build_price_inr": 10900,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "wood_rosewood",
+      "white_laminate",
+      "grey_laminate"
+    ],
+    "tags": [
+      "bedroom",
+      "compact"
+    ]
+  },
+  {
+    "sku": "WARDROBE-0082",
+    "asset_url": "wardrobe_3d.glb",
+    "name_en": "3-Door Wardrobe",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "wardrobe",
+    "rooms": [
+      "bedroom",
+      "kids"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1800,
+      "depth_mm": 600,
+      "height_mm": 2100
+    },
+    "price_inr": 22500,
+    "build_price_inr": 14800,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "wood_rosewood",
+      "white_laminate",
+      "grey_laminate"
+    ],
+    "tags": [
+      "master-bedroom",
+      "storage-heavy"
+    ]
+  },
+  {
+    "sku": "WARDROBE-0452",
+    "asset_url": "WARD-2DHCR-2CR.glb",
+    "name_en": "2-Door Wardrobe Ward 2dhcr 2cr",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "wardrobe",
+    "rooms": [
+      "bedroom",
+      "kids"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1200,
+      "depth_mm": 600,
+      "height_mm": 2100
+    },
+    "price_inr": 16500,
+    "build_price_inr": 10900,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "wood_rosewood",
+      "white_laminate",
+      "grey_laminate"
+    ],
+    "tags": [
+      "bedroom",
+      "storage-heavy"
+    ]
+  },
+  {
+    "sku": "WARDROBE-0454",
+    "asset_url": "WARD-2DS-2CR.glb",
+    "name_en": "2-Door Wardrobe Ward 2ds 2cr",
+    "name_hi": null,
+    "category": "storage",
+    "sub_category": "wardrobe",
+    "rooms": [
+      "bedroom",
+      "kids"
+    ],
+    "vibes": [
+      "earthy_crafted",
+      "light_airy",
+      "modern_minimal",
+      "warm_traditional"
+    ],
+    "dimensions": {
+      "width_mm": 1200,
+      "depth_mm": 600,
+      "height_mm": 2100
+    },
+    "price_inr": 16500,
+    "build_price_inr": 10900,
+    "materials": [
+      "wood_teak",
+      "wood_oak",
+      "wood_walnut",
+      "wood_sheen",
+      "wood_rosewood",
+      "white_laminate",
+      "grey_laminate"
+    ],
+    "tags": [
+      "bedroom",
+      "storage-heavy"
+    ]
+  }
+]

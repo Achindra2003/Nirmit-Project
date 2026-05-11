@@ -40,6 +40,11 @@ export interface Position {
 export interface CatalogRef {
   sku: string;
   asset_url: string;
+  tint_hex: string | null;
+  roughness_hint: number | null;
+  size_label: string | null;
+  material_label: string | null;
+  finish_label: string | null;
 }
 
 export interface PlacedItem {
@@ -74,6 +79,34 @@ export interface RoomState {
   palette: Record<string, string>;
   flooring: string | null;
   wall_finish: string | null;
+  lighting_kelvin: number;
+}
+
+export interface FinishingPaintSwatch {
+  id: string;
+  brand: string;
+  product: string;
+  color_name: string;
+  hex: string;
+  finish: string;
+}
+export interface FinishingFlooringOption {
+  id: string;
+  brand: string;
+  product: string;
+  label: string;
+  hex: string;
+  type: string;
+}
+export interface FinishingWarmthPreset {
+  id: string;
+  label: string;
+  kelvin: number;
+}
+export interface FinishingOptions {
+  paint_swatches: FinishingPaintSwatch[];
+  flooring: FinishingFlooringOption[];
+  warmth_presets: FinishingWarmthPreset[];
 }
 
 export interface Reasoning {
@@ -133,8 +166,11 @@ export type IntentKind =
   | "remove"
   | "add"
   | "move"
+  | "rotate"
+  | "duplicate"
   | "replace"
   | "recolor_room"
+  | "mix_from_vision"
   | "free_text";
 
 export interface Intent {
@@ -147,6 +183,7 @@ export interface ChatRequest {
   room_state: RoomState;
   history: Array<{ role: "user" | "assistant"; content: string }>;
   message: string;
+  available_visions?: Vision[];
 }
 
 export interface ChatResponse {
@@ -159,6 +196,7 @@ export interface ChatResponse {
 export interface ApplyRequest {
   room_state: RoomState;
   intents: Intent[];
+  available_visions?: Vision[];
 }
 export interface ApplyResponse {
   room_state: RoomState;

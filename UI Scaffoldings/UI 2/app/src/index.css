@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --basalt: #1A1714;
+    --stone: #E8DDD0;
+    --ink: #151210;
+    --ink-2: #5C5348;
+    --ink-3: #9B9080;
+    --terracotta: #C2552D;
+    --indigo: #2D3A5C;
+    --ochre: #D4A03D;
+    --sage: #6B7A4A;
+    --fd: 'Cormorant Garamond', Georgia, serif;
+    --fb: 'DM Sans', system-ui, sans-serif;
+    --fm: 'JetBrains Mono', ui-monospace, monospace;
+    --fh: 'Tiro Devanagari Hindi', serif;
+  }
+
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: var(--fb);
+    color: var(--ink);
+    background: var(--stone);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  input, textarea, button, select {
+    font-family: var(--fb);
+    color: inherit;
+  }
+}
+
+@layer components {
+  .paper {
+    position: relative;
+    background: var(--stone);
+  }
+
+  .paper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--ink-3) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ink-3) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.08;
+  }
+
+  .paper > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .paper-dark {
+    position: relative;
+    background: var(--basalt);
+  }
+
+  .paper-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--stone) 1px, transparent 1px),
+      linear-gradient(90deg, var(--stone) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.03;
+  }
+
+  .paper-dark > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .eyebrow {
+    font-family: var(--fm);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    display: inline-block;
+  }
+
+  .divider {
+    border: none;
+    border-top: 2px solid rgba(155, 144, 128, 0.2);
+  }
+
+  .divider-dark {
+    border: none;
+    border-top: 2px solid rgba(232, 221, 208, 0.1);
+  }
+}
+
+@layer base {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--ink-3);
+    border-radius: 2px;
+  }
+}

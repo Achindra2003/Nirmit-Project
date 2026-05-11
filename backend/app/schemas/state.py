@@ -61,12 +61,19 @@ class Dimensions(StrictModel):
 
 
 class Position(StrictModel):
-    """Position of an item's anchor point inside the room. Origin is the entrance corner."""
+    """Position of the item's footprint CENTRE inside the room, in room-local mm.
+
+    Convention: room coordinates run 0..width_mm on x and 0..depth_mm on z.
+    (x_mm, z_mm) is the centre of the item's footprint; `rotation_deg` rotates
+    the footprint about that centre. The frontend renders the room centred on
+    the world origin and places each item at (x_mm - width/2, z_mm - depth/2)
+    within that frame.
+    """
 
     x_mm: int
     z_mm: int
     rotation_deg: float = Field(
-        default=0.0, ge=-360.0, le=360.0, description="Clockwise rotation about Y"
+        default=0.0, ge=-360.0, le=360.0, description="Clockwise rotation about Y, around the footprint centre"
     )
 
 
@@ -75,6 +82,17 @@ class CatalogRef(StrictModel):
 
     sku: str
     asset_url: str = Field(description="Path under frontend /models/, e.g. 'sofa_3seat.glb'")
+    tint_hex: str | None = Field(
+        default=None,
+        description="Hex color the renderer should tint the GLB with — drives material variation",
+    )
+    roughness_hint: float | None = Field(
+        default=None,
+        description="0..1 roughness override for the renderer; matches the finish",
+    )
+    size_label: str | None = None
+    material_label: str | None = None
+    finish_label: str | None = None
 
 
 class PlacedItem(StrictModel):
@@ -155,6 +173,12 @@ class RoomState(StrictModel):
     )
     flooring: str | None = None
     wall_finish: str | None = None
+    lighting_kelvin: int = Field(
+        default=3200,
+        ge=2200,
+        le=6500,
+        description="Lighting colour temperature in Kelvin. Drives the 3D scene's sun warmth.",
+    )
 
 
 # ---------- Reasoning ----------
@@ -250,8 +274,11 @@ class IntentKind(str, Enum):
     REMOVE = "remove"
     ADD = "add"
     MOVE = "move"
+    ROTATE = "rotate"
+    DUPLICATE = "duplicate"
     REPLACE = "replace"
     RECOLOR_ROOM = "recolor_room"
+    MIX_FROM_VISION = "mix_from_vision"
     FREE_TEXT = "free_text"
 
 
@@ -270,6 +297,7 @@ class ChatRequest(StrictModel):
         description="[{role:'user'|'assistant', content:'...'}] — last ~10 turns",
     )
     message: str
+    # `available_visions` is appended below the Vision class is defined.
 
 
 class ChatResponse(StrictModel):
@@ -328,3 +356,19 @@ class ExportResponse(StrictModel):
     download_url: str | None = None
     bytes_b64: str | None = None
     valid_for_days: int = 30
+
+
+# Wire `available_visions` after Vision is defined.
+ChatRequest.model_fields["available_visions"] = ChatRequest.model_fields.get(
+    "available_visions"
+)
+# Pydantic v2 doesn't allow late field addition; instead, redeclare via a subclass
+# pattern below for clarity.
+
+
+class ChatRequestWithVisions(ChatRequest):
+    available_visions: list[Vision] = Field(default_factory=list)
+
+
+# Re-export under the original name so downstream typing stays stable.
+ChatRequest = ChatRequestWithVisions  # type: ignore[misc, assignment]

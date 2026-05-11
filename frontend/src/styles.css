@@ -1,23 +1,220 @@
+/**
+ * Nirmit design system — v2 tokens + v3 additions.
+ * Palette: paper / ink / terracotta / leaf / walnut / green
+ * Type: Cormorant Garamond (--fd) · DM Sans (--fb) · JetBrains Mono (--fm) · Tiro Devanagari Hindi (--fh)
+ */
+
 :root {
-  --warm-paper: #f7f1e6;
-  --warm-ink: #2a2218;
-  --warm-accent: #7a5c3a;
-  --warm-soft: #ede6d8;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Surfaces */
+  --paper:    #F2EBDD;
+  --paper-2:  #EAE2D0;
+  --paper-3:  #F8F3E8;
+  --basalt:   #1A1714;
+
+  /* Ink */
+  --ink:      #1F1B16;
+  --ink-2:    #5D544A;
+  --ink-3:    #8C8170;
+
+  /* Lines */
+  --line:     #D9CFB9;
+  --line-2:   #C8BFA8;
+
+  /* Accents */
+  --terra:    #C2502E;
+  --terra-dk: #9E3A1B;
+  --walnut:   #5B3B26;
+  --leaf:     #6B7A4A;
+  --green:    #1B3B2C;
+
+  /* Type stacks */
+  --fd: 'Cormorant Garamond', Georgia, serif;
+  --fh: 'Tiro Devanagari Hindi', serif;
+  --fb: 'DM Sans', system-ui, sans-serif;
+  --fm: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Legacy aliases kept for existing component refs */
+  --warm-paper:      var(--paper);
+  --warm-paper-soft: var(--paper-3);
+  --warm-paper-deep: var(--paper-2);
+  --warm-ink:        var(--ink);
+  --warm-ink-soft:   var(--ink-2);
+  --warm-mid:        var(--ink-2);
+  --warm-mute:       var(--ink-3);
+  --warm-line:       var(--line);
+  --warm-accent:     var(--terra);
+  --warm-error:      #a23838;
+  --font-sans:       var(--fb);
+  --font-serif:      var(--fd);
+  --font-hindi:      var(--fh);
+
+  /* Spacing (8-pt grid) */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+
+  /* Radii */
+  --r-sm: 4px; --r-md: 8px; --r-lg: 12px;
+
+  /* Motion */
+  --ease-spring: cubic-bezier(.22,.7,0,1.05);
+  --t-fast: 180ms;
+  --t-med:  320ms;
+  --t-slow: 700ms;
+
+  font-family: var(--fb);
   color-scheme: light;
 }
 
-* { box-sizing: border-box; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body, #root { height: 100%; margin: 0; padding: 0; }
-
-body {
-  background: var(--warm-paper);
-  color: var(--warm-ink);
-  -webkit-font-smoothing: antialiased;
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-button {
-  font: inherit;
+body {
+  font-family: var(--fb);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+input, textarea, button, select {
+  font-family: var(--fb);
+  color: inherit;
+}
+
+button { cursor: pointer; }
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--terra);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(194, 80, 46, 0.18);
+  color: var(--ink);
+}
+
+/* ── Paper surface ──────────────────────────────── */
+.paper {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 50% 0%,   rgba(31,27,22,0.025), transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(31,27,22,0.04),  transparent 65%),
+    var(--paper);
+}
+.paper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.18;
+  z-index: 0;
+}
+.paper > * { position: relative; z-index: 1; }
+
+/* ── Type utilities ─────────────────────────────── */
+.eyebrow {
+  font-family: var(--fm);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: inline-block;
+}
+
+.serif { font-family: var(--fd); }
+.hindi { font-family: var(--fh); }
+.muted { color: var(--ink-2); }
+
+/* Underline-link (used on cover + reveal) */
+.lnk {
+  position: relative;
   cursor: pointer;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink);
+  text-decoration: none;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--ink);
+  transition: color .25s ease, border-color .25s ease;
+  font-family: var(--fd);
+  font-style: italic;
+  font-weight: 500;
+}
+.lnk:hover { color: var(--terra); border-color: var(--terra); }
+.lnk-arrow { display: inline-block; transition: transform .3s ease; }
+.lnk:hover .lnk-arrow { transform: translateX(4px); }
+
+/* Range slider */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 1px;
+  background: var(--ink);
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--terra);
+  cursor: pointer;
+  border: 3px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--terra);
+}
+
+/* ── Animations ─────────────────────────────────── */
+@keyframes appear      { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade        { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp     { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes drawLine    { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+@keyframes pulse       { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes blink       { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes spin        { to { transform: rotate(360deg); } }
+@keyframes shimmer     { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+@keyframes typing-dot  { 0%, 80%, 100% { transform: scale(1); opacity: .4; } 40% { transform: scale(1.35); opacity: 1; } }
+@keyframes dot-expand  { from { width: 8px; } to { width: 28px; } }
+
+.appear   { animation: appear  .55s var(--ease-spring) both; }
+.appear-2 { animation: appear  .55s var(--ease-spring) .10s both; }
+.appear-3 { animation: appear  .55s var(--ease-spring) .22s both; }
+.appear-4 { animation: appear  .55s var(--ease-spring) .34s both; }
+.appear-5 { animation: appear  .55s var(--ease-spring) .46s both; }
+.fade     { animation: fade    .35s ease both; }
+.slide-up { animation: slideUp .5s  var(--ease-spring) both; }
+.fade-in  { animation: fade    var(--t-med) ease both; }
+
+.draw-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 2.4s ease forwards;
+}
+
+.pulse-anim { animation: pulse 2.2s ease infinite; }
+
+/* ── Scrollbar ──────────────────────────────────── */
+::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: var(--line-2); border-radius: 3px; }
+
+/* ── Reduced motion ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

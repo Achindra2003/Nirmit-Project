@@ -1,18 +1,62 @@
-"""POST /export — RoomState → quotation. Stub for Phase 1.
+"""POST /export — RoomState → carpenter-ready quotation PDF.
 
-The real implementation produces a Suresh-standard quotation: room sketch with
-mm dimensions, item-by-item carpenter specs, Hindi section, Buy-vs-Build pricing.
+Returns the PDF as a binary stream when format=pdf, or a JSON breakdown of
+the BOQ (for the frontend to render inline) when format=json.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter
+from datetime import date, timedelta
 
-from app.schemas.state import ExportRequest, ExportResponse
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse, Response
+
+from app.domain.boq import build_boq, build_quotation_pdf, generate_hindi_section
+from app.schemas.state import ExportRequest
 
 router = APIRouter()
 
 
-@router.post("/export", response_model=ExportResponse)
-async def export(req: ExportRequest) -> ExportResponse:
-    # Phase 1 stub. PDF generation lives in app/domain/boq/ once the BOQ port lands.
-    return ExportResponse(download_url=None, bytes_b64=None, valid_for_days=30)
+@router.post("/export")
+async def export(req: ExportRequest):
+    if req.format == "pdf":
+        pdf_bytes = build_quotation_pdf(req.room_state, city="Mumbai")
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": 'attachment; filename="nirmit-quotation.pdf"',
+                "Content-Length": str(len(pdf_bytes)),
+            },
+        )
+
+    boq = build_boq(req.room_state, city="Mumbai")
+    return JSONResponse(
+        {
+            "city": boq.city,
+            "subtotal_inr": boq.subtotal_inr,
+            "contingency_inr": boq.contingency_inr,
+            "gst_inr": boq.gst_inr,
+            "grand_total_inr": boq.grand_total_inr,
+            "furniture": [
+                {
+                    "sl_no": l.sl_no,
+                    "description": l.description,
+                    "amount_inr": l.amount_inr,
+                    "procurement": l.procurement,
+                    "carpenter_spec": l.carpenter_spec,
+                }
+                for l in boq.furniture
+            ],
+            "materials": [
+                {"sl_no": l.sl_no, "description": l.description, "qty": l.qty, "unit": l.unit, "rate_inr": l.rate_inr, "amount_inr": l.amount_inr}
+                for l in boq.materials
+            ],
+            "labor": [
+                {"sl_no": l.sl_no, "description": l.description, "qty": l.qty, "unit": l.unit, "rate_inr": l.rate_inr, "amount_inr": l.amount_inr}
+                for l in boq.labor
+            ],
+            "execution_phases": boq.execution_phases,
+            "hindi_section": generate_hindi_section(boq) if req.include_hindi_section else "",
+            "valid_until": (date.today() + timedelta(days=30)).isoformat(),
+        }
+    )
