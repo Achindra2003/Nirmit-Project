@@ -27,6 +27,18 @@ const DEFAULT: AssetTuning = { scaleMul: 1, yNudge: 0 };
  * wins (they should sit ~0.7–1.0 m up, not on the floor).
  */
 const OVERRIDES: Record<string, Partial<AssetTuning>> = {
+  // Living room sofas — large flat bases can clip; tiny lift clears z-fight.
+  "loungeDesignSofa.glb": { yNudge: 0.005 },
+  "loungeSofaLong.glb": { yNudge: 0.005 },
+  "loungeDesignSofaCorner.glb": { yNudge: 0.005 },
+  // TV units — ensure they sit flush on the floor.
+  "cabinetTelevision.glb": { yNudge: 0.003 },
+  "cabinetTelevisionDoors.glb": { yNudge: 0.003 },
+  // Coffee tables — very thin, need a hair to avoid z-fighting the floor.
+  "coffee_table.glb": { yNudge: 0.004 },
+  "tableCoffeeGlass.glb": { yNudge: 0.004 },
+  "tableCoffeeGlassSquare.glb": { yNudge: 0.004 },
+  "tableCoffeeSquare.glb": { yNudge: 0.004 },
   // Wall-mounted pooja unit — hangs at ~0.9 m on the wall.
   "pooja_wall.glb": { yNudge: 0.9 },
   // Thin floor items can z-fight the floor plane — lift a hair.

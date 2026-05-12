@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RoomScene, type CameraView } from "@/three/RoomScene";
 import { useAppStore } from "@/store/useAppStore";
+import { ProgressTrail } from "@/components/ProgressTrail";
 
 export function RevealRoute() {
   const { visions, selectedVisionId, selectVision, setStage } = useAppStore();
@@ -48,6 +49,7 @@ export function RevealRoute() {
           <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 500, color: "var(--ink)" }}>Nirmit</span>
           <span style={{ fontFamily: "var(--fh)", fontSize: 15, color: "var(--ink-3)" }}>निर्मित</span>
         </div>
+        <ProgressTrail stage="reveal" />
         <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-3)" }}>
           {visions.length > 1 ? `${visions.length} rooms drawn for you` : "Your room is ready"}
           {remaining !== 0 && (

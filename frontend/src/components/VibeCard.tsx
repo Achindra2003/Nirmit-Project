@@ -48,6 +48,18 @@ const META: Record<Vibe, VibeMeta> = {
     palette: ["#F8F4ED", "#EFE9DD", "#C9B89D", "#6E8388", "#243743"],
     motif: "airy",
   },
+  maximalist: {
+    label: "Maximalist",
+    description: "Bold colours, layered patterns, nothing held back.",
+    palette: ["#E8D8C4", "#8B6914", "#8B1A1A", "#2C4B1E", "#1A0E0A"],
+    motif: "warm",
+  },
+  coastal: {
+    label: "Coastal",
+    description: "Breezy, salt-bleached, open to the sea.",
+    palette: ["#EBF0ED", "#C9B8A0", "#6E9090", "#A8C5C0", "#243743"],
+    motif: "airy",
+  },
 };
 
 export function VibeCard({ vibe, selected, onSelect }: Props) {

@@ -72,16 +72,11 @@ export function HomeRoute() {
             <span style={{ fontStyle: "italic", fontWeight: 400, color: "var(--terra)" }}>home,</span> with you.
           </h1>
 
-          <div className="appear-3" style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 36 }}>
-            <span style={{ fontFamily: "var(--fh)", fontSize: 22, color: "var(--ink-2)" }}>आपका घर,</span>
-            <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 22, color: "var(--ink-2)", fontWeight: 400 }}>your hand.</span>
-          </div>
-
-          <p className="appear-4" style={{ fontSize: 16, lineHeight: 1.7, color: "var(--ink-2)", marginBottom: 44, maxWidth: "42ch" }}>
+          <p className="appear-3" style={{ fontSize: 16, lineHeight: 1.7, color: "var(--ink-2)", marginBottom: 44, maxWidth: "42ch" }}>
             Nirmit is a drawing practice. You tell us about your flat, your family, and the shape of your evenings. We draw three rooms for you — and give you everything your carpenter needs, in Hindi.
           </p>
 
-          <div className="appear-5" style={{ display: "flex", alignItems: "center", gap: 36, marginBottom: 36 }}>
+          <div className="appear-4" style={{ display: "flex", alignItems: "center", gap: 36, marginBottom: 36 }}>
             <button
               className="lnk"
               onClick={() => setStage("intake")}
@@ -95,7 +90,7 @@ export function HomeRoute() {
 
           {/* Saved designs */}
           {!loading && designs.length > 0 && (
-            <div className="appear-5" style={{ marginBottom: 40 }}>
+            <div className="appear-4" style={{ marginBottom: 40 }}>
               <span className="eyebrow" style={{ display: "block", marginBottom: 12 }}>Your saved rooms</span>
               <div style={{ display: "flex", flexDirection: "column", gap: 0, borderTop: "1px solid var(--line)" }}>
                 {designs.slice(0, 4).map((d) => (

@@ -21,6 +21,8 @@ export function PlannerRoute() {
   const setSelectedId    = useAppStore((s) => s.setSelectedItem);
   const editMode         = useAppStore((s) => s.editMode);
   const setEditMode      = useAppStore((s) => s.setEditMode);
+  const layoutEditMode   = useAppStore((s) => s.layoutEditMode);
+  const setLayoutEditMode = useAppStore((s) => s.setLayoutEditMode);
 
   const baseVision = visions.find((v) => v.id === selectedVisionId) ?? visions[0];
 
@@ -35,6 +37,8 @@ export function PlannerRoute() {
   const [roomMode, setRoomMode] = useState<RoomMode>("furniture");
   const [savedId, setSavedId]   = useState<string | null>(null);
   const [saving, setSaving]     = useState(false);
+  const [advisory, setAdvisory] = useState(false);
+  const [backendUp, setBackendUp] = useState(true);
   const scrollRef               = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,6 +61,12 @@ export function PlannerRoute() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [chat, sending]);
 
+  // Backend health check — single ping on mount so the user knows immediately if
+  // the server isn't running (shows red dot in header, explains API errors).
+  useEffect(() => {
+    fetch("/health").then((r) => setBackendUp(r.ok)).catch(() => setBackendUp(false));
+  }, []);
+
   if (!baseVision || !room) return (
     <div style={{ height: "100vh", display: "grid", placeItems: "center", background: "var(--basalt)", color: "var(--paper)", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 20 }}>
       No room loaded.
@@ -64,7 +74,7 @@ export function PlannerRoute() {
   );
 
   const selected  = room.items.find((i) => i.id === selectedId) ?? null;
-  const moveMode  = editMode === "move";
+  const moveMode  = editMode === "move" && layoutEditMode;
   const roomDims  = room.intake.room_dimensions;
   const wFt = (roomDims.width_mm / 304.8).toFixed(0);
   const dFt = (roomDims.depth_mm / 304.8).toFixed(0);
@@ -143,9 +153,12 @@ export function PlannerRoute() {
 
         {/* Canvas header */}
         <div style={{ height: 56, padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderBottom: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)" }}>
-          <div onClick={() => setStage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "baseline", gap: 8 }}>
+          <div onClick={() => setStage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontFamily: "var(--fd)", fontSize: 18, fontWeight: 500, color: "var(--paper)" }}>Nirmit</span>
-            <span style={{ fontFamily: "var(--fh)", fontSize: 13, color: "rgba(242,235,221,.45)" }}>निर्मित</span>
+            <span
+              title={backendUp ? "Backend connected" : "Backend offline — start the server on port 8000"}
+              style={{ width: 7, height: 7, borderRadius: "50%", background: backendUp ? "var(--leaf)" : "#c25a3a", flexShrink: 0, marginBottom: 1 }}
+            />
           </div>
 
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
@@ -165,13 +178,27 @@ export function PlannerRoute() {
               value={viewMode}
               onChange={(v) => setViewMode(v as ViewMode)}
             />
+            {roomMode === "furniture" && (
+              <button
+                onClick={() => setLayoutEditMode(!layoutEditMode)}
+                style={{
+                  background: layoutEditMode ? "rgba(125,180,108,.18)" : "transparent",
+                  border: `1px solid ${layoutEditMode ? "rgba(125,180,108,.6)" : "rgba(242,235,221,.18)"}`,
+                  color: layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.55)",
+                  padding: "7px 14px", fontFamily: "var(--fb)", fontSize: 11, fontWeight: 500,
+                  letterSpacing: "0.06em", cursor: "pointer", textTransform: "uppercase" as const, transition: "all .2s",
+                }}
+              >
+                {layoutEditMode ? "Done Editing" : "Edit Layout"}
+              </button>
+            )}
             <button
-              onClick={() => setStage("export")}
+              onClick={() => setStage("style")}
               style={{ background: "transparent", border: "1px solid rgba(242,235,221,.18)", color: "rgba(242,235,221,.55)", padding: "7px 18px", fontFamily: "var(--fb)", fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", cursor: "pointer", textTransform: "uppercase" as const, transition: "all .2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(242,235,221,.5)"; e.currentTarget.style.color = "var(--paper)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(242,235,221,.18)"; e.currentTarget.style.color = "rgba(242,235,221,.55)"; }}
             >
-              Hand off →
+              Materials →
             </button>
           </div>
         </div>
@@ -226,13 +253,13 @@ export function PlannerRoute() {
                   {moveMode ? (viewMode === "3d" ? "Drag in the room — orbit is paused" : "Drag in the plan") : `${selected.dimensions.width_mm}×${selected.dimensions.depth_mm} mm · ₹${Math.round(selected.price_inr / 1000)}k`}
                 </span>
               </div>
-              {viewMode === "3d" && (
+              {viewMode === "3d" && layoutEditMode && (
                 moveMode
                   ? <CBtn onClick={() => setEditMode("browse")} accent>✓ Done</CBtn>
                   : <CBtn onClick={() => setEditMode("move")} bold>↕ Move</CBtn>
               )}
-              <CBtn onClick={() => rotateItem(selected.id)}>↻ Rotate</CBtn>
-              <CBtn onClick={() => itemIntent("duplicate", "Duplicate")}>⧉ Dup</CBtn>
+              {layoutEditMode && <CBtn onClick={() => rotateItem(selected.id)}>↻ Rotate</CBtn>}
+              {layoutEditMode && <CBtn onClick={() => itemIntent("duplicate", "Duplicate")}>⧉ Dup</CBtn>}
               <CBtn onClick={() => itemIntent("make_bigger", "Make bigger")}>＋</CBtn>
               <CBtn onClick={() => itemIntent("make_smaller", "Make smaller")}>－</CBtn>
               <CBtn onClick={() => itemIntent("change_style", "Style")}>⇄ Style</CBtn>
@@ -257,12 +284,12 @@ export function PlannerRoute() {
             <span style={{ fontFamily: "var(--fd)", fontSize: 18, fontWeight: 500, color: "var(--terra)" }}>{budgetHeadline.split(" ")[0]}</span>
           </div>
           <button
-            onClick={() => setStage("export")}
+            onClick={() => setStage("style")}
             style={{ background: "var(--terra)", color: "var(--paper)", border: "none", padding: "8px 20px", fontFamily: "var(--fb)", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", cursor: "pointer", textTransform: "uppercase" as const, transition: "background .2s" }}
             onMouseEnter={(e) => { e.currentTarget.style.background = "var(--terra-dk)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "var(--terra)"; }}
           >
-            Generate quotation →
+            Materials & finish →
           </button>
         </div>
       </div>
@@ -343,6 +370,15 @@ export function PlannerRoute() {
           )}
         </div>
 
+        {/* Advisory panel */}
+        <AdvisoryPanel
+          open={advisory}
+          onToggle={() => setAdvisory((v) => !v)}
+          vastuNotes={room.intake.vastu_matters ? baseVision.reasoning.vastu_notes : []}
+          items={room.items}
+          roomDepth={room.intake.room_dimensions.depth_mm}
+        />
+
         {/* Suggestion chips */}
         <div style={{ padding: "8px 20px 4px", display: "flex", flexWrap: "wrap" as const, gap: 6, flexShrink: 0, borderTop: "1px solid var(--line)" }}>
           {SUGGESTIONS.map((s) => (
@@ -390,6 +426,58 @@ function PillSeg({ options, value, onChange }: { options: [string, string][]; va
           {label}
         </div>
       ))}
+    </div>
+  );
+}
+
+function AdvisoryPanel({ open, onToggle, vastuNotes, items, roomDepth }: {
+  open: boolean;
+  onToggle: () => void;
+  vastuNotes: string[];
+  items: import("@/api/types").PlacedItem[];
+  roomDepth: number;
+}) {
+  const entryZone = roomDepth - 900;
+  const entryBlocked = items.some((i) => i.position.z_mm >= entryZone && i.dimensions.width_mm * i.dimensions.depth_mm > 600 * 600);
+  const tooClose = items.some((a) =>
+    items.some((b) => {
+      if (a.id === b.id) return false;
+      const dx = Math.abs(a.position.x_mm - b.position.x_mm) - (a.dimensions.width_mm + b.dimensions.width_mm) / 2;
+      const dz = Math.abs(a.position.z_mm - b.position.z_mm) - (a.dimensions.depth_mm + b.dimensions.depth_mm) / 2;
+      return Math.max(dx, dz) < 200;
+    })
+  );
+
+  const notes = [
+    ...vastuNotes,
+    entryBlocked ? "Entry zone may be obstructed — consider moving items away from the entrance wall." : null,
+    tooClose     ? "Some items are less than 200mm apart — walkways may feel tight." : null,
+  ].filter(Boolean) as string[];
+
+  if (notes.length === 0) return null;
+
+  return (
+    <div style={{ borderTop: "1px solid var(--line)", flexShrink: 0 }}>
+      <button
+        onClick={onToggle}
+        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" as const }}
+      >
+        <span className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--terra)", display: "inline-block", flexShrink: 0 }} />
+          Spatial advisory · {notes.length}
+        </span>
+        <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.1em" }}>{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div style={{ padding: "0 20px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {notes.map((n, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <span style={{ color: "var(--terra)", marginTop: 2, flexShrink: 0, fontSize: 10 }}>·</span>
+              <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 13, color: "var(--ink-2)", lineHeight: 1.5 }}>{n}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

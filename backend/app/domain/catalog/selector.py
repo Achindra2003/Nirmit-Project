@@ -115,6 +115,7 @@ def select_items(
     intake: Intake,
     philosophy: VisionPhilosophy,
     catalog: CatalogRepository,
+    design_brief: dict | None = None,
 ) -> list[SelectedItem]:
     """Pick concrete catalog items for the given philosophy + intake.
 
@@ -126,6 +127,24 @@ def select_items(
     if template is None:
         # Fallback to living-Gathering for unsupported room types in v1.
         template = _LIVING_GATHERING
+
+    # Adjust optional item priorities based on who lives here.
+    brief = design_brief or {}
+    if brief.get("has_kids") or brief.get("has_elderly"):
+        adjusted: list[Requirement] = []
+        for req in template:
+            if brief.get("has_kids") and req.sub_category == "ottoman":
+                # Ottoman = trip hazard with kids — demote to optional
+                adjusted.append(Requirement(req.sub_category, "optional", req.against_wall))
+            elif brief.get("has_elderly") and req.sub_category == "lounge_chair":
+                # Lounge chair with arms = important for elderly — promote to recommended
+                adjusted.append(Requirement(req.sub_category, "recommended", req.against_wall))
+            elif brief.get("has_elderly") and req.sub_category == "desk":
+                # Desk less important for elderly households
+                adjusted.append(Requirement(req.sub_category, "optional", req.against_wall))
+            else:
+                adjusted.append(req)
+        template = tuple(adjusted)
 
     target_spend = int(intake.budget_inr * _BUDGET_TARGET_PCT[philosophy])
     chosen: list[SelectedItem] = []

@@ -5,6 +5,7 @@ import { IntakeRoute } from "@/routes/IntakeRoute";
 import { GeneratingRoute } from "@/routes/GeneratingRoute";
 import { RevealRoute } from "@/routes/RevealRoute";
 import { PlannerRoute } from "@/routes/PlannerRoute";
+import { StyleRoute } from "@/routes/StyleRoute";
 import { ExportRoute } from "@/routes/ExportRoute";
 
 const ROUTE_MAP = {
@@ -13,6 +14,7 @@ const ROUTE_MAP = {
   generating: <GeneratingRoute />,
   reveal:     <RevealRoute />,
   planner:    <PlannerRoute />,
+  style:      <StyleRoute />,
   export:     <ExportRoute />,
 };
 

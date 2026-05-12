@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Intake, Vision } from "@/api/types";
 
-export type Stage = "home" | "intake" | "generating" | "reveal" | "planner" | "export";
+export type Stage = "home" | "intake" | "generating" | "reveal" | "planner" | "style" | "export";
 
 /**
  * Planner edit mode — resolves the OrbitControls ⇄ drag conflict on the R3F
@@ -22,6 +22,7 @@ interface AppState {
   // ── Planner editing ──
   selectedItemId: string | null;
   editMode: EditMode;
+  layoutEditMode: boolean;
 
   setStage: (s: Stage) => void;
   setIntake: (i: Intake) => void;
@@ -30,6 +31,7 @@ interface AppState {
 
   setSelectedItem: (id: string | null) => void;
   setEditMode: (m: EditMode) => void;
+  setLayoutEditMode: (on: boolean) => void;
 
   reset: () => void;
 }
@@ -42,6 +44,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   selectedItemId: null,
   editMode: "browse",
+  layoutEditMode: false,
 
   setStage: (stage) => set({ stage }),
   setIntake: (intake) => set({ intake }),
@@ -52,6 +55,13 @@ export const useAppStore = create<AppState>((set) => ({
     // Deselecting always drops you back to browse mode (no orphaned move mode).
     set((s) => ({ selectedItemId, editMode: selectedItemId ? s.editMode : "browse" })),
   setEditMode: (editMode) => set({ editMode }),
+  setLayoutEditMode: (on) =>
+    set((s) => ({
+      layoutEditMode: on,
+      // Exiting layout edit also clears any selection and resets move mode.
+      selectedItemId: on ? s.selectedItemId : null,
+      editMode: on ? s.editMode : "browse",
+    })),
 
   reset: () =>
     set({
@@ -61,5 +71,6 @@ export const useAppStore = create<AppState>((set) => ({
       selectedVisionId: null,
       selectedItemId: null,
       editMode: "browse",
+      layoutEditMode: false,
     }),
 }));

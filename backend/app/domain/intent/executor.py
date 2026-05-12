@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 
 from app.domain.catalog import CatalogQuery, get_catalog
-from app.domain.solver import SolverInput, SolverItem, solve
+from app.domain.solver import DoorOpening, SolverInput, SolverItem, solve
 from app.schemas.state import (
     CatalogRef,
     Dimensions,
@@ -423,11 +423,18 @@ def _resolve(room: RoomState) -> RoomState:
     if not room.items:
         return room
 
+    entrance_door = DoorOpening(
+        wall=room.intake.entrance_direction,
+        position_frac=0.5,
+        width_mm=900,
+    )
     solver_items = tuple(
         SolverItem(
             id=i.id,
             category=i.category,
-            sub_category=i.category,  # PlacedItem doesn't carry sub_category — fallback OK for re-solve
+            # Item IDs are formatted as "{sub_category}-{hex}" by selector.py;
+            # extract the prefix so the TV back-wall bonus fires correctly.
+            sub_category=i.id.split("-")[0] if "-" in i.id else i.category,
             width_mm=i.dimensions.width_mm,
             depth_mm=i.dimensions.depth_mm,
             height_mm=i.dimensions.height_mm,
@@ -443,6 +450,7 @@ def _resolve(room: RoomState) -> RoomState:
             items=solver_items,
             vastu_enabled=room.intake.vastu_matters,
             room_type=room.intake.room_type.value,
+            doors=(entrance_door,),
         )
     )
     by_id = {p.item_id: p for p in res.placements}

@@ -2,28 +2,31 @@ import { Fragment, useState } from "react";
 import { api } from "@/api/client";
 import type { Direction, Intake, RoomType, Vibe } from "@/api/types";
 import { useAppStore } from "@/store/useAppStore";
+import { ProgressTrail } from "@/components/ProgressTrail";
 
 /* ── Data ─────────────────────────────────────────────────────── */
 
-const VIBES: Array<{ id: Vibe; name: string; hi: string; desc: string; depth: string }> = [
-  { id: "warm_traditional", name: "The Gathering",  hi: "सभा",      desc: "Warm, dense, lived-in.",          depth: "For homes that fill up easily — children, parents, neighbours, plates." },
-  { id: "light_airy",       name: "The Breath",     hi: "विश्राम",    desc: "Open, light, restrained.",        depth: "Less furniture, more air. The luxury of empty floor." },
-  { id: "earthy_crafted",   name: "The Keeper",     hi: "संग्रह",     desc: "Storage-first. Heritage tones.",  depth: "Closed cabinetry. A place for everything you have collected." },
-  { id: "modern_minimal",   name: "The Studio",     hi: "कक्ष",      desc: "Quiet, considered, urban.",       depth: "Clean lines, quality materials, nothing extra." },
+const VIBES: Array<{ id: Vibe; name: string; desc: string; gradient: string; img?: string }> = [
+  { id: "warm_traditional", name: "The Gathering", desc: "Warm, dense, lived-in.",        gradient: "linear-gradient(135deg, #6B4423 0%, #C2502E 40%, #8B6914 100%)" },
+  { id: "light_airy",       name: "The Breath",    desc: "Open, light, restrained.",       gradient: "linear-gradient(135deg, #E8E0D0 0%, #D4C5A9 50%, #B8A88A 100%)" },
+  { id: "earthy_crafted",   name: "The Keeper",    desc: "Storage-first. Heritage tones.", gradient: "linear-gradient(135deg, #4A3728 0%, #7B5A3A 50%, #A67C52 100%)" },
+  { id: "modern_minimal",   name: "The Studio",    desc: "Quiet, considered, urban.",      gradient: "linear-gradient(135deg, #2C2C2C 0%, #4A4A4A 50%, #787878 100%)" },
+  { id: "maximalist",       name: "The Bazaar",    desc: "Loud, layered, alive.",          gradient: "linear-gradient(135deg, #8B1A1A 0%, #C87941 40%, #2C4B1E 100%)" },
+  { id: "coastal",          name: "The Shore",     desc: "Breezy, open, sea-light.",       gradient: "linear-gradient(135deg, #A8C5C0 0%, #D4B896 50%, #8FA8A0 100%)" },
 ];
 
-const ROOMS: Array<[RoomType, string, string]> = [
-  ["living",  "Living Room", "बैठक"],
-  ["bedroom", "Bedroom",     "शयन कक्ष"],
-  ["dining",  "Dining",      "भोजन कक्ष"],
-  ["study",   "Study",       "अध्ययन कक्ष"],
+const ROOMS: Array<[RoomType, string]> = [
+  ["living",  "Living Room"],
+  ["bedroom", "Bedroom"],
+  ["dining",  "Dining"],
+  ["study",   "Study"],
 ];
 
-const SIZES: Array<{ id: string; en: string; hi: string; desc: string; w_mm: number; d_mm: number; rect: [number, number] }> = [
-  { id: "compact",  en: "Compact",  hi: "≤10×10", desc: "A snug city flat",            w_mm: 3000, d_mm: 3000, rect: [36, 36] },
-  { id: "standard", en: "Standard", hi: "10×14",  desc: "Most 2BHKs in metros",        w_mm: 3000, d_mm: 4300, rect: [38, 54] },
-  { id: "large",    en: "Large",    hi: "16×18",  desc: "Generous, well-proportioned",  w_mm: 4900, d_mm: 5500, rect: [54, 62] },
-  { id: "open",     en: "Open",     hi: "18ft+",  desc: "Combined living-dining",       w_mm: 5500, d_mm: 6100, rect: [66, 66] },
+const SIZES: Array<{ id: string; en: string; dims: string; desc: string; w_mm: number; d_mm: number; rect: [number, number] }> = [
+  { id: "compact",  en: "Compact",  dims: "≤10×10 ft", desc: "A snug city flat",            w_mm: 3000, d_mm: 3000, rect: [36, 36] },
+  { id: "standard", en: "Standard", dims: "10×14 ft",  desc: "Most 2BHKs in metros",        w_mm: 3000, d_mm: 4300, rect: [38, 54] },
+  { id: "large",    en: "Large",    dims: "16×18 ft",  desc: "Generous, well-proportioned",  w_mm: 4900, d_mm: 5500, rect: [54, 62] },
+  { id: "open",     en: "Open",     dims: "18ft+",     desc: "Combined living-dining",       w_mm: 5500, d_mm: 6100, rect: [66, 66] },
 ];
 
 const CITIES = ["Mumbai", "Pune", "Bangalore", "Delhi", "Hyderabad", "Chennai", "Kolkata"];
@@ -31,10 +34,10 @@ const CITIES = ["Mumbai", "Pune", "Bangalore", "Delhi", "Hyderabad", "Chennai", 
 const WHO_CHIPS = ["Young children", "Elderly parent", "Work from home", "Frequent guests", "Pets", "Just the two of us", "Vastu matters", "Joint family"];
 
 const PAGES = [
-  { title: "What feeling?",        hi: "क्या भाव?",              sub: "Not the style. The feeling.", kind: "vibe" as const },
-  { title: "Which room, how big?", hi: "कौन सा कमरा, कितना बड़ा?", sub: "A rough sense is enough — we will refine it later.", kind: "room" as const },
-  { title: "Who lives here?",      hi: "यहाँ कौन रहता है?",       sub: "Tell us in your own words. The more you say, the more personal the drawing.", kind: "who" as const },
-  { title: "Budget, and where?",   hi: "बजट, और कहाँ?",           sub: "For furniture and finishing. Installation is separate.", kind: "budget" as const },
+  { title: "What feeling?",        sub: "Not the style. The feeling.", kind: "vibe" as const },
+  { title: "Which room, how big?", sub: "A rough sense is enough — we will refine it later.", kind: "room" as const },
+  { title: "Who lives here?",      sub: "Tell us in your own words. The more you say, the more personal the drawing.", kind: "who" as const },
+  { title: "Budget, and where?",   sub: "For furniture and finishing. Installation is separate.", kind: "budget" as const },
 ];
 
 function truncate(s: string, n: number) { return s.length > n ? s.slice(0, n - 1) + "…" : s; }
@@ -52,6 +55,7 @@ export function IntakeRoute() {
   const setVisions = useAppStore((s) => s.setVisions);
 
   const [page, setPage] = useState(0);
+  const [nudge, setNudge]     = useState(false);
   const [vibe, setVibe]       = useState<Vibe | null>(null);
   const [room, setRoom]       = useState<RoomType | null>(null);
   const [size, setSize]       = useState<string | null>(null);
@@ -126,12 +130,14 @@ export function IntakeRoute() {
           <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 500, color: "var(--ink)" }}>Nirmit</span>
           <span style={{ fontFamily: "var(--fh)", fontSize: 15, color: "var(--ink-3)" }}>निर्मित</span>
         </div>
+        <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+          <ProgressTrail stage="intake" />
+        </div>
         {trailStr && (
-          <span style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.08em", flex: 1, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const, padding: "0 24px" }}>
+          <span style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.08em", maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
             {trailStr}
           </span>
         )}
-        <span className="eyebrow">Consultation · II.</span>
       </div>
 
       {/* Full-width progress bar */}
@@ -146,7 +152,7 @@ export function IntakeRoute() {
         <div style={{ padding: "72px 48px 48px 64px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid var(--line)" }}>
           <div>
             <div className="appear" style={{ marginBottom: 28 }}>
-              <span className="eyebrow">Page {String(page + 1).padStart(2, "0")} of 04 · {P.hi}</span>
+              <span className="eyebrow">Page {String(page + 1).padStart(2, "0")} of 04</span>
             </div>
 
             <h2 key={`q${page}`} className="slide-up" style={{ fontFamily: "var(--fd)", fontSize: "clamp(36px, 4vw, 60px)", fontWeight: 500, lineHeight: 1.0, letterSpacing: "-0.018em", marginBottom: 14, color: "var(--ink)" }}>
@@ -201,14 +207,21 @@ export function IntakeRoute() {
               {page === 0 ? "Back to cover" : "Previous"}
             </button>
 
-            <button
-              className="lnk"
-              onClick={ok[page] ? next : undefined}
-              style={{ fontSize: 18, opacity: ok[page] ? 1 : 0.28, cursor: ok[page] ? "pointer" : "default", pointerEvents: ok[page] ? "auto" : "none" }}
-            >
-              {page < 3 ? "Continue" : "Begin drafting"}
-              <span className="lnk-arrow">→</span>
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+              <button
+                className="lnk"
+                onClick={() => { if (ok[page]) { next(); } else { setNudge(true); setTimeout(() => setNudge(false), 600); } }}
+                style={{ fontSize: 18, opacity: ok[page] ? 1 : 0.38, cursor: "pointer", animation: nudge ? "appear .3s ease" : "none" }}
+              >
+                {page < 3 ? "Continue" : "Begin drafting"}
+                <span className="lnk-arrow">→</span>
+              </button>
+              {nudge && !ok[page] && (
+                <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12, color: "var(--terra)", transition: "opacity .2s" }}>
+                  {{ vibe: "Select a feeling to continue", room: "Choose a room and size", who: "Tell us who lives here", budget: "Select a city" }[PAGES[page].kind]}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -220,46 +233,50 @@ export function IntakeRoute() {
 
 function VibeAnswer({ vibe, setVibe }: { vibe: Vibe | null; setVibe: (v: Vibe) => void }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      {VIBES.map((v, i) => {
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      {VIBES.map((v) => {
         const sel = vibe === v.id;
         return (
           <div
             key={v.id}
             onClick={() => setVibe(v.id)}
             style={{
-              padding: "18px 0 18px 0",
-              borderTop: i === 0 ? "1px solid var(--line)" : "none",
-              borderBottom: "1px solid var(--line)",
-              cursor: "pointer",
-              display: "grid",
-              gridTemplateColumns: "4px 28px 1fr 1.3fr 22px",
-              gap: 16,
-              alignItems: "baseline",
-              background: sel ? "var(--paper-3)" : "transparent",
-              transition: "background .2s ease",
               position: "relative" as const,
+              cursor: "pointer",
+              aspectRatio: "4 / 3",
+              overflow: "hidden",
+              border: sel ? "2px solid var(--terra)" : "2px solid rgba(31,27,22,.12)",
+              outline: sel ? "2px solid rgba(194,80,46,.3)" : "none",
+              outlineOffset: 2,
+              transition: "border-color .2s ease",
             }}
-            onMouseEnter={(e) => { if (!sel) e.currentTarget.style.background = "rgba(248,243,232,0.6)"; }}
-            onMouseLeave={(e) => { if (!sel) e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => { if (!sel) (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(31,27,22,.28)"; }}
+            onMouseLeave={(e) => { if (!sel) (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(31,27,22,.12)"; }}
           >
-            {/* Left accent bar */}
-            <div style={{ width: 4, height: "100%", alignSelf: "stretch", background: sel ? "var(--terra)" : "transparent", transition: "background .2s ease", marginLeft: -16 }} />
-            <span style={{ fontFamily: "var(--fm)", fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.1em" }}>{String(i + 1).padStart(2, "0")}</span>
-            <div>
-              <div style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: sel ? 500 : 400, fontStyle: "italic", color: sel ? "var(--terra)" : "var(--ink)", display: "flex", alignItems: "baseline", gap: 8 }}>
-                {v.name}
-                <span style={{ fontFamily: "var(--fh)", fontSize: 15, color: sel ? "rgba(194,80,46,.6)" : "var(--ink-3)" }}>{v.hi}</span>
+            {/* Background: photo if available, else gradient */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: v.img ? `url(${v.img}) center / cover no-repeat` : v.gradient,
+            }} />
+            {/* Dark scrim */}
+            <div style={{
+              position: "absolute",
+              bottom: 0, left: 0, right: 0,
+              height: "58%",
+              background: "linear-gradient(to top, rgba(15,10,5,.88) 0%, transparent 100%)",
+            }} />
+            {/* Text overlay */}
+            <div style={{ position: "absolute", bottom: 14, left: 16, right: 16 }}>
+              <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 20, fontWeight: 500, color: "var(--paper)", lineHeight: 1.1 }}>{v.name}</div>
+              <div style={{ fontFamily: "var(--fb)", fontSize: 11, color: "rgba(242,235,221,.65)", marginTop: 4 }}>{v.desc}</div>
+            </div>
+            {/* Selected badge */}
+            {sel && (
+              <div style={{ position: "absolute", top: 12, right: 12, width: 26, height: 26, borderRadius: "50%", background: "var(--terra)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="13" height="13" viewBox="0 0 13 13"><path d="M2 6.5l3.5 3.5 5.5-7" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
-              <div style={{ fontFamily: "var(--fb)", fontSize: 12, color: "var(--ink-3)", marginTop: 3 }}>{v.desc}</div>
-            </div>
-            <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)", lineHeight: 1.55 }}>{v.depth}</div>
-            <div style={{ alignSelf: "center", justifySelf: "end" }}>
-              {sel
-                ? <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="var(--terra)" /><path d="M6 10l3 3 5-6" stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                : <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="none" stroke="var(--line-2)" strokeWidth="1" /></svg>
-              }
-            </div>
+            )}
           </div>
         );
       })}
@@ -278,12 +295,11 @@ function RoomAnswer({ room, setRoom, size, setSize, entrance, setEntrance }: {
       <div>
         <span className="eyebrow">Room</span>
         <div style={{ display: "flex", gap: 0, marginTop: 14, borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
-          {ROOMS.map(([id, en, hi], i) => {
+          {ROOMS.map(([id, en], i) => {
             const sel = room === id;
             return (
-              <div key={id} onClick={() => setRoom(id)} style={{ flex: 1, padding: "16px 10px", cursor: "pointer", textAlign: "center", borderLeft: i > 0 ? "1px solid var(--line)" : "none", background: sel ? "var(--ink)" : "transparent", color: sel ? "var(--paper)" : "var(--ink)", transition: "all .25s ease" }}>
+              <div key={id} onClick={() => setRoom(id)} style={{ flex: 1, padding: "18px 10px", cursor: "pointer", textAlign: "center", borderLeft: i > 0 ? "1px solid var(--line)" : "none", background: sel ? "var(--ink)" : "transparent", color: sel ? "var(--paper)" : "var(--ink)", transition: "all .25s ease" }}>
                 <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 17, fontWeight: 500 }}>{en}</div>
-                <div style={{ fontFamily: "var(--fh)", fontSize: 11, marginTop: 4, opacity: 0.6 }}>{hi}</div>
               </div>
             );
           })}
@@ -304,7 +320,7 @@ function RoomAnswer({ room, setRoom, size, setSize, entrance, setEntrance }: {
                   </div>
                 </div>
                 <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 17, fontWeight: 500, color: sel ? "var(--terra)" : "var(--ink)" }}>{rs.en}</div>
-                <div style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", marginTop: 3, letterSpacing: "0.08em" }}>{rs.hi} ft</div>
+                <div style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", marginTop: 3, letterSpacing: "0.08em" }}>{rs.dims}</div>
                 <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 11, color: "var(--ink-3)", marginTop: 6, lineHeight: 1.4 }}>{rs.desc}</div>
               </div>
             );

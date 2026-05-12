@@ -21,7 +21,9 @@ export type Vibe =
   | "warm_traditional"
   | "modern_minimal"
   | "earthy_crafted"
-  | "light_airy";
+  | "light_airy"
+  | "maximalist"
+  | "coastal";
 
 export type Direction = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
 
@@ -72,6 +74,15 @@ export interface Intake {
   vastu_matters: boolean;
 }
 
+export interface Opening {
+  wall: Direction;
+  center_frac: number;
+  width_mm: number;
+  height_mm: number;
+  kind: "door" | "window";
+  sill_mm: number;
+}
+
 export interface RoomState {
   id: string;
   intake: Intake;
@@ -80,6 +91,7 @@ export interface RoomState {
   flooring: string | null;
   wall_finish: string | null;
   lighting_kelvin: number;
+  openings?: Opening[];
 }
 
 export interface FinishingPaintSwatch {

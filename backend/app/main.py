@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import apply, chat, cost, designs, export, finishing, generate
 from app.config import settings
+from app.domain.persistence import init_db
 
 logging.basicConfig(level=settings.LOG_LEVEL)
 _log = logging.getLogger("nirmit")
@@ -54,6 +55,11 @@ app.include_router(cost.router, tags=["cost"])
 app.include_router(export.router, tags=["export"])
 app.include_router(finishing.router, tags=["finishing"])
 app.include_router(designs.router, tags=["designs"])
+
+
+@app.on_event("startup")
+async def _startup() -> None:
+    await init_db()
 
 
 @app.get("/health")

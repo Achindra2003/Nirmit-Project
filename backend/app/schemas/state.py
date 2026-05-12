@@ -37,6 +37,8 @@ class Vibe(str, Enum):
     MODERN_MINIMAL = "modern_minimal"
     EARTHY_CRAFTED = "earthy_crafted"
     LIGHT_AIRY = "light_airy"
+    MAXIMALIST = "maximalist"
+    COASTAL = "coastal"
 
 
 class Direction(str, Enum):
@@ -75,6 +77,18 @@ class Position(StrictModel):
     rotation_deg: float = Field(
         default=0.0, ge=-360.0, le=360.0, description="Clockwise rotation about Y, around the footprint centre"
     )
+
+
+class Opening(StrictModel):
+    """A door or window opening in a wall. Used by the frontend to render gaps
+    and by the solver to enforce entrance clearance."""
+
+    wall: Direction
+    center_frac: float = Field(default=0.5, ge=0.0, le=1.0, description="0=left edge of wall, 1=right edge")
+    width_mm: int = Field(gt=0)
+    height_mm: int = Field(gt=0)
+    kind: Literal["door", "window"]
+    sill_mm: int = Field(default=0, ge=0, description="Floor-to-bottom of opening (0 for doors, ~900 for windows)")
 
 
 class CatalogRef(StrictModel):
@@ -178,6 +192,10 @@ class RoomState(StrictModel):
         ge=2200,
         le=6500,
         description="Lighting colour temperature in Kelvin. Drives the 3D scene's sun warmth.",
+    )
+    openings: list[Opening] = Field(
+        default_factory=list,
+        description="Door and window openings in the room walls. Drives 3D gap rendering and solver clearance.",
     )
 
 

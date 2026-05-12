@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { ProgressTrail } from "@/components/ProgressTrail";
 
 const STAGES = [
-  { en: "Reading the room",                  hi: "कमरा पढ़ना" },
-  { en: "Placing the major pieces",          hi: "मुख्य फ़र्निचर" },
-  { en: "Arranging the smaller ones",        hi: "छोटे तत्व" },
-  { en: "Honouring Vastu, lining up light",  hi: "वास्तु और प्रकाश" },
-  { en: "Materials, prices, totals",         hi: "सामग्री और मूल्य" },
+  "Reading the room",
+  "Placing the major pieces",
+  "Arranging the smaller ones",
+  "Honouring Vastu, lining up light",
+  "Materials, prices, totals",
 ];
 
 const NOTES = [
@@ -40,6 +41,7 @@ export function GeneratingRoute() {
           <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 500, color: "var(--ink)" }}>Nirmit</span>
           <span style={{ fontFamily: "var(--fh)", fontSize: 15, color: "var(--ink-3)" }}>निर्मित</span>
         </div>
+        <ProgressTrail stage="generating" />
         <span style={{ fontFamily: "var(--fm)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--ink-3)" }}>Drafting · III.</span>
       </div>
 
@@ -86,15 +88,9 @@ export function GeneratingRoute() {
 
             <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 30, fontWeight: 500, lineHeight: 1.1, color: "rgba(242,235,221,.9)", minHeight: 88 }}>
               {stage === 0 && "Beginning to draw…"}
-              {current && current.en}
+              {current}
               {stage > STAGES.length && "Three rooms ready."}
             </div>
-
-            {current && (
-              <div style={{ fontFamily: "var(--fh)", fontSize: 16, color: "rgba(242,235,221,.42)", marginTop: 10 }}>
-                {current.hi}
-              </div>
-            )}
           </div>
 
           {/* Stage list */}
@@ -102,7 +98,7 @@ export function GeneratingRoute() {
             <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(242,235,221,.28)", marginBottom: 2 }}>
               Working steps
             </span>
-            {STAGES.map((s, i) => {
+            {STAGES.map((label, i) => {
               const done   = stage > i + 1;
               const active = stage === i + 1;
               return (
@@ -112,7 +108,7 @@ export function GeneratingRoute() {
                   </span>
                   <div style={{ flex: 1, height: 1, background: done ? "var(--terra)" : active ? "rgba(242,235,221,.4)" : "rgba(242,235,221,.1)", transition: "background .5s ease" }} />
                   <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12.5, color: done || active ? "rgba(242,235,221,.75)" : "rgba(242,235,221,.25)", flex: "0 0 auto", maxWidth: "55%", textAlign: "right" as const, transition: "color .4s ease" }}>
-                    {s.en}
+                    {label}
                   </span>
                 </div>
               );

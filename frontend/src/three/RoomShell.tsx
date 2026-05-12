@@ -21,6 +21,8 @@ const BASE_D = 0.018;
 const WIN_H = 1.4;
 const WIN_SILL = 0.85;
 const WIN_FRAC = 0.55;
+const DOOR_W = 0.9;  // 900mm door width
+const DOOR_H = 2.1;  // 2100mm door height
 
 export interface WallRefs {
   S: THREE.Mesh | null;
@@ -55,7 +57,15 @@ export function RoomShell({ room, wallRefs }: Props) {
   );
   const frameMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#4a4035", roughness: 0.6 }), []);
 
-  const windowWall = oppositeWall(room.intake.entrance_direction);
+  const entrance = room.intake.entrance_direction;
+  const windowWall = oppositeWall(entrance);
+
+  function wallOrDoor(dir: Direction, pos: [number, number, number], args: [number, number, number], mat: THREE.Material, refKey: keyof WallRefs) {
+    if (dir === entrance) {
+      return <DoorWall dir={dir} w={w} d={d} h={h} material={mat} wallRef={(m) => (wallRefs.current[refKey] = m)} />;
+    }
+    return <WallBox ref={(m) => (wallRefs.current[refKey] = m)} position={pos} args={args} material={mat} />;
+  }
 
   return (
     <group>
@@ -73,10 +83,10 @@ export function RoomShell({ room, wallRefs }: Props) {
         <meshStandardMaterial color="#fff3da" emissive="#ffe4b5" emissiveIntensity={0.35} side={THREE.DoubleSide} />
       </mesh>
 
-      <WallBox ref={(m) => (wallRefs.current.S = m)} position={[0, h / 2, -d / 2 + WALL_T / 2]} args={[w + WALL_T, h, WALL_T]} material={wallMatBack} />
-      <WallBox ref={(m) => (wallRefs.current.N = m)} position={[0, h / 2, d / 2 - WALL_T / 2]} args={[w + WALL_T, h, WALL_T]} material={wallMatBack} />
-      <WallBox ref={(m) => (wallRefs.current.W = m)} position={[-w / 2 + WALL_T / 2, h / 2, 0]} args={[WALL_T, h, d + WALL_T]} material={wallMatSide} />
-      <WallBox ref={(m) => (wallRefs.current.E = m)} position={[w / 2 - WALL_T / 2, h / 2, 0]} args={[WALL_T, h, d + WALL_T]} material={wallMatSide} />
+      {wallOrDoor("S", [0, h / 2, -d / 2 + WALL_T / 2], [w + WALL_T, h, WALL_T], wallMatBack, "S")}
+      {wallOrDoor("N", [0, h / 2, d / 2 - WALL_T / 2], [w + WALL_T, h, WALL_T], wallMatBack, "N")}
+      {wallOrDoor("W", [-w / 2 + WALL_T / 2, h / 2, 0], [WALL_T, h, d + WALL_T], wallMatSide, "W")}
+      {wallOrDoor("E", [w / 2 - WALL_T / 2, h / 2, 0], [WALL_T, h, d + WALL_T], wallMatSide, "E")}
 
       <mesh position={[0, BASE_H / 2, -d / 2 + WALL_T + BASE_D / 2]}><boxGeometry args={[w, BASE_H, BASE_D]} /><primitive object={baseMat} attach="material" /></mesh>
       <mesh position={[0, BASE_H / 2, d / 2 - WALL_T - BASE_D / 2]}><boxGeometry args={[w, BASE_H, BASE_D]} /><primitive object={baseMat} attach="material" /></mesh>
@@ -98,6 +108,61 @@ const WallBox = forwardRef<THREE.Mesh, { position: [number, number, number]; arg
     );
   },
 );
+
+/** Entrance wall split into left-panel + right-panel + lintel, leaving a DOOR_W × DOOR_H gap at center. */
+function DoorWall({ dir, w, d, h, material, wallRef }: {
+  dir: Direction; w: number; d: number; h: number;
+  material: THREE.Material;
+  wallRef: (m: THREE.Mesh | null) => void;
+}) {
+  const isNS = dir === "N" || dir === "S";
+  const wallLen = isNS ? w + WALL_T : d + WALL_T;
+  const panelLen = Math.max(0.01, (wallLen - DOOR_W) / 2);
+  const lintelH = Math.max(0, h - DOOR_H);
+  const halfGap = DOOR_W / 2;
+
+  if (isNS) {
+    const z = dir === "S" ? -d / 2 + WALL_T / 2 : d / 2 - WALL_T / 2;
+    return (
+      <group>
+        <mesh ref={wallRef} position={[-(halfGap + panelLen / 2), h / 2, z]} receiveShadow>
+          <boxGeometry args={[panelLen, h, WALL_T]} />
+          <primitive object={material} attach="material" />
+        </mesh>
+        <mesh position={[halfGap + panelLen / 2, h / 2, z]} receiveShadow>
+          <boxGeometry args={[panelLen, h, WALL_T]} />
+          <primitive object={material} attach="material" />
+        </mesh>
+        {lintelH > 0.005 && (
+          <mesh position={[0, DOOR_H + lintelH / 2, z]} receiveShadow>
+            <boxGeometry args={[DOOR_W, lintelH, WALL_T]} />
+            <primitive object={material} attach="material" />
+          </mesh>
+        )}
+      </group>
+    );
+  }
+
+  const x = dir === "W" ? -w / 2 + WALL_T / 2 : w / 2 - WALL_T / 2;
+  return (
+    <group>
+      <mesh ref={wallRef} position={[x, h / 2, -(halfGap + panelLen / 2)]} receiveShadow>
+        <boxGeometry args={[WALL_T, h, panelLen]} />
+        <primitive object={material} attach="material" />
+      </mesh>
+      <mesh position={[x, h / 2, halfGap + panelLen / 2]} receiveShadow>
+        <boxGeometry args={[WALL_T, h, panelLen]} />
+        <primitive object={material} attach="material" />
+      </mesh>
+      {lintelH > 0.005 && (
+        <mesh position={[x, DOOR_H + lintelH / 2, 0]} receiveShadow>
+          <boxGeometry args={[WALL_T, lintelH, DOOR_W]} />
+          <primitive object={material} attach="material" />
+        </mesh>
+      )}
+    </group>
+  );
+}
 
 function WindowOnWall({ wall, w, d, glass, frame }: { wall: Direction; w: number; d: number; glass: THREE.Material; frame: THREE.Material }) {
   const winY = WIN_SILL + WIN_H / 2;

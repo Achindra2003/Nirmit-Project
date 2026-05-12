@@ -11,15 +11,10 @@ from typing import List
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import Field
 
-from app.domain.persistence import init_db, repo
+from app.domain.persistence import repo
 from app.schemas.state import RoomState, StrictModel
 
 router = APIRouter()
-
-
-@router.on_event("startup")
-async def _startup() -> None:
-    await init_db()
 
 
 class SaveDesignRequest(StrictModel):

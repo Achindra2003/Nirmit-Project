@@ -18,6 +18,7 @@ table sits between them, the centre stays clear, the mandir is in the NE.
 from __future__ import annotations
 
 import math
+import random
 from dataclasses import dataclass
 
 from app.domain.solver.zones import RelativePlacement, ZoneTemplate
@@ -194,18 +195,16 @@ def _score(
         inp.depth_mm - (cz + eff_d / 2),
     )
     if item.against_wall:
-        if wall_gap < 60:
-            score += 45
-        elif wall_gap < 180:
-            score += 28
+        if wall_gap < 150:
+            score += 20   # near wall preferred, but not forced flush
         elif wall_gap < 400:
             score += 10
         else:
-            score -= 12
+            score -= 8
     else:
-        # Non-wall items: mild preference to NOT be jammed against a wall.
-        if wall_gap < 100:
-            score -= 4
+        # Non-wall items: prefer to not be jammed against a wall.
+        if wall_gap < 150:
+            score -= 8
 
     # Compass-zone preference (Vastu / zone template), weighted by list order.
     if pref_zones:
@@ -237,12 +236,39 @@ def _score(
         if room_long_x == item_long_x:
             score += 4
 
+    # Never put against-wall items against the entrance wall — blocks entry view.
+    if item.against_wall:
+        if inp.entrance == Direction.S:
+            dist_from_entrance = cz - eff_d / 2
+        elif inp.entrance == Direction.N:
+            dist_from_entrance = (inp.depth_mm - cz) - eff_d / 2
+        elif inp.entrance == Direction.W:
+            dist_from_entrance = cx - eff_w / 2
+        else:  # E
+            dist_from_entrance = (inp.width_mm - cx) - eff_w / 2
+        if dist_from_entrance < 800:
+            score -= 55
+
+    # TV unit prefers the back wall (opposite entrance) — creates the natural sofa↔TV axis.
+    if item.sub_category == "tv_unit":
+        if inp.entrance == Direction.S:
+            back_prox = inp.depth_mm - (cz + eff_d / 2)
+        elif inp.entrance == Direction.N:
+            back_prox = cz - eff_d / 2
+        elif inp.entrance == Direction.W:
+            back_prox = inp.width_mm - (cx + eff_w / 2)
+        else:  # E
+            back_prox = cx - eff_w / 2
+        if back_prox < 200:
+            score += 30
+
     return score
 
 
 # ---------- Anchor placement ----------
 
-_GRID_STEP_MM = 150
+_GRID_STEP_MM = 100   # finer grid → less asymmetric layouts
+_WALL_INSET_MM = 80   # minimum gap between item edge and room wall (buffers GLB mesh asymmetry)
 
 
 def _grid(lo: float, hi: float) -> list[float]:
@@ -259,20 +285,33 @@ def _place_anchor(
     inp: SolverInput,
     placed: list[Placement],
     preferred_zones: tuple[VastuZone, ...] = (),
+    rng: random.Random | None = None,
 ) -> Placement | None:
-    best: Placement | None = None
+    candidates: list[Placement] = []
     for rot in item.rotations_deg:
         eff_w, eff_d = _eff_extent(item.width_mm, item.depth_mm, rot)
         if eff_w > inp.width_mm or eff_d > inp.depth_mm:
             continue
-        for cx in _grid(eff_w / 2, inp.width_mm - eff_w / 2):
-            for cz in _grid(eff_d / 2, inp.depth_mm - eff_d / 2):
+        lo_cx = eff_w / 2 + _WALL_INSET_MM
+        hi_cx = inp.width_mm - eff_w / 2 - _WALL_INSET_MM
+        lo_cz = eff_d / 2 + _WALL_INSET_MM
+        hi_cz = inp.depth_mm - eff_d / 2 - _WALL_INSET_MM
+        for cx in _grid(lo_cx, hi_cx):
+            for cz in _grid(lo_cz, hi_cz):
                 if not _is_valid(cx, cz, eff_w, eff_d, inp, placed):
                     continue
                 s = _score(item, cx, cz, rot, eff_w, eff_d, inp, preferred_zones)
-                if best is None or s > best.score:
-                    best = Placement(item.id, int(round(cx)), int(round(cz)), rot, s)
-    return best
+                candidates.append(Placement(item.id, int(round(cx)), int(round(cz)), rot, s))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda p: p.score, reverse=True)
+    # Sample from the top-5 so equal-quality rooms look different across visions.
+    top = candidates[:5]
+    if rng is None or len(top) == 1:
+        return top[0]
+    floor_score = top[-1].score
+    weights = [max(p.score - floor_score + 1.0, 0.1) for p in top]
+    return rng.choices(top, weights=weights, k=1)[0]
 
 
 # ---------- Member placement (relative to an anchor) ----------
@@ -293,15 +332,19 @@ def _place_member(
     target_cx = anchor.x_mm + rel.offset_axial_mm * fx + rel.offset_lateral_mm * lx
     target_cz = anchor.z_mm + rel.offset_axial_mm * fz + rel.offset_lateral_mm * lz
 
-    # Clamp to room.
-    target_cx = max(eff_w / 2, min(target_cx, inp.width_mm - eff_w / 2))
-    target_cz = max(eff_d / 2, min(target_cz, inp.depth_mm - eff_d / 2))
+    # Clamp to room with wall inset.
+    m_lo_cx = eff_w / 2 + _WALL_INSET_MM
+    m_hi_cx = inp.width_mm - eff_w / 2 - _WALL_INSET_MM
+    m_lo_cz = eff_d / 2 + _WALL_INSET_MM
+    m_hi_cz = inp.depth_mm - eff_d / 2 - _WALL_INSET_MM
+    target_cx = max(m_lo_cx, min(target_cx, m_hi_cx))
+    target_cz = max(m_lo_cz, min(target_cz, m_hi_cz))
 
     candidates: list[tuple[float, float]] = [(target_cx, target_cz)]
     for r in (150, 300, 500, 750, 1000):
         for dx, dz in ((r, 0), (-r, 0), (0, r), (0, -r), (r, r), (-r, -r), (r, -r), (-r, r)):
-            ccx = max(eff_w / 2, min(target_cx + dx, inp.width_mm - eff_w / 2))
-            ccz = max(eff_d / 2, min(target_cz + dz, inp.depth_mm - eff_d / 2))
+            ccx = max(m_lo_cx, min(target_cx + dx, m_hi_cx))
+            ccz = max(m_lo_cz, min(target_cz + dz, m_hi_cz))
             candidates.append((ccx, ccz))
 
     for ccx, ccz in candidates:
@@ -347,10 +390,10 @@ def _clamp(v: float, lo: float, hi: float) -> float:
 
 
 def _clamp_placement_to_room(p: Placement, inp: SolverInput) -> Placement:
-    """Final safety: nudge a placement so its rotated footprint stays inside."""
+    """Final safety: nudge a placement so its rotated footprint stays inside with wall inset."""
     eff_w, eff_d = _eff_extent_for(inp, p.item_id, p.rotation_deg)
-    cx = _clamp(p.x_mm, eff_w / 2, inp.width_mm - eff_w / 2)
-    cz = _clamp(p.z_mm, eff_d / 2, inp.depth_mm - eff_d / 2)
+    cx = _clamp(p.x_mm, eff_w / 2 + _WALL_INSET_MM, inp.width_mm - eff_w / 2 - _WALL_INSET_MM)
+    cz = _clamp(p.z_mm, eff_d / 2 + _WALL_INSET_MM, inp.depth_mm - eff_d / 2 - _WALL_INSET_MM)
     if int(round(cx)) == p.x_mm and int(round(cz)) == p.z_mm:
         return p
     return Placement(p.item_id, int(round(cx)), int(round(cz)), p.rotation_deg, p.score, p.zone_id)
@@ -359,13 +402,14 @@ def _clamp_placement_to_room(p: Placement, inp: SolverInput) -> Placement:
 # ---------- Main entry point ----------
 
 
-def solve(inp: SolverInput) -> SolverResult:
+def solve(inp: SolverInput, seed: int = 0) -> SolverResult:
+    rng = random.Random(seed)
     if not inp.zones:
-        return _solve_flat(inp)
-    return _solve_zones(inp)
+        return _solve_flat(inp, rng)
+    return _solve_zones(inp, rng)
 
 
-def _solve_zones(inp: SolverInput) -> SolverResult:
+def _solve_zones(inp: SolverInput, rng: random.Random | None = None) -> SolverResult:
     by_sub: dict[str, list[SolverItem]] = {}
     for item in inp.items:
         by_sub.setdefault(item.sub_category, []).append(item)
@@ -382,7 +426,7 @@ def _solve_zones(inp: SolverInput) -> SolverResult:
             continue
         anchor_item = pool[0]
         pref = tuple(VastuZone(z) for z in zone.preferred_compass_zones)
-        p = _place_anchor(anchor_item, inp, placements, preferred_zones=pref)
+        p = _place_anchor(anchor_item, inp, placements, preferred_zones=pref, rng=rng)
         if p is None:
             failures.append(PlacementFailure(item_id=anchor_item.id, reason="no valid anchor position"))
             continue
@@ -432,7 +476,7 @@ def _solve_zones(inp: SolverInput) -> SolverResult:
         if item.id in placed_ids:
             continue
         pref = preferred_zone_for_category(category=item.category, room_type=inp.room_type, vastu_enabled=inp.vastu_enabled)
-        p = _place_anchor(item, inp, placements, preferred_zones=pref)
+        p = _place_anchor(item, inp, placements, preferred_zones=pref, rng=rng)
         if p is None:
             failures.append(PlacementFailure(item_id=item.id, reason="no valid free placement"))
             continue
@@ -442,13 +486,13 @@ def _solve_zones(inp: SolverInput) -> SolverResult:
     return SolverResult(tuple(placements), tuple(failures), sum(pl.score for pl in placements))
 
 
-def _solve_flat(inp: SolverInput) -> SolverResult:
+def _solve_flat(inp: SolverInput, rng: random.Random | None = None) -> SolverResult:
     """No-zones path — independent placement, wall items first, largest first."""
     placements: list[Placement] = []
     failures: list[PlacementFailure] = []
     for item in sorted(inp.items, key=lambda i: (0 if i.against_wall else 1, -(i.width_mm * i.depth_mm), i.id)):
         pref = preferred_zone_for_category(category=item.category, room_type=inp.room_type, vastu_enabled=inp.vastu_enabled)
-        p = _place_anchor(item, inp, placements, preferred_zones=pref)
+        p = _place_anchor(item, inp, placements, preferred_zones=pref, rng=rng)
         if p is None:
             failures.append(PlacementFailure(item_id=item.id, reason="no valid position found"))
             continue

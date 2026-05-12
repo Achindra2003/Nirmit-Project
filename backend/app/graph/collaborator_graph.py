@@ -107,6 +107,10 @@ def _apply(state: CollabState) -> CollabState:
         except (ValueError, KeyError):
             continue
 
+    # Positions are owned by the layout engine; the AI must not teleport items.
+    _BLOCKED = {IntentKind.MOVE, IntentKind.ROTATE}
+    intents = [i for i in intents if i.kind not in _BLOCKED]
+
     proposed: RoomState | None = None
     cost_delta = 0
     if intents:

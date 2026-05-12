@@ -1,44 +1,60 @@
 /**
  * Renders one PlacedItem inside the room-corner frame (parent group is at
- * [-w/2,0,-d/2]). `item.position.{x_mm,z_mm}` is the footprint CENTRE in room
- * coords, so the item's group sits at [mmToM(cx), 0, mmToM(cz)] and rotates
- * about that centre.
+ * [-w/2,0,-d/2]).
  *
- * GROUNDING: floor furniture is strictly grounded — the GLB is scaled to fit
- * the declared footprint, then a SECOND bounding-box pass measures the scaled
- * mesh and offsets it so its lowest vertex sits exactly on y=0 (no clipping,
- * no floating), independent of where the GLB's own origin is.
+ * Crash safety: an ErrorBoundary wraps every GLB load. A 404 or malformed
+ * model shows the BoxFallback instead of crashing the whole Canvas.
  *
- * DRAG: gated by `draggable` (= move-mode AND this item selected — see
- * useAppStore.editMode / RoomScene.moveMode). When not draggable, a pointer
- * down just selects; OrbitControls owns the cursor. When draggable, the item
- * follows the cursor on the floor plane (snapped to 50mm grid + walls) and
- * fires `onMoveCommit(id, cx_mm, cz_mm)` on release. OrbitControls is disabled
- * by the parent while move-mode is on, so there's no camera/drag fight.
+ * Tint: catalog tint_hex is blended 30% over the model's original colors,
+ * not hard-replaced. This keeps multi-material models visually varied.
  */
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import type { PlacedItem, RoomState } from "@/api/types";
+import { useAppStore } from "@/store/useAppStore";
 import { mmToM } from "./units";
 import { assetTuning } from "./assetTuning";
 
 const SNAP_GRID_MM = 50;
 const SNAP_WALL_MM = 120;
 
+// ---------- Error boundary ----------
+
+class GlbErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { fallback: ReactNode; children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch() {
+    // Swallow the error — BoxFallback is shown instead.
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
+
+// ---------- Public component ----------
+
 interface Props {
   item: PlacedItem;
   room: RoomState;
   accent: string;
   selected: boolean;
-  /** Draggable iff move-mode AND this item is the selected one. */
   draggable: boolean;
   onSelect: (id: string) => void;
   onMoveCommit?: (id: string, x_mm: number, z_mm: number) => void;
 }
 
 export function GlbItem({ item, room, accent, selected, draggable, onSelect, onMoveCommit }: Props) {
+  const layoutEditMode = useAppStore((s) => s.layoutEditMode);
   const w = mmToM(item.dimensions.width_mm);
   const d = mmToM(item.dimensions.depth_mm);
   const h = mmToM(item.dimensions.height_mm);
@@ -51,7 +67,6 @@ export function GlbItem({ item, room, accent, selected, draggable, onSelect, onM
   const [dragCentre, setDragCentre] = useState<{ x_mm: number; z_mm: number } | null>(null);
   const grabDeltaMm = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
 
-  // If move-mode turns off mid-drag, drop the drag.
   useEffect(() => {
     if (!draggable && dragCentre) setDragCentre(null);
   }, [draggable]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -110,7 +125,7 @@ export function GlbItem({ item, room, accent, selected, draggable, onSelect, onM
   function onPointerDown(e: ThreeEvent<PointerEvent>) {
     e.stopPropagation();
     onSelect(item.id);
-    if (!draggable) return; // locked — selection only, OrbitControls owns the cursor
+    if (!layoutEditMode || !draggable) return;
     const floor = pointerToRoomMm(ndcOf(e.clientX, e.clientY));
     if (!floor) return;
     grabDeltaMm.current = { x: floor.x_mm - item.position.x_mm, z: floor.z_mm - item.position.z_mm };
@@ -118,79 +133,106 @@ export function GlbItem({ item, room, accent, selected, draggable, onSelect, onM
   }
 
   const isHot = selected || !!dragCentre;
+  const fallback = <BoxFallback w={w} d={d} h={h} category={item.category} accent={accent} selected={isHot} draggable={draggable} />;
+  const assetUrl = item.catalog?.asset_url;
+
   return (
     <group position={[x, 0, z]} rotation={[0, rot, 0]} onPointerDown={onPointerDown}>
-      <Suspense fallback={<BoxFallback w={w} d={d} h={h} category={item.category} accent={accent} selected={isHot} draggable={draggable} />}>
-        <GlbMesh assetUrl={item.catalog.asset_url} tint={item.catalog.tint_hex} roughness={item.catalog.roughness_hint} w={w} d={d} h={h} selected={isHot} draggable={draggable} />
-      </Suspense>
+      {assetUrl ? (
+        <GlbErrorBoundary fallback={fallback}>
+          <Suspense fallback={fallback}>
+            <GlbMesh
+              assetUrl={assetUrl}
+              tint={item.catalog.tint_hex}
+              roughness={item.catalog.roughness_hint}
+              w={w} d={d} h={h}
+              selected={isHot}
+              draggable={draggable}
+            />
+          </Suspense>
+        </GlbErrorBoundary>
+      ) : fallback}
     </group>
   );
 }
 
+// ---------- GLB mesh ----------
+
+function applyMat(mat: THREE.MeshStandardMaterial, tint: string | null, roughness: number | null, selected: boolean, draggable: boolean) {
+  // Restore or save the original color so tint is always relative to it,
+  // not cumulative across re-renders.
+  if (!mat.userData._origColor) {
+    mat.userData._origColor = mat.color.clone();
+  }
+  const orig = mat.userData._origColor as THREE.Color;
+  mat.color.copy(orig);
+  if (tint) {
+    // Blend 28% toward the catalog tint — keeps multi-material variety.
+    mat.color.lerp(new THREE.Color(tint), 0.28);
+  }
+  if (roughness != null) mat.roughness = Math.max(0, Math.min(1, roughness));
+  if (selected) {
+    mat.emissive.set(draggable ? "#3a2a10" : "#241a0a");
+    mat.emissiveIntensity = draggable ? 0.35 : 0.18;
+  } else {
+    mat.emissiveIntensity = 0;
+  }
+  mat.needsUpdate = true;
+}
+
 function GlbMesh({
-  assetUrl,
-  tint,
-  roughness,
-  w,
-  d,
-  h,
-  selected,
-  draggable,
+  assetUrl, tint, roughness, w, d, h, selected, draggable,
 }: {
   assetUrl: string;
   tint: string | null;
   roughness: number | null;
-  w: number;
-  d: number;
-  h: number;
+  w: number; d: number; h: number;
   selected: boolean;
   draggable: boolean;
 }) {
   const { scene } = useGLTF(`/models/${assetUrl}`);
+
   const cloned = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((node) => {
-      if ((node as THREE.Mesh).isMesh) {
-        const mesh = node as THREE.Mesh;
-        const mat = mesh.material;
-        if (Array.isArray(mat)) mesh.material = mat.map((m) => m.clone());
-        else if (mat) mesh.material = (mat as THREE.Material).clone();
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
+      if (!(node as THREE.Mesh).isMesh) return;
+      const mesh = node as THREE.Mesh;
+      const mat = mesh.material;
+      if (Array.isArray(mat)) {
+        mesh.material = mat.map((m) => {
+          const cl = m.clone();
+          // Store original color immediately on clone so first applyMat has it.
+          if ((cl as THREE.MeshStandardMaterial).isMeshStandardMaterial) {
+            cl.userData._origColor = (cl as THREE.MeshStandardMaterial).color.clone();
+          }
+          return cl;
+        });
+      } else if (mat) {
+        const cl = (mat as THREE.Material).clone();
+        if ((cl as THREE.MeshStandardMaterial).isMeshStandardMaterial) {
+          cl.userData._origColor = (cl as THREE.MeshStandardMaterial).color.clone();
+        }
+        mesh.material = cl;
       }
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
     });
     return c;
   }, [scene]);
 
   useEffect(() => {
     cloned.traverse((node) => {
-      if ((node as THREE.Mesh).isMesh) {
-        const mat = (node as THREE.Mesh).material as THREE.MeshStandardMaterial;
-        if (mat && mat.isMeshStandardMaterial) {
-          if (tint) mat.color = new THREE.Color(tint);
-          if (roughness != null) mat.roughness = Math.max(0, Math.min(1, roughness));
-          if (selected) {
-            mat.emissive = new THREE.Color(draggable ? "#3a2a10" : "#241a0a");
-            mat.emissiveIntensity = draggable ? 0.35 : 0.18;
-          } else {
-            mat.emissiveIntensity = 0;
-          }
-          mat.needsUpdate = true;
+      if (!(node as THREE.Mesh).isMesh) return;
+      const mesh = node as THREE.Mesh;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const m of mats) {
+        if ((m as THREE.MeshStandardMaterial).isMeshStandardMaterial) {
+          applyMat(m as THREE.MeshStandardMaterial, tint, roughness, selected, draggable);
         }
       }
     });
   }, [cloned, tint, roughness, selected, draggable]);
 
-  /**
-   * Two-pass fit + ground (+ per-asset tuning from ./assetTuning):
-   *   1. Measure the GLB's native bbox; pick a uniform scale so the larger
-   *      horizontal extent fits max(w, d) and the height fits h, times the
-   *      asset's `scaleMul` override.
-   *   2. Re-measure the *scaled* bbox and translate so its centre is at
-   *      (0, _, 0) and its MINIMUM y is exactly 0 (lowest vertex on the
-   *      floor, regardless of the GLB's authored origin), then add the
-   *      asset's `yNudge` (for wall-mounted items that should float).
-   */
   const fit = useMemo(() => {
     const tuning = assetTuning(assetUrl);
     const native = new THREE.Box3().setFromObject(cloned);
@@ -199,8 +241,7 @@ function GlbMesh({
     if (size.x < 1e-5 || size.y < 1e-5 || size.z < 1e-5) {
       return { scale: 1, offset: new THREE.Vector3(0, tuning.yNudge, 0) };
     }
-    const scale =
-      Math.min(Math.max(w, d) / Math.max(size.x, size.z), h / size.y) * tuning.scaleMul;
+    const scale = Math.min(Math.max(w, d) / Math.max(size.x, size.z), h / size.y) * tuning.scaleMul;
     const minY = native.min.y * scale;
     const cX = (native.min.x + native.max.x) * 0.5 * scale;
     const cZ = (native.min.z + native.max.z) * 0.5 * scale;
@@ -210,13 +251,16 @@ function GlbMesh({
   return (
     <group scale={fit.scale} position={fit.offset}>
       <primitive object={cloned} />
-      {/* selection ring drawn at floor level in the GlbMesh's UNSCALED frame */}
       {selected && <SelectionRing w={w} d={d} scale={1 / fit.scale} draggable={draggable} />}
     </group>
   );
 }
 
-function BoxFallback({ w, d, h, category, accent, selected, draggable }: { w: number; d: number; h: number; category: string; accent: string; selected: boolean; draggable: boolean }) {
+// ---------- Fallback + helpers ----------
+
+function BoxFallback({ w, d, h, category, accent, selected, draggable }: {
+  w: number; d: number; h: number; category: string; accent: string; selected: boolean; draggable: boolean;
+}) {
   return (
     <group position={[0, h / 2, 0]}>
       <mesh castShadow receiveShadow>
@@ -233,7 +277,9 @@ function BoxFallback({ w, d, h, category, accent, selected, draggable }: { w: nu
   );
 }
 
-function SelectionRing({ w, d, scale = 1, yOffset = 0.012, draggable }: { w: number; d: number; scale?: number; yOffset?: number; draggable: boolean }) {
+function SelectionRing({ w, d, scale = 1, yOffset = 0.012, draggable }: {
+  w: number; d: number; scale?: number; yOffset?: number; draggable: boolean;
+}) {
   const r = Math.max(w, d) * 0.62 * scale;
   return (
     <mesh position={[0, yOffset, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -255,6 +301,11 @@ function categoryColor(category: string, accent: string): string {
   }
 }
 
-useGLTF.preload("/models/sofa_3seat.glb");
-useGLTF.preload("/models/tv_unit.glb");
+// Preload the most common living room GLBs so the first render doesn't stall.
+useGLTF.preload("/models/loungeDesignSofa.glb");
+useGLTF.preload("/models/loungeSofaLong.glb");
+useGLTF.preload("/models/loungeDesignSofaCorner.glb");
+useGLTF.preload("/models/cabinetTelevision.glb");
+useGLTF.preload("/models/cabinetTelevisionDoors.glb");
+useGLTF.preload("/models/coffee_table.glb");
 useGLTF.preload("/models/pooja_wall.glb");

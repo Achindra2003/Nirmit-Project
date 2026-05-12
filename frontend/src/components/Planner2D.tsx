@@ -12,6 +12,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Direction, PlacedItem, RoomState } from "@/api/types";
+import { useAppStore } from "@/store/useAppStore";
 
 const PAD = 64;
 const TARGET = 760;
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRotateItem }: Props) {
+  const layoutEditMode = useAppStore((s) => s.layoutEditMode);
   const wMm = room.intake.room_dimensions.width_mm;
   const dMm = room.intake.room_dimensions.depth_mm;
   const scale = useMemo(() => (TARGET - PAD * 2) / Math.max(wMm, dMm), [wMm, dMm]);
@@ -56,6 +58,7 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
   function startDrag(e: React.PointerEvent, item: PlacedItem) {
     e.stopPropagation();
     onSelectItem?.(item.id);
+    if (!layoutEditMode) return; // drag only available in Edit Layout mode
     const cur = pointerToMm(e.clientX, e.clientY);
     setDrag({ id: item.id, offMm: { x: cur.x - item.position.x_mm, z: cur.z - item.position.z_mm }, curMm: cur });
   }
@@ -136,8 +139,9 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
             scale={scale}
             selected={selectedItemId === item.id}
             dragging={isDragging}
+            canDrag={layoutEditMode}
             onPointerDown={(e) => startDrag(e, item)}
-            onDoubleClick={() => onRotateItem?.(item.id)}
+            onDoubleClick={() => layoutEditMode && onRotateItem?.(item.id)}
           />
         );
       })}
@@ -172,6 +176,7 @@ function ItemRect({
   scale,
   selected,
   dragging,
+  canDrag,
   onPointerDown,
   onDoubleClick,
 }: {
@@ -182,6 +187,7 @@ function ItemRect({
   scale: number;
   selected: boolean;
   dragging: boolean;
+  canDrag: boolean;
   onPointerDown: (e: React.PointerEvent) => void;
   onDoubleClick: () => void;
 }) {
@@ -209,7 +215,7 @@ function ItemRect({
           pointerEvents="none"
         />
       )}
-      <g transform={transform} onPointerDown={onPointerDown} onDoubleClick={onDoubleClick} style={{ cursor: dragging ? "grabbing" : "grab" }}>
+      <g transform={transform} onPointerDown={onPointerDown} onDoubleClick={onDoubleClick} style={{ cursor: dragging ? "grabbing" : canDrag ? "grab" : "pointer" }}>
         <rect x={-w / 2} y={-d / 2} width={w} height={d} rx={3} fill={fill} fillOpacity={dragging ? 0.5 : 0.88} stroke={selected ? "#D4A574" : "#5C4632"} strokeWidth={selected ? 2 : 1.1} />
         <DraftIcon category={item.category} w={w} d={d} />
         {/* Front-edge tick (facing direction = local +z = bottom of the rect before rotation) */}

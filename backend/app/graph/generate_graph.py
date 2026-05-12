@@ -22,6 +22,7 @@ Pipeline:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -34,13 +35,15 @@ from app.domain.catalog import get_catalog
 from app.domain.catalog.selector import SelectedItem, select_items
 from app.domain.costing import build_cost_breakdown
 from app.domain.solver import SolverInput, SolverItem, composition_for, solve
+from app.domain.solver.solver import DoorOpening
 from app.domain.vastu import apply_rules as vastu_apply_rules
-from app.prompts import RANKER_SYSTEM, build_ranker_prompt
+from app.prompts import RANKER_SYSTEM, STYLE_SYSTEM, build_ranker_prompt, build_style_prompt
 from app.schemas.state import (
     CatalogRef,
     Dimensions,
     Direction,
     Intake,
+    Opening,
     PlacedItem,
     Position,
     Reasoning,
@@ -140,13 +143,27 @@ def build_generate_graph():
 # ---------- Vision construction ----------
 
 
+_OPPOSITE_DIR: dict[Direction, Direction] = {
+    Direction.N: Direction.S,
+    Direction.S: Direction.N,
+    Direction.E: Direction.W,
+    Direction.W: Direction.E,
+}
+
+_PHILOSOPHY_IDX: dict[VisionPhilosophy, int] = {
+    VisionPhilosophy.GATHERING: 0,
+    VisionPhilosophy.BREATH: 1,
+    VisionPhilosophy.KEEPER: 2,
+}
+
+
 def _build_vision(
     intake: Intake,
     philosophy: VisionPhilosophy,
     brief: dict[str, Any],
 ) -> Vision | None:
     catalog = get_catalog()
-    selected = select_items(intake=intake, philosophy=philosophy, catalog=catalog)
+    selected = select_items(intake=intake, philosophy=philosophy, catalog=catalog, design_brief=brief)
     if not selected:
         return None
 
@@ -163,6 +180,25 @@ def _build_vision(
         )
         for s in selected
     )
+
+    # Derive a stable seed from intake so the same inputs always produce the same
+    # 3 rooms, but different inputs produce different spatial arrangements.
+    seed_str = (
+        f"{intake.room_dimensions.width_mm}"
+        f"{intake.room_dimensions.depth_mm}"
+        f"{intake.vibe.value}"
+        f"{intake.who_lives_here}"
+    )
+    base_seed = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
+    vision_seed = base_seed + _PHILOSOPHY_IDX[philosophy]
+
+    # Wire the entrance door so the solver keeps furniture clear of it.
+    door_for_solver = DoorOpening(
+        wall=intake.entrance_direction,
+        position_frac=0.5,
+        width_mm=900,
+    )
+
     zones = composition_for(intake.room_type.value, philosophy.value)
     res = solve(
         SolverInput(
@@ -174,7 +210,9 @@ def _build_vision(
             vastu_enabled=intake.vastu_matters,
             room_type=intake.room_type.value,
             walkway_min_mm=600,
-        )
+            doors=(door_for_solver,),
+        ),
+        seed=vision_seed,
     )
 
     by_id = {s.item_id: s for s in selected}
@@ -202,7 +240,7 @@ def _build_vision(
                     height_mm=s.catalog.dimensions.height_mm,
                 ),
                 position=Position(x_mm=p.x_mm, z_mm=p.z_mm, rotation_deg=float(p.rotation_deg)),
-                facing=_facing_for_category(s.catalog.category, intake.entrance_direction),
+                facing=_facing_for_category(s.catalog.sub_category or s.catalog.category, intake.entrance_direction),
                 is_buy=_is_buy_default(s.catalog.category),
                 price_inr=s.catalog.price_inr,
                 build_price_inr=s.catalog.build_price_inr,
@@ -212,14 +250,32 @@ def _build_vision(
     if not placed_items:
         return None
 
-    palette = _palette_for_vibe_and_philosophy(intake.vibe.value, philosophy)
+    # Default openings — one door on entrance wall, one window on opposite wall.
+    window_wall = _OPPOSITE_DIR.get(intake.entrance_direction, Direction.N)
+    default_openings = [
+        Opening(wall=intake.entrance_direction, center_frac=0.5, width_mm=900, height_mm=2100, kind="door", sill_mm=0),
+        Opening(wall=window_wall, center_frac=0.5, width_mm=1500, height_mm=1200, kind="window", sill_mm=900),
+    ]
+
+    # LLM-driven style: palette, flooring, wall finish, lighting per vision.
+    style = _llm_style(intake, philosophy)
+    palette = style.get("palette") or _palette_for_vibe_and_philosophy(intake.vibe.value, philosophy)
+    flooring = style.get("flooring") or _flooring_for_vibe(intake.vibe.value)
+    wall_finish = style.get("wall_finish") or _wall_finish_for_vibe(intake.vibe.value)
+    try:
+        lighting_kelvin = max(2200, min(6500, int(style.get("lighting_kelvin") or 3200)))
+    except (TypeError, ValueError):
+        lighting_kelvin = 3200
+
     room = RoomState(
         id=f"room_{uuid.uuid4().hex[:8]}",
         intake=intake,
         items=placed_items,
         palette=palette,
-        flooring=_flooring_for_vibe(intake.vibe.value),
-        wall_finish=_wall_finish_for_vibe(intake.vibe.value),
+        flooring=flooring,
+        wall_finish=wall_finish,
+        lighting_kelvin=lighting_kelvin,
+        openings=default_openings,
     )
     cost = build_cost_breakdown(room)
 
@@ -276,9 +332,11 @@ def _deterministic_reasoning(
     }
     bullets: list[str] = []
 
-    sofa = next((i for i in room.items if i.category == "seating"), None)
-    tv = next((i for i in room.items if i.category == "tv_unit"), None)
-    storage_count = sum(1 for i in room.items if i.category == "storage")
+    # item.id starts with sub_category (e.g. "sofa-0", "tv_unit-1") — use that
+    # since catalog category ("seating", "storage") doesn't encode sub_category.
+    sofa = next((i for i in room.items if i.id.startswith("sofa")), None)
+    tv = next((i for i in room.items if i.id.startswith("tv_unit")), None)
+    storage_count = sum(1 for i in room.items if i.id.startswith(("bookshelf", "cabinet", "wardrobe", "drawer", "shoe_rack")))
 
     if philosophy is VisionPhilosophy.GATHERING and sofa:
         bullets.append(
@@ -293,7 +351,7 @@ def _deterministic_reasoning(
             f"{storage_count} pieces of closed storage line the walls — toys, festival boxes, daily clutter all have a home."
         )
     if tv:
-        bullets.append("TV unit on the entrance wall keeps the room's centre open and the entrance view clean.")
+        bullets.append("TV unit is anchored to the back wall so the sofa faces across the full depth of the room.")
     if brief.get("has_kids"):
         bullets.append("Coffee table is small and rounded — clear floor space for a four-year-old to play.")
     if brief.get("has_elderly"):
@@ -366,6 +424,39 @@ def _author_reasoning(intake: Intake, vision: Vision) -> Reasoning:
 # ---------- Helpers ----------
 
 
+def _llm_style(intake: Intake, philosophy: VisionPhilosophy) -> dict:
+    """Call LLM for palette + flooring + wall_finish + lighting_kelvin.
+    Falls back to hardcoded maps on any error."""
+    try:
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        from app.llm import get_llm
+
+        llm = get_llm(temperature=0.5)
+        raw = llm.invoke(
+            [
+                SystemMessage(content=STYLE_SYSTEM),
+                HumanMessage(content=build_style_prompt(intake=intake, philosophy=philosophy.value)),
+            ]
+        )
+        text = raw.content if hasattr(raw, "content") else str(raw)
+        if not isinstance(text, str):
+            text = str(text)
+        m = _JSON_BLOCK.search(text)
+        if m:
+            data = json.loads(m.group(0))
+            if isinstance(data, dict) and "palette" in data:
+                return data
+    except Exception:
+        log.warning("LLM style call failed for %s; using hardcoded fallback", philosophy, exc_info=True)
+    return {
+        "palette": _palette_for_vibe_and_philosophy(intake.vibe.value, philosophy),
+        "flooring": _flooring_for_vibe(intake.vibe.value),
+        "wall_finish": _wall_finish_for_vibe(intake.vibe.value),
+        "lighting_kelvin": 3200,
+    }
+
+
 def _name_and_tagline(p: VisionPhilosophy) -> tuple[str, str]:
     if p is VisionPhilosophy.GATHERING:
         return "The Gathering", "Warm, dense, made for evenings together."
@@ -380,6 +471,8 @@ def _palette_for_vibe_and_philosophy(vibe: str, philosophy: VisionPhilosophy) ->
         "modern_minimal": {"wall": "#F2EFEA", "floor": "#A89A8C", "accent": "#3F3A33"},
         "earthy_crafted": {"wall": "#E5DDD0", "floor": "#9C7E5C", "accent": "#5C4632"},
         "light_airy": {"wall": "#F8F4ED", "floor": "#C9B89D", "accent": "#6E8388"},
+        "maximalist": {"wall": "#E8D8C4", "floor": "#8B6914", "accent": "#8B1A1A"},
+        "coastal": {"wall": "#EBF0ED", "floor": "#C9B8A0", "accent": "#6E9090"},
     }.get(vibe, {"wall": "#EDE6D8", "floor": "#B89B7A", "accent": "#7A5C3A"})
     if philosophy is VisionPhilosophy.BREATH:
         base = {**base, "wall": "#F8F4ED"}
@@ -392,6 +485,8 @@ def _flooring_for_vibe(vibe: str) -> str:
         "modern_minimal": "matte grey vitrified",
         "earthy_crafted": "kota stone",
         "light_airy": "pale oak laminate",
+        "maximalist": "teak hardwood",
+        "coastal": "light terrazzo",
     }.get(vibe, "warm oak laminate")
 
 
@@ -401,6 +496,8 @@ def _wall_finish_for_vibe(vibe: str) -> str:
         "modern_minimal": "soft white emulsion",
         "earthy_crafted": "earthy beige texture",
         "light_airy": "ivory matte",
+        "maximalist": "deep terracotta",
+        "coastal": "light sage matte",
     }.get(vibe, "off-white limewash")
 
 

@@ -5,3 +5,6 @@ frontend/dist/
 backend/__pycache__/
 .vscode/
 *.log
+*.txt
+.claude/
+user-flow/

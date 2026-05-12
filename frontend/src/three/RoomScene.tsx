@@ -136,6 +136,9 @@ interface WallSpec {
 
 function WallFader({ wallRefs, roomW, roomD }: { wallRefs: React.MutableRefObject<WallRefs>; roomW: number; roomD: number }) {
   const { camera } = useThree();
+  // Track current opacity per wall in a ref so the lerp persists across renders
+  // without mutating stale material instances.
+  const opacityRef = useRef<Record<string, number>>({ S: 1, N: 1, W: 1, E: 1 });
   const walls = useMemo<WallSpec[]>(
     () => [
       { key: "S", axis: "z", plane: -roomD / 2, outwardSign: -1 },
@@ -149,14 +152,16 @@ function WallFader({ wallRefs, roomW, roomD }: { wallRefs: React.MutableRefObjec
     for (const wall of walls) {
       const mesh = wallRefs.current[wall.key];
       if (!mesh) continue;
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      if (!mat?.isMeshStandardMaterial) continue;
       const camCoord = wall.axis === "x" ? camera.position.x : camera.position.z;
-      // Signed distance of the camera from the wall plane along the OUTWARD
-      // normal. > 0 ⇒ camera is outside the wall ⇒ it blocks the view in.
       const camToPlaneOutside = (camCoord - wall.plane) * wall.outwardSign;
       const target = camToPlaneOutside > 0.3 ? 0.06 : camToPlaneOutside < -0.3 ? 1.0 : 0.06 + ((-camToPlaneOutside + 0.3) / 0.6) * 0.94;
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      mat.opacity += (target - mat.opacity) * 0.18;
-      mat.depthWrite = mat.opacity > 0.5;
+      const cur = opacityRef.current[wall.key] ?? 1;
+      const next = cur + (target - cur) * 0.18;
+      opacityRef.current[wall.key] = next;
+      mat.opacity = next;
+      mat.depthWrite = next > 0.5;
     }
   });
   return null;

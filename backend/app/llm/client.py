@@ -4,7 +4,7 @@ The brain talks to LLMs through this single function. Providers are swappable by
 config — swapping Groq for Anthropic should be a one-line change in .env, not a
 codebase migration.
 
-Default: Groq + moonshotai/kimi-k2-instruct (per founder decision 2026-05-08).
+Default: Groq + llama-3.3-70b-versatile (moonshotai/kimi-k2-instruct unavailable on this account).
 """
 from __future__ import annotations
 
