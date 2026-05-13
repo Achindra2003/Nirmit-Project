@@ -15,7 +15,7 @@
  */
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, Environment, Grid, OrbitControls } from "@react-three/drei";
+import { ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import type { Direction, RoomState } from "@/api/types";
 import { GlbItem } from "./GlbItem";
@@ -57,21 +57,22 @@ export function RoomScene({
   const palette = room.palette;
   const wallRefs = useRef<WallRefs>({ S: null, N: null, W: null, E: null });
 
-  // Initial camera = 3/4 corner.
+  // Initial camera — standing at the entrance corner at roughly eye level.
   const initialCam = useMemo<[number, number, number]>(
-    () => [w * 0.65, h * 1.0, d * 0.85],
+    () => [w * 0.72, h * 0.60, d * 0.92],
     [w, h, d],
   );
 
   return (
     <Canvas
       shadows
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05, outputColorSpace: THREE.SRGBColorSpace }}
-      camera={{ position: initialCam, fov: 42 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.12, outputColorSpace: THREE.SRGBColorSpace }}
+      camera={{ position: initialCam, fov: 52 }}
       style={{ width: "100%", height: "100%" }}
       onPointerMissed={() => onSelectItem?.(null)}
     >
-      <color attach="background" args={["#1a1510"]} />
+      {/* Warm off-white background — visible through window + faded walls instead of a black void */}
+      <color attach="background" args={["#e8e0d5"]} />
 
       <Lighting
         roomWmm={room.intake.room_dimensions.width_mm}
@@ -80,7 +81,6 @@ export function RoomScene({
         entrance={room.intake.entrance_direction}
         warmthK={warmthK}
       />
-      <Environment preset="apartment" environmentIntensity={0.45} />
 
       <RoomShell room={room} wallRefs={wallRefs} />
       <WallFader wallRefs={wallRefs} roomW={w} roomD={d} />
@@ -94,7 +94,6 @@ export function RoomScene({
             room={room}
             accent={palette.accent ?? "#7a5c3a"}
             selected={selectedItemId === item.id}
-            // Draggable only when this item is selected AND we're in move mode.
             draggable={moveMode && selectedItemId === item.id}
             onSelect={(id) => onSelectItem?.(id)}
             onMoveCommit={onMoveItem}
@@ -103,8 +102,7 @@ export function RoomScene({
         {showAtmosphere && <Atmosphere room={room} />}
       </group>
 
-      <ContactShadows position={[0, 0.006, 0]} opacity={0.5} scale={Math.max(w, d) * 1.6} blur={2.6} far={h * 1.2} resolution={1024} color="#241810" />
-      <Grid position={[0, 0.003, 0]} args={[Math.max(w, d) * 2, Math.max(w, d) * 2]} cellSize={0.5} cellThickness={0.4} sectionSize={1} sectionThickness={0.8} cellColor="#7a5c3a" sectionColor="#5c4632" fadeDistance={Math.max(w, d) * 2.2} fadeStrength={1.4} infiniteGrid={false} />
+      <ContactShadows position={[0, 0.004, 0]} opacity={0.45} scale={Math.max(w, d) * 1.5} blur={1.8} far={h} resolution={1024} color="#2a1e12" />
 
       <OrbitControls
         makeDefault
@@ -205,8 +203,8 @@ function CameraController({
         default: return { pos: new THREE.Vector3(0, 1.55, -roomD / 2 + 0.7), tgt: new THREE.Vector3(0, 1.25, roomD / 4) };
       }
     }
-    // corner (default 3/4)
-    return { pos: new THREE.Vector3(roomW * 0.65, roomH * 1.0, roomD * 0.85), tgt: new THREE.Vector3(0, roomH * 0.32, 0) };
+    // corner — eye-level 3/4 view, not overhead
+    return { pos: new THREE.Vector3(roomW * 0.72, roomH * 0.60, roomD * 0.92), tgt: new THREE.Vector3(0, roomH * 0.28, 0) };
   };
 
   useEffect(() => {

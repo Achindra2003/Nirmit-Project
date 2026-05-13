@@ -27,21 +27,44 @@ const DEFAULT: AssetTuning = { scaleMul: 1, yNudge: 0 };
  * wins (they should sit ~0.7–1.0 m up, not on the floor).
  */
 const OVERRIDES: Record<string, Partial<AssetTuning>> = {
-  // Living room sofas — large flat bases can clip; tiny lift clears z-fight.
+  // ── New living-room GLBs (12 replacements) ──────────────────────────────
+  // sofa_3seat origin is at base of mesh — no y-lift needed.
+  "sofa_3seat.glb": { yNudge: 0.0 },
+  // sofa_l (L-shape) — flat base, tiny lift clears z-fight.
+  "sofa_l.glb": { yNudge: 0.003 },
+  // tv_unit sits flush on the floor.
+  "tv_unit.glb": { yNudge: 0.003 },
+  // coffee_table — thin, small lift to prevent z-fight.
+  "coffee_table.glb": { yNudge: 0.003 },
+  // lounge_chair — standard floor clearance.
+  "lounge_chair.glb": { yNudge: 0.003 },
+  // ottoman — standard floor clearance.
+  "ottoman.glb": { yNudge: 0.003 },
+  // bookshelf — tall upright, flush to floor.
+  "bookshelf.glb": { yNudge: 0.003 },
+  // lamp_floor — tall floor lamp, standard clearance.
+  "lamp_floor.glb": { yNudge: 0.003 },
+  // rug — very flat; tiny lift prevents z-fight with floor plane.
+  "rug.glb": { yNudge: 0.003 },
+  // chair — standard floor clearance.
+  "chair.glb": { yNudge: 0.003 },
+  // fan — ceiling-mounted; catalog height=470 mm => nudge = 3.0 - 0.47 = 2.53
+  "fan.glb": { yNudge: 2.53 },
+  // plant — standard floor clearance.
+  "plant.glb": { yNudge: 0.003 },
+
+  // ── Legacy GLBs (kept for backwards compat with non-living-room entries) ──
   "loungeDesignSofa.glb": { yNudge: 0.005 },
   "loungeSofaLong.glb": { yNudge: 0.005 },
   "loungeDesignSofaCorner.glb": { yNudge: 0.005 },
-  // TV units — ensure they sit flush on the floor.
   "cabinetTelevision.glb": { yNudge: 0.003 },
   "cabinetTelevisionDoors.glb": { yNudge: 0.003 },
-  // Coffee tables — very thin, need a hair to avoid z-fighting the floor.
-  "coffee_table.glb": { yNudge: 0.004 },
   "tableCoffeeGlass.glb": { yNudge: 0.004 },
   "tableCoffeeGlassSquare.glb": { yNudge: 0.004 },
   "tableCoffeeSquare.glb": { yNudge: 0.004 },
   // Wall-mounted pooja unit — hangs at ~0.9 m on the wall.
   "pooja_wall.glb": { yNudge: 0.9 },
-  // Thin floor items can z-fight the floor plane — lift a hair.
+  // Thin floor rugs — z-fight prevention.
   "rugRectangle.glb": { yNudge: 0.003 },
   "rugRound.glb": { yNudge: 0.003 },
   "rugSquare.glb": { yNudge: 0.003 },
@@ -51,12 +74,7 @@ const OVERRIDES: Record<string, Partial<AssetTuning>> = {
   "lampWall.glb": { yNudge: 1.4 },
   "bathroomMirror.glb": { yNudge: 1.2 },
   "mirror.glb": { yNudge: 1.2 },
-  // Ceiling fixtures — room height is 3000 mm = 3.0 m. Fixture height is
-  // in its catalog Dimensions.height_mm, so the item already sits at
-  // (roomH - itemH) once we push it up. yNudge = 3.0 - itemH(m).
-  // fan.glb catalog height = 300 mm => 3.0 - 0.3 = 2.7
-  "fan.glb": { yNudge: 2.7 },
-  // lampSquareCeiling catalog height = typically 150–200 mm => nudge to ~2.8
+  // Ceiling fixtures.
   "lampSquareCeiling.glb": { yNudge: 2.85 },
   // Wardrobes — large GLBs may have off-centre pivots; scaleMul 1 = auto-fit unchanged.
   "wardrobe_2d.glb": { scaleMul: 1.0 },

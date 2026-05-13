@@ -301,11 +301,17 @@ function categoryColor(category: string, accent: string): string {
   }
 }
 
-// Preload the most common living room GLBs so the first render doesn't stall.
-useGLTF.preload("/models/loungeDesignSofa.glb");
-useGLTF.preload("/models/loungeSofaLong.glb");
-useGLTF.preload("/models/loungeDesignSofaCorner.glb");
-useGLTF.preload("/models/cabinetTelevision.glb");
-useGLTF.preload("/models/cabinetTelevisionDoors.glb");
+// Preload the 12 new living-room GLBs so the first render doesn't stall.
+useGLTF.preload("/models/sofa_3seat.glb");
+useGLTF.preload("/models/sofa_l.glb");
+useGLTF.preload("/models/tv_unit.glb");
 useGLTF.preload("/models/coffee_table.glb");
+useGLTF.preload("/models/lounge_chair.glb");
+useGLTF.preload("/models/ottoman.glb");
+useGLTF.preload("/models/bookshelf.glb");
+useGLTF.preload("/models/lamp_floor.glb");
+useGLTF.preload("/models/rug.glb");
+useGLTF.preload("/models/chair.glb");
+useGLTF.preload("/models/fan.glb");
+useGLTF.preload("/models/plant.glb");
 useGLTF.preload("/models/pooja_wall.glb");

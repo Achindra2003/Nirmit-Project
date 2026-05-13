@@ -22,7 +22,7 @@ interface Props {
   warmthK?: number; // 2700 (warm) - 4000 (cool)
 }
 
-const SUN_INTENSITY = 1.6;
+const SUN_INTENSITY = 2.2;
 
 export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, warmthK = 3200 }: Props) {
   const w = mmToM(roomWmm);
@@ -53,7 +53,7 @@ export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, warmthK = 3200 }
 
   return (
     <>
-      <hemisphereLight args={[skyColor, "#3a2f24", 0.45]} />
+      <hemisphereLight args={[skyColor, "#4a3828", 0.55]} />
 
       <directionalLight
         position={sunPos}
@@ -71,15 +71,25 @@ export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, warmthK = 3200 }
         shadow-bias={-0.0008}
       />
 
+      {/* Warm bounce from the floor — fills the underside of furniture */}
       <pointLight
-        position={[w / 2, h * 0.15, d / 2]}
-        intensity={0.18}
+        position={[0, h * 0.08, 0]}
+        intensity={0.35}
         color="#ffe4b5"
-        distance={Math.max(w, d) * 1.4}
-        decay={1.6}
+        distance={Math.max(w, d) * 2.0}
+        decay={1.4}
       />
 
-      <ambientLight intensity={0.15} color="#ede1c8" />
+      {/* Fill light — softens the dark side of the room opposite the window */}
+      <pointLight
+        position={[-w / 2, h * 0.55, -d / 2]}
+        intensity={0.22}
+        color="#fff3e0"
+        distance={Math.max(w, d) * 2.5}
+        decay={1.2}
+      />
+
+      <ambientLight intensity={0.22} color="#ede1c8" />
     </>
   );
 }

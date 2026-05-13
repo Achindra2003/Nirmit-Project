@@ -18,7 +18,8 @@
       "WebSearch",
       "WebFetch(domain:discourse.threejs.org)",
       "Bash(curl -s http://127.0.0.1:8000/health)",
-      "Bash(pip install *)"
+      "Bash(pip install *)",
+      "WebFetch(domain:www.sweethome3d.com)"
     ]
   }
 }

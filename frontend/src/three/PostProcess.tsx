@@ -9,8 +9,8 @@ import { ToneMappingMode } from "postprocessing";
 export function PostProcess() {
   return (
     <EffectComposer multisampling={4} enableNormalPass={false}>
-      <Bloom intensity={0.55} luminanceThreshold={0.85} luminanceSmoothing={0.25} mipmapBlur />
-      <Vignette eskil={false} offset={0.18} darkness={0.55} />
+      <Bloom intensity={0.28} luminanceThreshold={0.88} luminanceSmoothing={0.2} mipmapBlur />
+      <Vignette eskil={false} offset={0.25} darkness={0.32} />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
     </EffectComposer>
   );
