@@ -177,6 +177,7 @@ def _build_vision(
             height_mm=s.catalog.dimensions.height_mm,
             against_wall=s.against_wall,
             catalog_sku=s.catalog.sku,
+            front_clearance_mm=s.catalog.front_clearance_mm,
         )
         for s in selected
     )

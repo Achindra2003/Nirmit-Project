@@ -46,26 +46,26 @@ const card = {
   bottom: 24,
   left: "50%",
   transform: "translateX(-50%)",
-  background: "rgba(247, 241, 230, 0.97)",
-  border: "1px solid #d8cfba",
-  borderRadius: 14,
+  background: "rgba(240, 230, 211, 0.97)",
+  border: "1px solid var(--line)",
   padding: 12,
   width: 360,
-  boxShadow: "0 12px 30px rgba(42, 34, 24, 0.18)",
+  boxShadow: "0 12px 30px rgba(0, 0, 0, 0.15)",
 };
 const head = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
   paddingBottom: 8,
-  borderBottom: "1px solid #ede6d8",
+  borderBottom: "1px solid var(--line)",
 };
 const closeBtn = {
   background: "transparent",
   border: "none",
   fontSize: 22,
   lineHeight: 1,
-  color: "#6b614f",
+  color: "var(--ink-3)",
+  cursor: "pointer",
 } as const;
 const list = {
   display: "grid",
@@ -74,11 +74,12 @@ const list = {
   marginTop: 10,
 };
 const btn = {
-  background: "#fff",
-  border: "1px solid #d8cfba",
-  borderRadius: 8,
+  background: "var(--paper-3)",
+  border: "1px solid var(--line)",
   padding: "10px 12px",
   font: "inherit",
+  fontFamily: "var(--fb)",
+  fontSize: 14,
   textAlign: "left" as const,
   cursor: "pointer",
 };

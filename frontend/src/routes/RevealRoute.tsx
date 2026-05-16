@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RoomScene, type CameraView } from "@/three/RoomScene";
 import { useAppStore } from "@/store/useAppStore";
-import { ProgressTrail } from "@/components/ProgressTrail";
+import { TopNav } from "@/components/shell/TopNav";
 
 export function RevealRoute() {
   const { visions, selectedVisionId, selectVision, setStage } = useAppStore();
@@ -10,12 +10,10 @@ export function RevealRoute() {
   const vision = visions[idx] ?? visions[0];
 
   const [show, setShow]   = useState(false);
-  const [why, setWhy]     = useState(false);
   const [view, setView]   = useState<CameraView>("corner");
 
   useEffect(() => {
     setShow(false);
-    setWhy(false);
     const t = setTimeout(() => setShow(true), 800);
     return () => clearTimeout(t);
   }, [vision?.id]);
@@ -43,20 +41,7 @@ export function RevealRoute() {
   return (
     <div className="paper" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
 
-      {/* Top bar — minimal */}
-      <div style={{ height: 58, padding: "0 40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, borderBottom: "1px solid var(--line)" }}>
-        <div onClick={() => setStage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "baseline", gap: 10 }}>
-          <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 500, color: "var(--ink)" }}>Nirmit</span>
-          <span style={{ fontFamily: "var(--fh)", fontSize: 15, color: "var(--ink-3)" }}>निर्मित</span>
-        </div>
-        <ProgressTrail stage="reveal" />
-        <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-3)" }}>
-          {visions.length > 1 ? `${visions.length} rooms drawn for you` : "Your room is ready"}
-          {remaining !== 0 && (
-            <span style={{ marginLeft: 12, color: remainColor }}> · {remainFmt}</span>
-          )}
-        </span>
-      </div>
+      <TopNav stage="reveal" hideTrail />
 
       {/* Spread */}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1.15fr 1fr", minHeight: 0 }}>
@@ -124,160 +109,106 @@ export function RevealRoute() {
         </div>
 
         {/* RIGHT — info panel */}
-        <div style={{ borderLeft: "1px solid var(--line)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <AnimatePresence mode="wait">
-            {!why ? (
-              <motion.div
-                key={`main-${vision.id}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: show ? 1 : 0, y: show ? 0 : 10 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", padding: "28px 36px 28px 32px" }}
-              >
-                {/* Dot navigation */}
-                {visions.length > 1 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
-                    {visions.map((v, i) => {
-                      const sel = i === idx;
-                      return (
-                        <div
-                          key={v.id}
-                          onClick={() => selectVision(v.id)}
-                          title={v.name}
-                          style={{
-                            height: 8,
-                            width: sel ? 28 : 8,
-                            borderRadius: 4,
-                            background: sel ? "var(--terra)" : "var(--line-2)",
-                            cursor: "pointer",
-                            transition: "width .28s ease, background .28s ease",
-                            flexShrink: 0,
-                          }}
-                        />
-                      );
-                    })}
-                    <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em", marginLeft: 6 }}>
-                      {String(idx + 1).padStart(2, "0")} / {String(visions.length).padStart(2, "0")}
-                    </span>
+        <div style={{ borderLeft: "1px solid var(--line)", display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--paper)" }}>
+          <motion.div
+            key={`main-${vision.id}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: show ? 1 : 0, y: show ? 0 : 10 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", padding: "28px 36px 28px 32px" }}
+          >
+            {/* Dot navigation */}
+            {visions.length > 1 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
+                {visions.map((v, i) => {
+                  const sel = i === idx;
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => selectVision(v.id)}
+                      title={v.name}
+                      style={{
+                        height: 8,
+                        width: sel ? 28 : 8,
+                        borderRadius: 4,
+                        background: sel ? "var(--terra)" : "var(--line-2)",
+                        cursor: "pointer",
+                        transition: "width .28s ease, background .28s ease",
+                        flexShrink: 0,
+                      }}
+                    />
+                  );
+                })}
+                <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em", marginLeft: 6 }}>
+                  {String(idx + 1).padStart(2, "0")} / {String(visions.length).padStart(2, "0")}
+                </span>
+              </div>
+            )}
+
+            {/* Vision name */}
+            <h2 style={{ fontFamily: "var(--fd)", fontSize: "clamp(28px, 2.8vw, 38px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.015em", color: "var(--ink)", marginBottom: 8 }}>
+              {vision.name}
+            </h2>
+
+            {/* Tagline */}
+            <div className="pull-note" style={{ marginBottom: 24 }}>
+              {vision.tagline}
+            </div>
+
+            {/* Insight card */}
+            <div style={{ background: "var(--paper-3)", border: "1px solid var(--line)", padding: "18px 20px", marginBottom: 24 }}>
+              <span className="eyebrow" style={{ display: "block", marginBottom: 10 }}>The design thinking</span>
+              <p style={{ fontFamily: "var(--fb)", fontSize: 15, fontWeight: 500, lineHeight: 1.6, color: "var(--ink)", marginBottom: 10 }}>
+                {vision.reasoning.headline}
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {vision.reasoning.bullets.map((b, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--terra)", flexShrink: 0, marginTop: 7 }} />
+                    <p style={{ fontFamily: "var(--fb)", fontSize: 14, lineHeight: 1.6, color: "var(--ink-2)" }}>{b}</p>
                   </div>
-                )}
+                ))}
+              </div>
 
-                {/* Vision name */}
-                <h2 style={{ fontFamily: "var(--fd)", fontSize: "clamp(28px, 2.8vw, 38px)", fontWeight: 500, lineHeight: 1.05, letterSpacing: "-0.018em", color: "var(--ink)", marginBottom: 8 }}>
-                  {vision.name}
-                </h2>
-
-                {/* Tagline */}
-                <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 16, color: "var(--terra)", marginBottom: 24, lineHeight: 1.4 }}>
-                  {vision.tagline}
-                </p>
-
-                {/* Insight card */}
-                <div style={{ background: "var(--paper-3)", border: "1px solid var(--line)", padding: "18px 20px", marginBottom: 24 }}>
-                  <span className="eyebrow" style={{ display: "block", marginBottom: 10 }}>The design thinking</span>
-                  <p style={{ fontFamily: "var(--fd)", fontSize: 16, fontWeight: 500, lineHeight: 1.5, color: "var(--ink)", marginBottom: 10 }}>
-                    {vision.reasoning.headline}
-                  </p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {vision.reasoning.bullets.slice(0, 3).map((b, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                        <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--terra)", flexShrink: 0, marginTop: 7 }} />
-                        <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, lineHeight: 1.55, color: "var(--ink-2)" }}>{b}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Cost */}
-                <div style={{ marginBottom: 24 }}>
-                  <span className="eyebrow" style={{ display: "block", marginBottom: 8 }}>Total estimate</span>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                    <span style={{ fontFamily: "var(--fd)", fontSize: "clamp(32px, 3.5vw, 44px)", fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.02em" }}>{totalFmt}</span>
-                    <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>OF {budgetFmt}</span>
-                  </div>
-                  <div style={{ fontFamily: "var(--fb)", fontSize: 12.5, color: remainColor, marginTop: 4 }}>{remainFmt}</div>
-                </div>
-
-                {/* CTAs */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: "auto" }}>
-                  <button
-                    onClick={() => setStage("planner")}
-                    style={{ width: "100%", background: "var(--terra)", color: "var(--paper)", border: "none", padding: "14px 24px", fontFamily: "var(--fb)", fontSize: 13, fontWeight: 600, letterSpacing: "0.04em", cursor: "pointer", textTransform: "uppercase" as const, transition: "background .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--terra-dk)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "var(--terra)"; }}
-                  >
-                    Start with this room
-                    <span style={{ fontSize: 16, fontWeight: 400 }}>→</span>
-                  </button>
-                  <button
-                    onClick={() => setWhy(true)}
-                    style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-3)", textDecoration: "underline", textUnderlineOffset: 4, padding: "4px 0" }}
-                  >
-                    Why was this designed for me?
-                  </button>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key={`why-${vision.id}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", padding: "28px 36px 28px 32px" }}
-              >
-                <button
-                  onClick={() => setWhy(false)}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--fb)", fontSize: 12, color: "var(--ink-3)", textAlign: "left" as const, padding: "0 0 20px 0", display: "flex", alignItems: "center", gap: 6 }}
-                >
-                  <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>→</span> Back
-                </button>
-
-                <h2 style={{ fontFamily: "var(--fd)", fontSize: 28, fontWeight: 500, marginBottom: 24, color: "var(--ink)" }}>
-                  Why we designed it this way
-                </h2>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 18, flex: 1 }}>
-                  {vision.reasoning.bullets.map((b, i) => (
-                    <div key={i} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-                      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--terra)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--paper)" }} />
-                      </div>
-                      <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 15.5, color: "var(--ink-2)", lineHeight: 1.6 }}>{b}</p>
+              {vision.reasoning.vastu_notes.length > 0 && (
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed var(--line)" }}>
+                  <span className="eyebrow" style={{ display: "block", marginBottom: 10, color: "var(--ink)" }}>Vastu Considerations</span>
+                  {vision.reasoning.vastu_notes.map((n, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
+                      <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--ink-3)", flexShrink: 0, marginTop: 7 }} />
+                      <p style={{ fontFamily: "var(--fb)", fontSize: 14, color: "var(--ink-2)", lineHeight: 1.55 }}>{n}</p>
                     </div>
                   ))}
-
-                  {vision.reasoning.vastu_notes.length > 0 && (
-                    <div style={{ marginTop: 8, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
-                      <span className="eyebrow" style={{ display: "block", marginBottom: 10, color: "var(--green)" }}>Vastu</span>
-                      {vision.reasoning.vastu_notes.map((n, i) => (
-                        <p key={i} style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14.5, color: "var(--walnut)", lineHeight: 1.55, marginBottom: 8 }}>{n}</p>
-                      ))}
-                    </div>
-                  )}
-
-                  {vision.reasoning.accessibility_notes?.length > 0 && (
-                    <div style={{ marginTop: 4, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
-                      <span className="eyebrow" style={{ display: "block", marginBottom: 10 }}>Accessibility</span>
-                      {vision.reasoning.accessibility_notes.map((n, i) => (
-                        <p key={i} style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14.5, color: "var(--ink-2)", lineHeight: 1.55, marginBottom: 8 }}>{n}</p>
-                      ))}
-                    </div>
-                  )}
                 </div>
+              )}
+            </div>
 
-                <button
-                  onClick={() => setStage("planner")}
-                  style={{ width: "100%", background: "var(--terra)", color: "var(--paper)", border: "none", padding: "14px 24px", fontFamily: "var(--fb)", fontSize: 13, fontWeight: 600, letterSpacing: "0.04em", cursor: "pointer", textTransform: "uppercase" as const, transition: "background .2s", marginTop: 28, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--terra-dk)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "var(--terra)"; }}
-                >
-                  Start with this room →
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            {/* Cost */}
+            <div style={{ marginBottom: 24 }}>
+              <div className="rule-ornamental" style={{ marginBottom: 16 }}>
+                <span className="rule-ornamental-glyph">◆</span>
+              </div>
+              <span className="eyebrow" style={{ display: "block", marginBottom: 8 }}>Total estimate</span>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                <span style={{ fontFamily: "var(--fd)", fontSize: "clamp(32px, 3.5vw, 44px)", fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.02em" }}>{totalFmt}</span>
+                <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>OF {budgetFmt}</span>
+              </div>
+              <div style={{ fontFamily: "var(--fb)", fontSize: 13, color: remainColor, marginTop: 4, fontWeight: 500 }}>{remainFmt}</div>
+            </div>
+
+            {/* CTAs */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: "auto" }}>
+              <button
+                className="btn-primary"
+                onClick={() => setStage("planner")}
+                style={{ width: "100%" }}
+              >
+                Start with this room
+                <span style={{ fontSize: 16, fontWeight: 400 }}>→</span>
+              </button>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

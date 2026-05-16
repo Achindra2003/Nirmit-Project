@@ -20,6 +20,7 @@ class Requirement:
     sub_category: str
     priority: str  # "mandatory" | "recommended" | "optional"
     against_wall: bool = False
+    count: int = 1  # multiple instances (e.g. 4 dining chairs around one table)
 
 
 # ---------- Templates per philosophy + room ----------
@@ -35,9 +36,13 @@ _LIVING_GATHERING: tuple[Requirement, ...] = (
     Requirement("lounge_chair", "recommended"),
     Requirement("rug", "recommended"),
     Requirement("ottoman", "recommended"),
+    Requirement("side_table", "recommended"),
     Requirement("bookshelf", "recommended", against_wall=True),
+    Requirement("ceiling_fan", "recommended"),  # Indian-essential — almost every room has one
     Requirement("plant", "optional"),
     Requirement("lamp", "optional"),
+    Requirement("table_lamp", "optional"),
+    Requirement("mirror", "optional"),
     Requirement("mandir_wall", "recommended", against_wall=True),
 )
 
@@ -45,8 +50,11 @@ _LIVING_BREATH: tuple[Requirement, ...] = (
     Requirement("sofa", "mandatory", against_wall=True),
     Requirement("tv_unit", "mandatory", against_wall=True),
     Requirement("coffee_table", "mandatory"),
+    Requirement("ceiling_fan", "recommended"),
     Requirement("plant", "recommended"),
+    Requirement("rug", "recommended"),
     Requirement("lamp", "optional"),
+    Requirement("mirror", "optional"),  # bounces light around for the airy feel
     Requirement("mandir_wall", "recommended", against_wall=True),
 )
 
@@ -58,22 +66,31 @@ _LIVING_KEEPER: tuple[Requirement, ...] = (
     Requirement("cabinet", "recommended", against_wall=True),
     Requirement("shoe_rack", "recommended", against_wall=True),
     Requirement("drawer", "optional", against_wall=True),
+    Requirement("ceiling_fan", "recommended"),
+    Requirement("side_table", "optional"),
     Requirement("mandir_wall", "recommended", against_wall=True),
 )
 
 _BEDROOM_GATHERING: tuple[Requirement, ...] = (
     Requirement("bed_queen", "mandatory", against_wall=True),
     Requirement("wardrobe", "mandatory", against_wall=True),
+    Requirement("side_table", "recommended", count=2),  # nightstands on both sides
     Requirement("desk", "recommended", against_wall=True),
     Requirement("desk_chair", "recommended"),
+    Requirement("ceiling_fan", "recommended"),
     Requirement("rug", "optional"),
     Requirement("plant", "optional"),
+    Requirement("mirror", "optional"),
+    Requirement("table_lamp", "optional", count=2),
 )
 
 _BEDROOM_BREATH: tuple[Requirement, ...] = (
     Requirement("bed_queen", "mandatory", against_wall=True),
     Requirement("wardrobe", "mandatory", against_wall=True),
+    Requirement("side_table", "recommended", count=2),
+    Requirement("ceiling_fan", "recommended"),
     Requirement("plant", "recommended"),
+    Requirement("mirror", "optional"),
 )
 
 _BEDROOM_KEEPER: tuple[Requirement, ...] = (
@@ -81,7 +98,66 @@ _BEDROOM_KEEPER: tuple[Requirement, ...] = (
     Requirement("wardrobe", "mandatory", against_wall=True),
     Requirement("drawer", "recommended", against_wall=True),
     Requirement("cabinet", "recommended", against_wall=True),
+    Requirement("side_table", "recommended", count=2),
+    Requirement("ceiling_fan", "recommended"),
     Requirement("desk", "optional", against_wall=True),
+)
+
+_DINING_GATHERING: tuple[Requirement, ...] = (
+    Requirement("dining_table", "mandatory"),
+    Requirement("dining_chair", "mandatory", count=4),
+    Requirement("sideboard", "recommended", against_wall=True),
+    Requirement("ceiling_fan", "recommended"),
+    Requirement("rug", "optional"),
+    Requirement("plant", "optional"),
+    Requirement("mirror", "optional"),
+    Requirement("mandir_wall", "recommended", against_wall=True),
+)
+
+_DINING_BREATH: tuple[Requirement, ...] = (
+    Requirement("dining_table", "mandatory"),
+    Requirement("dining_chair", "mandatory", count=4),
+    Requirement("ceiling_fan", "recommended"),
+    Requirement("plant", "optional"),
+    Requirement("mirror", "optional"),
+)
+
+_DINING_KEEPER: tuple[Requirement, ...] = (
+    Requirement("dining_table", "mandatory"),
+    Requirement("dining_chair", "mandatory", count=4),
+    Requirement("sideboard", "recommended", against_wall=True),
+    Requirement("cabinet", "optional", against_wall=True),
+    Requirement("ceiling_fan", "recommended"),
+)
+
+_STUDY_GATHERING: tuple[Requirement, ...] = (
+    Requirement("desk", "mandatory", against_wall=True),
+    Requirement("desk_chair", "mandatory"),
+    Requirement("bookshelf", "recommended", against_wall=True),
+    Requirement("cabinet", "optional", against_wall=True),
+    Requirement("ceiling_fan", "recommended"),
+    Requirement("table_lamp", "recommended"),  # task lighting on the desk
+    Requirement("plant_small", "optional"),
+    Requirement("plant", "optional"),
+    Requirement("lamp", "optional"),
+)
+
+_STUDY_BREATH: tuple[Requirement, ...] = (
+    Requirement("desk", "mandatory", against_wall=True),
+    Requirement("desk_chair", "mandatory"),
+    Requirement("table_lamp", "recommended"),
+    Requirement("ceiling_fan", "recommended"),
+    Requirement("plant", "recommended"),
+)
+
+_STUDY_KEEPER: tuple[Requirement, ...] = (
+    Requirement("desk", "mandatory", against_wall=True),
+    Requirement("desk_chair", "mandatory"),
+    Requirement("bookshelf", "mandatory", against_wall=True),
+    Requirement("cabinet", "recommended", against_wall=True),
+    Requirement("drawer", "optional", against_wall=True),
+    Requirement("table_lamp", "recommended"),
+    Requirement("ceiling_fan", "recommended"),
 )
 
 _TEMPLATES: dict[tuple[RoomType, VisionPhilosophy], tuple[Requirement, ...]] = {
@@ -91,6 +167,12 @@ _TEMPLATES: dict[tuple[RoomType, VisionPhilosophy], tuple[Requirement, ...]] = {
     (RoomType.BEDROOM, VisionPhilosophy.GATHERING): _BEDROOM_GATHERING,
     (RoomType.BEDROOM, VisionPhilosophy.BREATH): _BEDROOM_BREATH,
     (RoomType.BEDROOM, VisionPhilosophy.KEEPER): _BEDROOM_KEEPER,
+    (RoomType.DINING, VisionPhilosophy.GATHERING): _DINING_GATHERING,
+    (RoomType.DINING, VisionPhilosophy.BREATH): _DINING_BREATH,
+    (RoomType.DINING, VisionPhilosophy.KEEPER): _DINING_KEEPER,
+    (RoomType.STUDY, VisionPhilosophy.GATHERING): _STUDY_GATHERING,
+    (RoomType.STUDY, VisionPhilosophy.BREATH): _STUDY_BREATH,
+    (RoomType.STUDY, VisionPhilosophy.KEEPER): _STUDY_KEEPER,
 }
 
 _BUDGET_TARGET_PCT: dict[VisionPhilosophy, float] = {
@@ -163,15 +245,19 @@ def select_items(
         # 15% buffer because we want philosophies to *feel* their density).
         cheapest = min(candidates, key=lambda c: c.price_inr)
         is_mandatory = req.priority == "mandatory"
-        if not is_mandatory and (spent + cheapest.price_inr) > int(target_spend * 1.15):
+        total_cost = cheapest.price_inr * req.count
+        if not is_mandatory and (spent + total_cost) > int(target_spend * 1.15):
             continue
 
-        chosen.append(SelectedItem(
-            item_id=f"{req.sub_category}-{idx}",
-            catalog=cheapest,
-            against_wall=req.against_wall,
-        ))
-        spent += cheapest.price_inr
+        # Create N instances when count > 1 (e.g. 4 dining chairs share the same
+        # SKU but each needs its own placement). IDs stay unique per instance.
+        for i in range(req.count):
+            chosen.append(SelectedItem(
+                item_id=f"{req.sub_category}-{idx}-{i}" if req.count > 1 else f"{req.sub_category}-{idx}",
+                catalog=cheapest,
+                against_wall=req.against_wall,
+            ))
+        spent += total_cost
         seen_skus.add(cheapest.sku)
 
     return chosen

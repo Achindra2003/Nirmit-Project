@@ -18,8 +18,9 @@ router = APIRouter()
 
 @router.post("/export")
 async def export(req: ExportRequest):
+    city = req.room_state.intake.city
     if req.format == "pdf":
-        pdf_bytes = build_quotation_pdf(req.room_state, city="Mumbai")
+        pdf_bytes = build_quotation_pdf(req.room_state, city=city)
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
@@ -29,7 +30,7 @@ async def export(req: ExportRequest):
             },
         )
 
-    boq = build_boq(req.room_state, city="Mumbai")
+    boq = build_boq(req.room_state, city=city)
     return JSONResponse(
         {
             "city": boq.city,

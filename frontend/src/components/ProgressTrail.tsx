@@ -1,6 +1,6 @@
 import type { Stage } from "@/store/useAppStore";
 
-const STEPS = ["Discover", "Visions", "Design", "Style", "The Brief"] as const;
+const STEPS = ["Discover", "Visions", "Design", "Style", "Quotation"] as const;
 
 const STAGE_TO_STEP: Partial<Record<Stage, number>> = {
   intake:     0,
@@ -18,36 +18,56 @@ interface Props {
 
 export function ProgressTrail({ stage, dark = false }: Props) {
   const active = STAGE_TO_STEP[stage] ?? -1;
-  const ink    = dark ? "rgba(242,235,221,.55)" : "var(--ink-3)";
-  const inkFt  = dark ? "rgba(242,235,221,.25)" : "var(--line-2)";
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 0, height: 44, padding: "0 0", userSelect: "none" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 0, height: 44, userSelect: "none" }}>
       {STEPS.map((label, i) => {
         const done   = i < active;
         const isCurr = i === active;
+
+        const color = isCurr
+          ? "var(--terra)"
+          : done
+            ? (dark ? "rgba(242,235,221,.7)" : "var(--ink)")
+            : (dark ? "rgba(242,235,221,.3)" : "var(--ink-3)");
+
+        const connectorBg = done
+          ? (dark ? "rgba(242,235,221,.35)" : "var(--terra)")
+          : (dark ? "rgba(242,235,221,.12)" : "var(--line)");
+
         return (
           <div key={label} style={{ display: "flex", alignItems: "center" }}>
-            {/* Step label */}
-            <span style={{
-              fontFamily: "var(--fm)",
-              fontSize: 9.5,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase" as const,
-              color: isCurr ? "var(--terra)" : done ? (dark ? "rgba(242,235,221,.7)" : "var(--ink-2)") : ink,
-              fontWeight: isCurr ? 600 : 400,
-              transition: "color .3s ease",
-              whiteSpace: "nowrap" as const,
-            }}>
-              {label}
-            </span>
-            {/* Connector (not after last) */}
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              {/* Step dot */}
+              <div style={{
+                width: isCurr ? 8 : 6,
+                height: isCurr ? 8 : 6,
+                borderRadius: "50%",
+                background: isCurr ? "var(--terra)" : done ? (dark ? "rgba(242,235,221,.6)" : "var(--ink-2)") : (dark ? "rgba(242,235,221,.15)" : "var(--line)"),
+                transition: "all .3s ease",
+                flexShrink: 0,
+              }} />
+              {/* Label */}
+              <span style={{
+                fontFamily: "var(--fb)",
+                fontSize: 11,
+                fontWeight: isCurr ? 600 : 400,
+                letterSpacing: "0.04em",
+                color,
+                transition: "color .3s ease",
+                whiteSpace: "nowrap" as const,
+              }}>
+                {label}
+              </span>
+            </div>
+            {/* Connector */}
             {i < STEPS.length - 1 && (
               <div style={{
-                width: 28,
-                height: 1,
+                width: 24,
+                height: 1.5,
                 margin: "0 8px",
-                background: done ? (dark ? "rgba(242,235,221,.35)" : "var(--ink-3)") : inkFt,
+                background: connectorBg,
+                borderRadius: 1,
                 transition: "background .3s ease",
               }} />
             )}

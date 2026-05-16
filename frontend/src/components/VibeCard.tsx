@@ -70,11 +70,11 @@ export function VibeCard({ vibe, selected, onSelect }: Props) {
       onClick={() => onSelect(vibe)}
       style={{
         ...cardStyle,
-        outline: selected ? "3px solid var(--warm-accent)" : "1px solid #d8cfba",
+        outline: selected ? "3px solid var(--terra)" : "1px solid var(--line)",
         transform: selected ? "translateY(-2px)" : "translateY(0)",
         boxShadow: selected
-          ? "0 14px 36px rgba(122, 92, 58, 0.22)"
-          : "0 6px 18px rgba(42, 34, 24, 0.06)",
+          ? "0 14px 36px rgba(0, 0, 0, 0.15)"
+          : "0 6px 18px rgba(0, 0, 0, 0.05)",
       }}
     >
       <VibeIllustration motif={meta.motif} palette={meta.palette} />
@@ -155,18 +155,18 @@ function VibeIllustration({
 }
 
 const cardStyle = {
-  background: "#fff",
-  border: "1px solid #d8cfba",
-  borderRadius: 12,
+  background: "var(--paper-3)",
+  border: "1px solid var(--line)",
+  borderRadius: 0,
   padding: 0,
   textAlign: "left" as const,
   cursor: "pointer",
   display: "flex",
   flexDirection: "column" as const,
   overflow: "hidden",
-  transition: "transform 220ms ease, box-shadow 220ms ease",
+  transition: "transform 220ms ease, box-shadow 220ms ease, outline 220ms ease",
   font: "inherit",
 };
-const textBlock = { padding: "10px 12px 12px", display: "flex", flexDirection: "column" as const, gap: 2 };
-const titleStyle = { fontSize: 14, fontWeight: 600 } as const;
-const descStyle = { fontSize: 12, color: "#6b614f", fontStyle: "normal" as const };
+const textBlock = { padding: "12px 14px 14px", display: "flex", flexDirection: "column" as const, gap: 3 };
+const titleStyle = { fontFamily: "var(--fb)", fontSize: 14, fontWeight: 600, color: "var(--ink)" } as const;
+const descStyle = { fontFamily: "var(--fb)", fontSize: 12, color: "var(--ink-2)" } as const;

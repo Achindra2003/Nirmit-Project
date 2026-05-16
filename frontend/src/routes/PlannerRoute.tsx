@@ -3,11 +3,9 @@ import { api } from "@/api/client";
 import type { ChatResponse, Intent, IntentKind, RoomState, Vision } from "@/api/types";
 import { RoomScene, type CameraView } from "@/three/RoomScene";
 import { Planner2D } from "@/components/Planner2D";
-import { FinishingPanel } from "@/components/FinishingPanel";
 import { useAppStore } from "@/store/useAppStore";
 
 type ViewMode = "3d" | "2d";
-type RoomMode = "furniture" | "finishing";
 
 const SUGGESTIONS = ["Make the sofa bigger", "Add more storage", "Make it feel warmer", "Lighter and airier", "Add a study desk"];
 
@@ -32,13 +30,14 @@ export function PlannerRoute() {
   const [draft, setDraft]       = useState("");
   const [sending, setSending]   = useState(false);
   const [pending, setPending]   = useState<ChatResponse | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("3d");
+  const [viewMode, setViewMode] = useState<ViewMode>("2d");
   const [camView, setCamView]   = useState<CameraView>("corner");
-  const [roomMode, setRoomMode] = useState<RoomMode>("furniture");
-  const [savedId, setSavedId]   = useState<string | null>(null);
-  const [saving, setSaving]     = useState(false);
   const [advisory, setAdvisory] = useState(false);
   const [backendUp, setBackendUp] = useState(true);
+  const [showRoomEdit, setShowRoomEdit] = useState(false);
+  const [showCatalogue, setShowCatalogue] = useState(false);
+  const [roomW, setRoomW] = useState(baseVision?.room_state.intake.room_dimensions.width_mm ?? 3600);
+  const [roomD, setRoomD] = useState(baseVision?.room_state.intake.room_dimensions.depth_mm ?? 4200);
   const scrollRef               = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,8 +53,8 @@ export function PlannerRoute() {
   }, [baseVision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if ((viewMode !== "3d" || roomMode !== "furniture") && editMode === "move") setEditMode("browse");
-  }, [viewMode, roomMode]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (viewMode !== "3d" && editMode === "move") setEditMode("browse");
+  }, [viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -102,8 +101,6 @@ export function PlannerRoute() {
   function rotateItem(id: string) {
     void applyOneIntent({ kind: "rotate", target_item_id: id, parameters: { delta_deg: 90 } });
   }
-  function finishingIntent(intent: Intent) { return applyOneIntent(intent); }
-
   async function send() {
     if (!draft.trim() || sending || !room) return;
     const turn = { role: "user" as const, content: draft.trim() };
@@ -132,18 +129,7 @@ export function PlannerRoute() {
     }
   }
 
-  async function save() {
-    if (!room || saving) return;
-    setSaving(true);
-    try {
-      const r = await api.saveDesign({ name: baseVision!.name, philosophy: baseVision!.philosophy, room_state: room, existing_id: savedId });
-      setSavedId(r.id);
-    } catch (e) {
-      console.warn("save failed", e);
-    } finally {
-      setSaving(false);
-    }
-  }
+
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", width: "100%", height: "100vh", background: "var(--basalt)" }}>
@@ -152,66 +138,140 @@ export function PlannerRoute() {
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* Canvas header */}
-        <div style={{ height: 56, padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderBottom: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)" }}>
-          <div onClick={() => setStage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontFamily: "var(--fd)", fontSize: 18, fontWeight: 500, color: "var(--paper)" }}>Nirmit</span>
+        <div style={{ height: 56, padding: "0 20px 0 24px", display: "flex", alignItems: "center", gap: 16, flexShrink: 0, borderBottom: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)" }}>
+
+          {/* Left — logo */}
+          <div onClick={() => setStage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 600, color: "var(--paper)", letterSpacing: "-0.01em" }}>Nirmit</span>
             <span
               title={backendUp ? "Backend connected" : "Backend offline — start the server on port 8000"}
-              style={{ width: 7, height: 7, borderRadius: "50%", background: backendUp ? "var(--leaf)" : "#c25a3a", flexShrink: 0, marginBottom: 1 }}
+              style={{ width: 7, height: 7, borderRadius: "50%", background: backendUp ? "var(--leaf)" : "#c25a3a", flexShrink: 0 }}
             />
           </div>
 
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "rgba(242,235,221,.28)", letterSpacing: "0.12em" }}>DRAWING · </span>
-            <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 17, fontWeight: 500, color: "var(--paper)" }}>{baseVision.name}</span>
-            <span style={{ fontFamily: "var(--fm)", fontSize: 10, color: "rgba(242,235,221,.28)" }}>{wFt}′-0″ × {dFt}′-0″</span>
+          {/* Centre — room name + dims, flex-1 so it fills remaining space and centres naturally */}
+          <div style={{ flex: 1, display: "flex", alignItems: "baseline", justifyContent: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
+            <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 17, fontWeight: 500, color: "var(--paper)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{baseVision.name}</span>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 10, color: "rgba(242,235,221,.35)", letterSpacing: "0.04em", flexShrink: 0 }}>{wFt}′-0″ × {dFt}′-0″</span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <PillSeg
-              options={[["furniture", "Furniture"], ["finishing", "Finishing"]]}
-              value={roomMode}
-              onChange={(v) => setRoomMode(v as RoomMode)}
-            />
-            <PillSeg
-              options={[["3d", "3D"], ["2d", "2D"]]}
-              value={viewMode}
-              onChange={(v) => setViewMode(v as ViewMode)}
-            />
-            {roomMode === "furniture" && (
+          {/* Right — 2D/3D toggle + controls */}
+          <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
+            {/* Prominent segmented view toggle */}
+            <div
+              role="tablist"
+              aria-label="View mode"
+              style={{
+                display: "flex",
+                background: "rgba(242,235,221,.04)",
+                border: "1px solid rgba(242,235,221,.18)",
+                borderRadius: 4,
+                padding: 3,
+                gap: 2,
+                position: "relative",
+              }}
+            >
+              {(["2d", "3d"] as ViewMode[]).map((m) => {
+                const sel = viewMode === m;
+                return (
+                  <button
+                    key={m}
+                    role="tab"
+                    aria-selected={sel}
+                    onClick={() => setViewMode(m)}
+                    style={{
+                      padding: "8px 22px",
+                      background: sel ? "var(--terra)" : "transparent",
+                      border: "none",
+                      borderRadius: 3,
+                      color: sel ? "var(--paper)" : "rgba(242,235,221,.55)",
+                      fontFamily: "var(--fm)",
+                      fontSize: 11.5,
+                      fontWeight: sel ? 600 : 500,
+                      letterSpacing: "0.14em",
+                      cursor: "pointer",
+                      transition: "background .18s ease, color .18s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 7,
+                    }}
+                  >
+                    <span aria-hidden style={{ fontSize: 13, lineHeight: 1, opacity: sel ? 1 : 0.55 }}>
+                      {m === "2d" ? "▦" : "◰"}
+                    </span>
+                    {m.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+            {/* Annotative edit toggle */}
+            <button
+              onClick={() => { setLayoutEditMode(!layoutEditMode); if (layoutEditMode) { setSelectedId(null); setShowCatalogue(false); } }}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "var(--fb)",
+                fontSize: 11.5,
+                letterSpacing: "0.06em",
+                color: layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.55)",
+                borderBottom: `1px solid ${layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.2)"}`,
+                padding: "2px 0",
+                transition: "color .2s, border-color .2s",
+              }}
+            >
+              {layoutEditMode ? "✓ Done" : "Edit"}
+            </button>
+            {layoutEditMode && (
               <button
-                onClick={() => setLayoutEditMode(!layoutEditMode)}
+                onClick={() => setShowCatalogue(v => !v)}
                 style={{
-                  background: layoutEditMode ? "rgba(125,180,108,.18)" : "transparent",
-                  border: `1px solid ${layoutEditMode ? "rgba(125,180,108,.6)" : "rgba(242,235,221,.18)"}`,
-                  color: layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.55)",
-                  padding: "7px 14px", fontFamily: "var(--fb)", fontSize: 11, fontWeight: 500,
-                  letterSpacing: "0.06em", cursor: "pointer", textTransform: "uppercase" as const, transition: "all .2s",
+                  background: showCatalogue ? "rgba(242,235,221,.1)" : "transparent",
+                  border: "1px solid rgba(242,235,221,.2)",
+                  cursor: "pointer",
+                  fontFamily: "var(--fm)",
+                  fontSize: 10,
+                  letterSpacing: "0.08em",
+                  color: showCatalogue ? "var(--paper)" : "rgba(242,235,221,.45)",
+                  padding: "4px 10px",
+                  transition: "all .15s",
                 }}
               >
-                {layoutEditMode ? "Done Editing" : "Edit Layout"}
+                + Furniture
               </button>
             )}
             <button
-              onClick={() => setStage("style")}
-              style={{ background: "transparent", border: "1px solid rgba(242,235,221,.18)", color: "rgba(242,235,221,.55)", padding: "7px 18px", fontFamily: "var(--fb)", fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", cursor: "pointer", textTransform: "uppercase" as const, transition: "all .2s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(242,235,221,.5)"; e.currentTarget.style.color = "var(--paper)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(242,235,221,.18)"; e.currentTarget.style.color = "rgba(242,235,221,.55)"; }}
+              onClick={() => setShowRoomEdit(v => !v)}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "var(--fm)",
+                fontSize: 10,
+                letterSpacing: "0.08em",
+                color: "rgba(242,235,221,.35)",
+                padding: "2px 0",
+              }}
+              title="Adjust room dimensions"
             >
-              Materials →
+              ⊡ Size
             </button>
           </div>
         </div>
 
         {/* Canvas area */}
-        <div style={{ flex: 1, position: "relative", overflow: "hidden", background: "var(--basalt)" }}>
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex" }}>
+          {/* Main canvas */}
+          <div className="canvas-viewport-container" style={{ flex: 1, height: "100%", position: "relative" }}>
+            <div className="canvas-corner-mark mark-tl">+</div>
+            <div className="canvas-corner-mark mark-tr">+</div>
           {viewMode === "3d" ? (
             <RoomScene
               room={room}
-              selectedItemId={roomMode === "furniture" ? selectedId : null}
-              onSelectItem={roomMode === "furniture" ? setSelectedId : () => {}}
-              onMoveItem={roomMode === "furniture" ? moveItem : undefined}
-              moveMode={roomMode === "furniture" && moveMode}
+              selectedItemId={layoutEditMode ? selectedId : null}
+              onSelectItem={layoutEditMode ? setSelectedId : () => {}}
+              onMoveItem={layoutEditMode ? moveItem : undefined}
+              moveMode={moveMode}
               view={camView}
               warmthK={room.lighting_kelvin}
               showAtmosphere
@@ -219,34 +279,63 @@ export function PlannerRoute() {
           ) : (
             <Planner2D
               room={room}
-              selectedItemId={roomMode === "furniture" ? selectedId : null}
-              onSelectItem={roomMode === "furniture" ? setSelectedId : () => {}}
-              onMoveItem={roomMode === "furniture" ? moveItem : undefined}
-              onRotateItem={roomMode === "furniture" ? rotateItem : undefined}
+              selectedItemId={layoutEditMode ? selectedId : null}
+              onSelectItem={layoutEditMode ? setSelectedId : () => {}}
+              onMoveItem={layoutEditMode ? moveItem : undefined}
+              onRotateItem={layoutEditMode ? rotateItem : undefined}
             />
-          )}
-
-          {/* Finishing panel slide-in */}
-          {roomMode === "finishing" && (
-            <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 300, background: "rgba(242,235,221,.97)", borderLeft: "1px solid var(--line)", display: "flex", flexDirection: "column", boxShadow: "-12px 0 30px rgba(0,0,0,.2)" }}>
-              <FinishingPanel room={room} onApply={finishingIntent} />
-            </div>
           )}
 
           {/* Camera presets (3D) */}
           {viewMode === "3d" && (
-            <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 0, background: "rgba(20,16,12,.7)", backdropFilter: "blur(10px)", border: "1px solid rgba(242,235,221,.1)" }}>
+            <div className="floating-draft-panel" style={{ bottom: "var(--s-5)", left: "50%", transform: "translateX(-50%)", display: "flex", gap: 16 }}>
               {(["eye", "corner", "top", "walk"] as const).map((v) => (
-                <button key={v} onClick={() => setCamView(v)} style={{ background: camView === v ? "rgba(242,235,221,.12)" : "transparent", border: "none", color: camView === v ? "var(--paper)" : "rgba(242,235,221,.4)", padding: "8px 16px", fontFamily: "var(--fm)", fontSize: 10, letterSpacing: "0.1em", cursor: "pointer", textTransform: "uppercase" as const, transition: "all .2s", borderRight: "1px solid rgba(242,235,221,.08)" }}>
-                  {{ eye: "ENTRANCE", corner: "3/4", top: "PLAN", walk: "WALK" }[v]}
+                <button key={v} className="tool-action-lnk" onClick={() => setCamView(v)} style={{ color: camView === v ? "var(--leaf)" : "var(--ink-2)", borderBottomColor: camView === v ? "var(--leaf)" : "transparent", padding: 0 }}>
+                  {{ eye: "Entrance", corner: "3/4 View", top: "Plan", walk: "Walk" }[v]}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Selected-item controls */}
-          {roomMode === "furniture" && selected && (
-            <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 6, background: "rgba(242,235,221,.97)", border: "1px solid var(--line)", padding: "8px 10px", boxShadow: "0 4px 20px rgba(0,0,0,.2)", maxWidth: "calc(100% - 48px)", flexWrap: "wrap" as const, ...(moveMode ? { outline: "2px solid var(--leaf)", outlineOffset: 2 } : {}) }}>
+          {/* Room size edit overlay */}
+          {showRoomEdit && (
+            <div className="floating-draft-panel" style={{ top: "var(--s-4)", right: "var(--s-4)", display: "flex", flexDirection: "column", gap: 12, minWidth: 200 }}>
+              <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)" }}>ROOM DIMENSIONS</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {(["Width", "Depth"] as const).map((axis) => {
+                  const val = axis === "Width" ? roomW : roomD;
+                  const setter = axis === "Width" ? setRoomW : setRoomD;
+                  const ft = (val / 304.8).toFixed(1);
+                  return (
+                    <div key={axis}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontFamily: "var(--fb)", fontSize: 12, color: "var(--ink-2)" }}>{axis}</span>
+                        <span style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)" }}>{ft}′</span>
+                      </div>
+                      <input type="range" min={2400} max={7200} step={100} value={val}
+                        onChange={(e) => setter(parseInt(e.target.value))}
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => {
+                  if (!room) return;
+                  const updated = { ...room, intake: { ...room.intake, room_dimensions: { width_mm: roomW, depth_mm: roomD } } };
+                  setRoom(updated);
+                  setShowRoomEdit(false);
+                }}
+                className="btn-primary"
+                style={{ fontSize: 11, padding: "6px 14px" }}
+              >Apply</button>
+            </div>
+          )}
+
+          {/* Selected-item controls — only in Edit mode */}
+          {layoutEditMode && selected && (
+            <div className="floating-draft-panel" style={{ top: "var(--s-4)", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 8, maxWidth: "calc(100% - 48px)", flexWrap: "wrap" as const, ...(moveMode ? { outline: "1px solid var(--leaf)", outlineOffset: 2 } : {}) }}>
               <div style={{ display: "flex", flexDirection: "column", marginRight: 6 }}>
                 <span style={{ fontFamily: "var(--fd)", fontSize: 14, fontWeight: 500, color: "var(--ink)" }}>{selected.name_en}</span>
                 <span style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.06em" }}>
@@ -267,27 +356,30 @@ export function PlannerRoute() {
               <button onClick={() => setSelectedId(null)} style={{ background: "transparent", border: "none", fontSize: 20, lineHeight: 1, color: "var(--ink-3)", cursor: "pointer", marginLeft: 2 }} aria-label="Deselect">×</button>
             </div>
           )}
+          </div>
+
+          {/* Furniture catalogue drawer — slides in from right */}
+          {showCatalogue && (
+            <CatalogueDrawer
+              roomType={room.intake.room_type}
+              onAdd={(name) => {
+                void applyOneIntent({ kind: "add_item", target_item_id: null, parameters: { item_name: name } });
+              }}
+              onClose={() => setShowCatalogue(false)}
+            />
+          )}
         </div>
 
         {/* Canvas footer */}
-        <div style={{ height: 44, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)" }}>
-          <button
-            onClick={save}
-            style={{ background: "transparent", border: "1px solid rgba(242,235,221,.18)", color: "rgba(242,235,221,.5)", padding: "6px 16px", fontFamily: "var(--fb)", fontSize: 11, fontWeight: 500, letterSpacing: "0.04em", cursor: "pointer", textTransform: "uppercase" as const, transition: "all .2s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--paper)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(242,235,221,.5)"; }}
-          >
-            {saving ? "Saving…" : savedId ? "Saved ✓" : "Save to your home"}
-          </button>
+        <div style={{ height: 56, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "rgba(242,235,221,.3)", letterSpacing: "0.1em" }}>ESTIMATE</span>
-            <span style={{ fontFamily: "var(--fd)", fontSize: 18, fontWeight: 500, color: "var(--terra)" }}>{budgetHeadline.split(" ")[0]}</span>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "rgba(242,235,221,.28)", letterSpacing: "0.12em" }}>ESTIMATE</span>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 500, color: "var(--terra)" }}>{budgetHeadline.split(" ")[0]}</span>
           </div>
           <button
+            className="btn-primary-dark"
             onClick={() => setStage("style")}
-            style={{ background: "var(--terra)", color: "var(--paper)", border: "none", padding: "8px 20px", fontFamily: "var(--fb)", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", cursor: "pointer", textTransform: "uppercase" as const, transition: "background .2s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--terra-dk)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "var(--terra)"; }}
+            style={{ padding: "10px 24px", fontSize: 11 }}
           >
             Materials & finish →
           </button>
@@ -298,18 +390,13 @@ export function PlannerRoute() {
       <div style={{ display: "flex", flexDirection: "column", borderLeft: "1px solid var(--line)", background: "var(--paper)", overflow: "hidden" }}>
 
         {/* Chat header */}
-        <div style={{ padding: "18px 24px 16px", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <span className="eyebrow">Collaborator</span>
-              <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 18, fontWeight: 500, marginTop: 5, color: "var(--ink)" }}>
-                {baseVision.name}
-              </div>
-              <div style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--terra)", letterSpacing: "0.08em", marginTop: 3 }}>
-                {budgetHeadline || "Calculating…"}
-              </div>
-            </div>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--terra)", animation: "pulse 2s ease infinite" }} />
+        <div style={{ padding: "16px 24px 16px", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
+          <span className="eyebrow">Collaborator</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 10 }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--terra)", animation: "pulse 2s ease infinite", flexShrink: 0 }} />
+            <span style={{ fontFamily: "var(--fb)", fontSize: 13, fontWeight: 500, color: "var(--terra)", lineHeight: 1.4 }}>
+              {budgetHeadline || "Calculating…"}
+            </span>
           </div>
         </div>
 
@@ -485,10 +572,98 @@ function AdvisoryPanel({ open, onToggle, vastuNotes, items, roomDepth }: {
 function CBtn({ children, onClick, danger, accent, bold }: { children: React.ReactNode; onClick: () => void; danger?: boolean; accent?: boolean; bold?: boolean }) {
   return (
     <button
+      className="tool-action-lnk"
       onClick={onClick}
-      style={{ background: accent ? "var(--leaf)" : "var(--paper-3)", border: `1px solid ${danger ? "rgba(162,56,56,.3)" : "var(--line)"}`, padding: "6px 10px", fontSize: 12, cursor: "pointer", font: "inherit", whiteSpace: "nowrap" as const, color: danger ? "var(--terra-dk)" : accent ? "var(--paper)" : "var(--ink)", fontWeight: bold ? 600 : 400 }}
+      style={{ color: danger ? "var(--terra)" : accent ? "var(--leaf)" : undefined, fontWeight: bold ? 600 : 400, marginLeft: "var(--s-2)", whiteSpace: "nowrap" as const }}
     >
       {children}
     </button>
+  );
+}
+
+/* ── Furniture Catalogue Drawer ── */
+const CATALOGUE_BY_TYPE: Record<string, { name: string; dims: string; price: string }[]> = {
+  living_room: [
+    { name: "3-Seater Sofa", dims: "2200 × 900 mm", price: "₹28k" },
+    { name: "L-Shaped Sofa", dims: "2800 × 1800 mm", price: "₹42k" },
+    { name: "Coffee Table", dims: "1100 × 600 mm", price: "₹8k" },
+    { name: "TV Unit", dims: "1600 × 450 mm", price: "₹14k" },
+    { name: "Bookshelf", dims: "900 × 350 mm", price: "₹7k" },
+    { name: "Armchair", dims: "800 × 800 mm", price: "₹12k" },
+    { name: "Side Table", dims: "500 × 500 mm", price: "₹4k" },
+    { name: "Floor Lamp", dims: "400 × 400 mm", price: "₹3k" },
+    { name: "Pooja Unit", dims: "600 × 400 mm", price: "₹9k" },
+    { name: "Storage Cabinet", dims: "1000 × 450 mm", price: "₹11k" },
+  ],
+  bedroom: [
+    { name: "Queen Bed", dims: "1600 × 2000 mm", price: "₹22k" },
+    { name: "King Bed", dims: "2000 × 2000 mm", price: "₹32k" },
+    { name: "Wardrobe", dims: "1800 × 600 mm", price: "₹25k" },
+    { name: "Bedside Table", dims: "450 × 400 mm", price: "₹4k" },
+    { name: "Dressing Table", dims: "900 × 450 mm", price: "₹9k" },
+    { name: "Study Desk", dims: "1200 × 600 mm", price: "₹10k" },
+    { name: "Chest of Drawers", dims: "800 × 450 mm", price: "₹8k" },
+  ],
+  dining_room: [
+    { name: "6-Seater Dining Table", dims: "1800 × 900 mm", price: "₹18k" },
+    { name: "4-Seater Dining Table", dims: "1200 × 750 mm", price: "₹11k" },
+    { name: "Dining Chair", dims: "450 × 480 mm", price: "₹3k" },
+    { name: "Bar Cabinet", dims: "900 × 400 mm", price: "₹14k" },
+    { name: "Crockery Unit", dims: "1200 × 400 mm", price: "₹18k" },
+  ],
+};
+
+function CatalogueDrawer({ roomType, onAdd, onClose }: { roomType: string; onAdd: (name: string) => void; onClose: () => void }) {
+  const items = CATALOGUE_BY_TYPE[roomType] ?? CATALOGUE_BY_TYPE["living_room"];
+  const [adding, setAdding] = useState<string | null>(null);
+
+  return (
+    <div className="pane-animated-entrance" style={{
+      width: 220,
+      height: "100%",
+      background: "var(--paper)",
+      borderLeft: "1px solid var(--line)",
+      display: "flex",
+      flexDirection: "column",
+      flexShrink: 0,
+      overflow: "hidden",
+    }}>
+      <div style={{ padding: "12px 16px 10px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)" }}>FURNITURE CATALOGUE</span>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-3)", fontSize: 16, lineHeight: 1 }}>×</button>
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+        {items.map((item) => (
+          <div key={item.name} style={{ padding: "10px 16px", borderBottom: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 14, fontWeight: 500, color: "var(--ink)" }}>{item.name}</span>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.06em" }}>{item.dims}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+              <span style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--ink-2)" }}>{item.price}</span>
+              <button
+                onClick={async () => {
+                  setAdding(item.name);
+                  onAdd(item.name);
+                  setTimeout(() => setAdding(null), 1200);
+                }}
+                disabled={adding === item.name}
+                style={{
+                  background: adding === item.name ? "var(--leaf)" : "var(--terra)",
+                  border: "none",
+                  color: "var(--paper)",
+                  fontFamily: "var(--fm)",
+                  fontSize: 9,
+                  letterSpacing: "0.1em",
+                  padding: "4px 10px",
+                  cursor: adding === item.name ? "default" : "pointer",
+                  transition: "background .3s",
+                }}
+              >
+                {adding === item.name ? "ADDED" : "+ ADD"}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

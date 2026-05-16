@@ -5,6 +5,8 @@ import { RoomScene } from "@/three/RoomScene";
 import { FinishingPanel } from "@/components/FinishingPanel";
 import { useAppStore } from "@/store/useAppStore";
 
+type MaterialTab = "paint" | "flooring" | "lighting";
+
 export function StyleRoute() {
   const visions          = useAppStore((s) => s.visions);
   const selectedVisionId = useAppStore((s) => s.selectedVisionId);
@@ -13,9 +15,10 @@ export function StyleRoute() {
 
   const baseVision = visions.find((v) => v.id === selectedVisionId) ?? visions[0];
   const [room, setRoom] = useState<RoomState | null>(baseVision?.room_state ?? null);
+  const [tab, setTab]   = useState<MaterialTab>("paint");
 
-  if (!baseVision || !room) return (
-    <div style={{ height: "100vh", display: "grid", placeItems: "center", background: "var(--basalt)", color: "var(--paper)", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 20 }}>
+  if (!baseVision || room === null) return (
+    <div style={{ height: "100vh", display: "grid", placeItems: "center", background: "var(--basalt)", color: "var(--paper)", fontFamily: "var(--fd)", fontSize: 20 }}>
       No room loaded.
     </div>
   );
@@ -34,57 +37,98 @@ export function StyleRoute() {
     }
   }
 
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", width: "100%", height: "100vh", background: "var(--basalt)" }}>
+  const TABS: Array<{ id: MaterialTab; label: string; icon: string }> = [
+    { id: "paint",    label: "Wall Paint", icon: "◧" },
+    { id: "flooring", label: "Flooring",   icon: "◫" },
+    { id: "lighting", label: "Lighting",   icon: "☀" },
+  ];
 
-      {/* Left — finishing panel */}
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "380px 1fr", width: "100%", height: "100vh", background: "var(--basalt)" }}>
+
+      {/* Left — materials panel */}
       <div style={{ display: "flex", flexDirection: "column", background: "var(--paper)", borderRight: "1px solid var(--line)", overflow: "hidden" }}>
 
         {/* Panel header */}
-        <div style={{ height: 56, padding: "0 24px", display: "flex", alignItems: "center", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
-          <div>
-            <span className="eyebrow">Materials · IV.</span>
-            <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 16, fontWeight: 500, color: "var(--ink)", marginTop: 3 }}>
-              Walls, floors, light
-            </div>
-          </div>
+        <div style={{ padding: "28px 28px 20px", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
+          <h2 style={{ fontFamily: "var(--fd)", fontSize: 32, fontWeight: 600, lineHeight: 1.05, color: "var(--ink)", marginBottom: 6 }}>
+            Materials & <span style={{ fontStyle: "italic", fontWeight: 400, color: "var(--terra)" }}>finish</span>
+          </h2>
+          <p style={{ fontFamily: "var(--fb)", fontSize: 14, color: "var(--ink-2)", lineHeight: 1.5 }}>
+            Set the tone for walls, floors, and light.
+          </p>
         </div>
 
+        {/* Material tabs */}
+        <div style={{ display: "flex", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
+          {TABS.map((t) => {
+            const sel = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                style={{
+                  flex: 1,
+                  padding: "14px 8px",
+                  background: sel ? "var(--paper-3)" : "transparent",
+                  border: "none",
+                  borderBottom: sel ? "2.5px solid var(--terra)" : "2.5px solid transparent",
+                  cursor: "pointer",
+                  transition: "all .2s ease",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <span style={{ fontSize: 18, opacity: sel ? 1 : 0.4 }}>{t.icon}</span>
+                <span style={{ fontFamily: "var(--fb)", fontSize: 12, fontWeight: sel ? 600 : 400, color: sel ? "var(--terra)" : "var(--ink-3)", letterSpacing: "0.02em" }}>
+                  {t.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content area — only the active tab, no scrolling between sections */}
         <div style={{ flex: 1, overflow: "auto" }}>
-          <FinishingPanel room={room} onApply={applyFinishing} />
+          <FinishingPanel room={room} onApply={applyFinishing} activeSection={tab} />
         </div>
-      </div>
 
-      {/* Right — 3D preview */}
-      <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-        {/* Top bar */}
-        <div style={{ height: 56, padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderBottom: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)" }}>
+        {/* Footer CTA */}
+        <div style={{ padding: "16px 28px 20px", borderTop: "1px solid var(--line)", flexShrink: 0, display: "flex", flexDirection: "column", gap: 10 }}>
           <button
-            onClick={() => setStage("planner")}
-            style={{ background: "transparent", border: "none", color: "rgba(242,235,221,.5)", fontFamily: "var(--fb)", fontSize: 12, fontWeight: 500, letterSpacing: "0.06em", cursor: "pointer", textTransform: "uppercase" as const, transition: "color .2s", display: "flex", alignItems: "center", gap: 6 }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--paper)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(242,235,221,.5)"; }}
-          >
-            ← Back to planner
-          </button>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontFamily: "var(--fd)", fontSize: 17, fontWeight: 500, color: "var(--paper)" }}>{baseVision.name}</span>
-            <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "rgba(242,235,221,.3)", letterSpacing: "0.1em" }}>MATERIALS</span>
-          </div>
-          <button
+            className="btn-primary"
             onClick={() => setStage("export")}
-            style={{ background: "var(--terra)", color: "var(--paper)", border: "none", padding: "8px 20px", fontFamily: "var(--fb)", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", cursor: "pointer", textTransform: "uppercase" as const, transition: "background .2s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--terra-dk)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "var(--terra)"; }}
+            style={{ width: "100%" }}
           >
             Generate quotation →
           </button>
+          <button
+            className="btn-ghost"
+            onClick={() => setStage("planner")}
+            style={{ width: "100%", justifyContent: "center" }}
+          >
+            ← Back to design
+          </button>
+        </div>
+      </div>
+
+      {/* Right — full-bleed 3D preview */}
+      <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+        {/* Minimal dark header */}
+        <div style={{ height: 56, padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderBottom: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)" }}>
+          <span style={{ fontFamily: "var(--fd)", fontSize: 18, fontWeight: 600, color: "var(--paper)", letterSpacing: "-0.01em" }}>{baseVision.name}</span>
+          <span className="eyebrow" style={{ color: "rgba(242,235,221,.3)" }}>Materials Preview</span>
         </div>
 
         {/* 3D scene */}
         <div style={{ flex: 1, position: "relative" }}>
-          <RoomScene
+          <div className="canvas-viewport-container" style={{ width: "100%", height: "100%", position: "relative" }}>
+            <div className="canvas-corner-mark mark-tl">+</div>
+            <div className="canvas-corner-mark mark-tr">+</div>
+            <RoomScene
             room={room}
             selectedItemId={null}
             onSelectItem={() => {}}
@@ -93,6 +137,18 @@ export function StyleRoute() {
             warmthK={room.lighting_kelvin}
             showAtmosphere
           />
+
+          {/* Cost impact badge */}
+          <div className="floating-draft-panel" style={{
+            bottom: "var(--s-5)", left: "50%", transform: "translateX(-50%)",
+            display: "flex", alignItems: "baseline", gap: 12,
+          }}>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.1em" }}>ESTIMATE</span>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 600, color: "var(--terra)" }}>
+              ₹{Math.round((baseVision.cost.story.total_inr || 0) / 1000)}k
+            </span>
+          </div>
+          </div>
         </div>
       </div>
     </div>

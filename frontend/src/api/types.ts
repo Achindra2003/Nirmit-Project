@@ -72,6 +72,7 @@ export interface Intake {
   budget_inr: number;
   keep_existing: string | null;
   vastu_matters: boolean;
+  city: string;
 }
 
 export interface Opening {

@@ -30,6 +30,7 @@ class CatalogItem(BaseModel):
     material_label: str | None = None
     finish_label: str | None = None
     roughness_hint: float | None = None
+    front_clearance_mm: int = 600
 
 
 class CatalogQuery(BaseModel):

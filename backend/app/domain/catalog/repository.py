@@ -1,18 +1,25 @@
-"""Catalog repository — loads the JSON file once and serves typed queries.
+"""Catalog repository — the source of truth for items the solver can place.
 
-The actual data file is populated by the catalog migration step (task #6).
-For Phase 1 a tiny seed catalog is shipped so the vertical slice runs without
-the migration being complete.
+Switched from the procedurally-expanded `data/catalog.json` (3,628 SKUs auto-
+generated with names like "Compact 2-Seater Sofa" whose dimensions actually
+describe a 3-seater) to the curated `hero_catalog.HERO_ITEMS` list. The hero
+items have:
+
+  * dimensions measured directly from their GLB bounding boxes so the
+    renderer's auto-fit produces a clean uniform scale (no stretching);
+  * per-item `front_clearance_mm` reflecting real ergonomics (TV 1800 mm,
+    sofa 900 mm, desk 1000 mm) instead of a flat 600 mm pad;
+  * dining tables with their dedicated GLBs (dining_4.glb, dining_6.glb).
+
+The big expanded catalog remains on disk as a research artefact but is no
+longer the runtime source — the visual coherence of three reveal visions
+matters more than 3,628 SKU variations.
 """
 from __future__ import annotations
 
-import json
 from functools import lru_cache
-from pathlib import Path
 
 from app.domain.catalog.model import CatalogItem, CatalogQuery
-
-DATA_PATH = Path(__file__).resolve().parents[3] / "data" / "catalog.json"
 
 
 class CatalogRepository:
@@ -51,9 +58,7 @@ class CatalogRepository:
 
 @lru_cache(maxsize=1)
 def get_catalog() -> CatalogRepository:
-    if not DATA_PATH.exists():
-        # Phase 1: empty repo is acceptable; the mock /generate uses inline fixtures.
-        return CatalogRepository(items=[])
-    raw = json.loads(DATA_PATH.read_text(encoding="utf-8"))
-    items = [CatalogItem.model_validate(x) for x in raw]
-    return CatalogRepository(items=items)
+    # Import inside the function so circular-import order doesn't matter at
+    # module load time (hero_catalog imports from app.domain.catalog.model too).
+    from app.domain.catalog.hero_catalog import HERO_ITEMS
+    return CatalogRepository(items=list(HERO_ITEMS))

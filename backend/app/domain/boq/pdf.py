@@ -219,8 +219,22 @@ def _cover_block(room: RoomState, boq: BOQ) -> list[Flowable]:
     today = date.today()
     valid_until = today + timedelta(days=30)
     rd = room.intake.room_dimensions
+    # Devanagari font for निर्मित — falls back to Helvetica if not installed.
+    dev_font = _devanagari_font()
+    logo_style = ParagraphStyle(
+        "Logo",
+        parent=H1,
+        fontSize=24,
+        leading=28,
+    )
+    # Build the wordmark: English in serif, Devanagari in the Hindi font.
+    logo = Paragraph(
+        f'Nirmit <font name="{dev_font}" size="16" color="#8B6F52">निर्मित</font> '
+        f'<font size="11" color="#6B614F">· Room Quotation</font>',
+        logo_style,
+    )
     return [
-        Paragraph("Nirmit · Design Quotation", H1),
+        logo,
         Spacer(1, 6),
         Paragraph(
             f"<b>{room.intake.room_type.value.title()}</b> · "

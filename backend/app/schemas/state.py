@@ -161,6 +161,10 @@ class Intake(StrictModel):
         default=False,
         description="Single bool — the AI surfaces Vastu reasoning when true",
     )
+    city: str = Field(
+        default="Mumbai",
+        description="City for BOQ labour-rate lookup (Mumbai, Bangalore, Delhi, etc.)",
+    )
 
     @field_validator("room_dimensions")
     @classmethod

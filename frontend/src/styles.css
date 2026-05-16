@@ -1,34 +1,53 @@
 /**
- * Nirmit design system — v2 tokens + v3 additions.
- * Palette: paper / ink / terracotta / leaf / walnut / green
- * Type: Cormorant Garamond (--fd) · DM Sans (--fb) · JetBrains Mono (--fm) · Tiro Devanagari Hindi (--fh)
+ * Nirmit design system — v3 overhaul.
+ * Differentiated palette, Playfair Display serif, paper-grain texture.
+ *
+ * Palette: paper / ink / brick / sage / walnut
+ * Type: Playfair Display (--fd) · DM Sans (--fb) · JetBrains Mono (--fm) · Tiro Devanagari Hindi (--fh)
  */
 
 :root {
-  /* Surfaces */
-  --paper:    #F2EBDD;
-  --paper-2:  #EAE2D0;
-  --paper-3:  #F8F3E8;
+  /* ── Surfaces ── */
+  --paper:    #F0E6D3;
+  --paper-2:  #E6DACA;
+  --paper-3:  #F5EDDF;
   --basalt:   #1A1714;
 
-  /* Ink */
-  --ink:      #1F1B16;
-  --ink-2:    #5D544A;
-  --ink-3:    #8C8170;
+  /* ── Ink ── */
+  --ink:      #1C1812;
+  --ink-2:    #52493E;
+  --ink-3:    #7D7367;
 
-  /* Lines */
-  --line:     #D9CFB9;
-  --line-2:   #C8BFA8;
+  /* ── Lines ── */
+  --line:     #D4C9B2;
+  --line-2:   #C2B89F;
 
-  /* Accents */
-  --terra:    #C2502E;
-  --terra-dk: #9E3A1B;
+  /* ── Accents ── */
+  --terra:    #B8432A;
+  --terra-dk: #8E2E18;
+  --terra-light: rgba(184, 67, 42, 0.08);
   --walnut:   #5B3B26;
-  --leaf:     #6B7A4A;
+  --leaf:     #4A7C6F;
+  --leaf-dk:  #355B52;
   --green:    #1B3B2C;
 
-  /* Type stacks */
-  --fd: 'Cormorant Garamond', Georgia, serif;
+  /* 2. REASSIGN their semantic roles to decouple from the Claude UI model */
+  
+  /* Primary buttons & main actions: Switch from Terra (AI Orange) to Basalt (Solid Ink) */
+  --action-bg:        var(--basalt);
+  --action-text:      var(--paper-3);
+  --action-hover:     var(--ink-2);
+
+  /* System Accents: Demote Terra to low-frequency, highly intentional triggers */
+  --accent-marker:    var(--terra);       /* Used ONLY for structural points, like 3D vertex selections */
+  --focus-ring:       var(--ink-3);       /* Focus states become muted ink frames instead of glowing orange */
+
+  /* UI Categorization: Use your underutilized Sage & Walnut for interactive tools */
+  --tool-active:      var(--leaf);        /* Active room generation states */
+  --structure-dark:   var(--green);       /* Deep architectural headers */
+
+  /* ── Type stacks ── */
+  --fd: 'Playfair Display', Georgia, serif;
   --fh: 'Tiro Devanagari Hindi', serif;
   --fb: 'DM Sans', system-ui, sans-serif;
   --fm: 'JetBrains Mono', ui-monospace, monospace;
@@ -48,14 +67,14 @@
   --font-serif:      var(--fd);
   --font-hindi:      var(--fh);
 
-  /* Spacing (8-pt grid) */
+  /* ── Spacing (8-pt grid) ── */
   --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
   --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
 
-  /* Radii */
-  --r-sm: 4px; --r-md: 8px; --r-lg: 12px;
+  /* ── Radii ── */
+  --r-sm: 0px; --r-md: 0px; --r-lg: 0px;
 
-  /* Motion */
+  /* ── Motion ── */
   --ease-spring: cubic-bezier(.22,.7,0,1.05);
   --t-fast: 180ms;
   --t-med:  320ms;
@@ -75,10 +94,27 @@ html, body, #root {
 
 body {
   font-family: var(--fb);
+  font-size: 15px;
+  line-height: 1.6;
   color: var(--ink);
   background: var(--paper);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Site-wide paper grain — fixed overlay so it persists across all routes */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.38;
+  mix-blend-mode: multiply;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)' opacity='0.55'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
 }
 
 input, textarea, button, select {
@@ -91,43 +127,41 @@ button { cursor: pointer; }
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--terra);
-  outline-offset: 2px;
+  outline: 1px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 ::selection {
-  background: rgba(194, 80, 46, 0.18);
-  color: var(--ink);
+  background: var(--paper-2);
+  color: var(--basalt);
 }
 
-/* ── Paper surface ──────────────────────────────── */
+/* ── Paper surface (grain texture instead of grid) ── */
 .paper {
   position: relative;
-  background:
-    radial-gradient(ellipse at 50% 0%,   rgba(31,27,22,0.025), transparent 60%),
-    radial-gradient(ellipse at 50% 100%, rgba(31,27,22,0.04),  transparent 65%),
-    var(--paper);
+  background: var(--paper);
 }
 .paper::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 32px 32px;
-  opacity: 0.18;
   z-index: 0;
+  opacity: 0.55;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  mix-blend-mode: multiply;
 }
 .paper > * { position: relative; z-index: 1; }
 
-/* ── Type utilities ─────────────────────────────── */
+/* ── Type utilities ── */
 .eyebrow {
   font-family: var(--fm);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-3);
   display: inline-block;
@@ -137,7 +171,161 @@ textarea:focus-visible {
 .hindi { font-family: var(--fh); }
 .muted { color: var(--ink-2); }
 
-/* Underline-link (used on cover + reveal) */
+/* Update layout controls, sidebar tabs, and canvas toggle buttons */
+.panel-label {
+  font-family: var(--fm);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--ink-2);
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: var(--s-1);
+}
+
+/* Display heading — serif, for hero/title contexts */
+.display-heading {
+  font-family: var(--fd);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+/* Body text — always sans-serif at readable size */
+.body-text {
+  font-family: var(--fb);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+/* ── Buttons — 3-tier system ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 32px;
+  background: var(--action-bg);
+  color: var(--action-text);
+  border: 1px solid var(--basalt);
+  border-radius: 0px;
+  font-family: var(--fb);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--t-fast) ease, border-color var(--t-fast) ease;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary:hover {
+  background: var(--ink-2);
+  color: var(--action-text);
+  box-shadow: none;
+  transform: none;
+}
+.btn-primary:active {
+  transform: none;
+  box-shadow: none;
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+.btn-primary.btn-lg {
+  padding: 16px 40px;
+  font-size: 15px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 0px;
+  font-family: var(--fb);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--t-fast) ease;
+}
+.btn-secondary:hover {
+  background: var(--terra-light);
+  color: var(--ink);
+  border-color: var(--terra);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  font-family: var(--fb);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--t-fast) ease;
+}
+.btn-ghost:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* Dark variant buttons (for dark backgrounds like planner) */
+.btn-primary-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 22px;
+  background: var(--terra);
+  color: var(--paper);
+  border: none;
+  font-family: var(--fb);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--t-fast) ease;
+}
+.btn-primary-dark:hover { background: var(--terra-dk); }
+
+.btn-ghost-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  color: rgba(242,235,221,.55);
+  border: 1px solid rgba(242,235,221,.18);
+  font-family: var(--fb);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--t-fast) ease;
+}
+.btn-ghost-dark:hover {
+  border-color: rgba(242,235,221,.5);
+  color: var(--paper);
+}
+
+/* ── Link style (kept for rare inline text links only) ── */
 .lnk {
   position: relative;
   cursor: pointer;
@@ -157,30 +345,111 @@ textarea:focus-visible {
 .lnk-arrow { display: inline-block; transition: transform .3s ease; }
 .lnk:hover .lnk-arrow { transform: translateX(4px); }
 
-/* Range slider */
+/* ── Unbound 3D Canvas Layout ── */
+.canvas-viewport-container {
+  position: relative;
+  background: var(--paper-3); /* Slight tint shift to distinguish the space naturally */
+  border: none; /* Strip away constricting lines */
+  
+  /* Creates a soft "letterpress indentation" into the paper instead of a hard border */
+  box-shadow: 
+    inset 0 2px 8px rgba(28, 24, 18, 0.05),
+    inset 0 1px 2px rgba(28, 24, 18, 0.03);
+    
+  overflow: hidden;
+}
+
+/* Clear out any dark mats or strict containment templates */
+.generator-canvas-frame {
+  background: transparent;
+  padding: 0;
+  border: none;
+  outline: none;
+}
+
+/* Apply this to your toolbars or modifier panels floating over the 3D space */
+.floating-draft-panel {
+  position: absolute;
+  z-index: 10;
+  background: rgba(245, 237, 223, 0.85); /* Semi-translucent paper overlay */
+  backdrop-filter: blur(8px); /* Modern web clarity with tactile transparency */
+  border: 1px solid var(--line);
+  padding: var(--s-4);
+  box-shadow: 0 12px 32px rgba(28, 24, 18, 0.06);
+}
+
+/* Use thin blueprint alignment crosshairs at the viewport corners instead of boxes */
+.canvas-corner-mark {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  color: var(--line-2);
+  font-family: var(--fm); /* JetBrains Mono */
+  font-size: 10px;
+  pointer-events: none;
+  z-index: 5;
+}
+.mark-tl { top: var(--s-3); left: var(--s-3); }
+.mark-tr { top: var(--s-3); right: var(--s-3); }
+
+/* Extend your existing .lnk system for tool actions */
+.tool-action-lnk {
+  font-family: var(--fd); /* Playfair Display */
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--line-2);
+  padding: var(--s-1) 0;
+  cursor: pointer;
+  transition: color var(--t-fast) ease, border-color var(--t-fast) ease;
+}
+
+.tool-action-lnk:hover {
+  color: var(--leaf); /* Sage feedback indicator */
+  border-bottom-color: var(--leaf);
+}
+
+/* ── Range slider ── */
 input[type=range] {
   -webkit-appearance: none;
   width: 100%;
   height: 1px;
-  background: var(--ink);
-  outline: none;
+  background: var(--line-2);
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--terra);
-  cursor: pointer;
-  border: 3px solid var(--paper);
+  width: 10px;
+  height: 20px;
+  border-radius: 0px;
+  background: var(--basalt);
+  cursor: ew-resize;
+  border: 1px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--basalt);
+}
+
+/* ── Card ── */
+.card {
+  background: var(--paper-3);
+  border: 1px solid var(--line);
+  padding: 20px 24px;
+  transition: border-color var(--t-fast) ease, box-shadow var(--t-fast) ease;
+}
+.card:hover {
+  border-color: var(--line-2);
+}
+.card-selected {
+  border-color: var(--terra);
   box-shadow: 0 0 0 1px var(--terra);
 }
 
-/* ── Animations ─────────────────────────────────── */
-@keyframes appear      { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+/* ── Animations ── */
+@keyframes appear      { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float       { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-6px); } }
 @keyframes fade        { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp     { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes drawLine    { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+@keyframes drawLine    { to { stroke-dashoffset: 0; } }
 @keyframes pulse       { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 @keyframes blink       { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 @keyframes spin        { to { transform: rotate(360deg); } }
@@ -205,16 +474,270 @@ input[type=range]::-webkit-slider-thumb {
 
 .pulse-anim { animation: pulse 2.2s ease infinite; }
 
-/* ── Scrollbar ──────────────────────────────────── */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar         { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track   { background: transparent; }
 ::-webkit-scrollbar-thumb   { background: var(--line-2); border-radius: 3px; }
 
-/* ── Reduced motion ─────────────────────────────── */
+/* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Classical design language extensions
+   ───────────────────────────────────────────────────────────────── */
+
+/* Ornamental horizontal rule — thin line with centered diamond mark */
+.rule-ornamental {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--terra);
+  user-select: none;
+}
+.rule-ornamental::before,
+.rule-ornamental::after {
+  content: '';
+  flex: 1;
+  height: 0.5px;
+  background: var(--line-2);
+}
+.rule-ornamental-glyph {
+  font-family: var(--fm);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--terra);
+  flex-shrink: 0;
+}
+
+/* Pull note — classical annotation / architect's margin note */
+.pull-note {
+  border-left: 2px solid var(--terra);
+  padding: 12px 18px;
+  background: var(--terra-light);
+  font-family: var(--fd);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+/* Ledger row — used in "So Far" summary and similar structured data */
+.ledger-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 0.5px solid var(--line);
+}
+.ledger-row:first-child { border-top: 0.5px solid var(--line); }
+
+/* Classical double-border card inset */
+.card-inset {
+  background: var(--paper-3);
+  padding: 20px 24px;
+  outline: 1px solid var(--line);
+  outline-offset: -1px;
+  box-shadow: inset 0 0 0 5px var(--paper-3), inset 0 0 0 6px var(--line-2);
+}
+
+/* Step pill — Roman numeral step indicator */
+.step-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--fm);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+.step-pill-num {
+  font-family: var(--fd);
+  font-size: 13px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--terra);
+  letter-spacing: 0.05em;
+}
+
+/* Inline confirm — for destructive action micro-flows */
+.inline-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  animation: appear .25s ease both;
+}
+.inline-confirm-label {
+  font-family: var(--fb);
+  font-size: 12px;
+  color: var(--ink-3);
+  font-style: italic;
+}
+.inline-confirm-yes {
+  font-family: var(--fb);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--terra-dk);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.04em;
+}
+.inline-confirm-no {
+  font-family: var(--fb);
+  font-size: 12px;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.04em;
+}
+.inline-confirm-yes:hover { color: var(--terra); }
+.inline-confirm-no:hover  { color: var(--ink); }
+
+.workspace-pane {
+  background: var(--paper-3);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* ── 2. The Unbound 3D Viewport Plate ── */
+/* Gives the room generation area technical breathing room without structural boxing */
+.viewport-plate {
+  position: relative;
+  background: var(--paper); /* Blends into engine canvas */
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Precise drafting crosshairs rendered at absolute canvas limits */
+.viewport-plate::before {
+  content: '';
+  position: absolute;
+  inset: var(--s-4);
+  border: 1px dashed rgba(125, 115, 103, 0.15); /* Technical boundary bounds */
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Corner coordinate anchors to enhance tool utility look */
+.canvas-coord {
+  position: absolute;
+  font-family: var(--fm);
+  font-size: 9px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  z-index: 2;
+  pointer-events: none;
+}
+.coord-tl { top: var(--s-5); left: var(--s-5); }
+.coord-br { bottom: var(--s-5); right: var(--s-5); }
+
+/* ── 3. Color & Interaction Micro-States ── */
+
+/* Functional Form inputs matching blueprint standards */
+.drafting-input {
+  width: 100%;
+  font-family: var(--fm); /* Technical numbers read better in mono */
+  font-size: 13px;
+  padding: var(--s-3);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  transition: all var(--t-fast) var(--ease-layout);
+}
+.drafting-input:focus {
+  outline: none;
+  border-color: var(--basalt);
+  background: var(--paper-3);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* 3-Tier Step Indicators (e.g., Layout > Furnish > Render) */
+.step-ledger {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+.step-node {
+  flex: 1;
+  padding: var(--s-3) var(--s-4);
+  font-family: var(--fm);
+  font-size: 11px;
+  text-align: center;
+  color: var(--ink-3);
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease-layout);
+}
+.step-node:last-child { border-right: none; }
+.step-node.is-active {
+  background: var(--paper-3);
+  color: var(--terra);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--terra); /* Brick red anchor bar */
+}
+
+/* ── 4. Tactical Blueprint Animations ── */
+
+/* Structural pane slide-in on tool selection */
+@keyframes paneDraw {
+  from { transform: translateX(var(--s-6)); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.pane-animated-entrance {
+  animation: paneDraw var(--t-med) var(--ease-layout) forwards;
+}
+
+/* Interactive blueprint element generation loop indicator */
+@keyframes blueprintPulse {
+  0% { border-color: var(--line-2); }
+  50% { border-color: var(--terra); }
+  100% { border-color: var(--line-2); }
+}
+.is-generating-mesh {
+  animation: blueprintPulse 1.8s var(--ease-draw) infinite;
+  pointer-events: none;
+}
+
+/* ── 5. Functionalizing Typography Hierarchy ── */
+.panel-header {
+  padding: var(--s-5) var(--s-5) var(--s-3) var(--s-5);
+  border-bottom: 1px dashed var(--line);
+}
+.panel-header h2 {
+  font-family: var(--fd);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+}
+.panel-header p {
+  font-family: var(--fb);
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-top: var(--s-1);
+}
+
+/* Precise numeric asset labels inside tool grids */
+.asset-dimension-tag {
+  font-family: var(--fm);
+  font-size: 10px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  padding: 2px 6px;
+  display: inline-block;
+  margin-top: var(--s-1);
 }

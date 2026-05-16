@@ -21,6 +21,7 @@ import math
 import random
 from dataclasses import dataclass
 
+from app.domain.solver.partition import Rect, partition_room
 from app.domain.solver.zones import RelativePlacement, ZoneTemplate
 from app.domain.vastu import VastuZone, point_zone, preferred_zone_for_category
 from app.schemas.state import Direction
@@ -39,6 +40,7 @@ class SolverItem:
     rotations_deg: tuple[int, ...] = (0, 90, 180, 270)
     against_wall: bool = False
     catalog_sku: str = ""
+    front_clearance_mm: int = 600
 
 
 @dataclass(frozen=True)
@@ -140,6 +142,27 @@ def _eff_extent_for(inp: SolverInput, item_id: str, rot: int) -> tuple[float, fl
     return (0.0, 0.0)
 
 
+def _item_for(inp: SolverInput, item_id: str) -> SolverItem | None:
+    for src in inp.items:
+        if src.id == item_id:
+            return src
+    return None
+
+
+# Overlay items don't compete with floor furniture for space — rugs go UNDER
+# the coffee table, ceiling fans hang above the room, wall mirrors mount flat
+# on walls, small plants sit on tabletops. Treating them as "solid" obstacles
+# would force the coffee-table-on-rug arrangement (the entire point of a rug)
+# to fail collision and drop the rug.
+_OVERLAY_SUBCATEGORIES: frozenset[str] = frozenset({
+    "rug", "ceiling_fan", "mirror", "plant_small",
+})
+
+
+def _is_overlay(sub_category: str) -> bool:
+    return sub_category in _OVERLAY_SUBCATEGORIES
+
+
 # ---------- Validity ----------
 
 
@@ -152,18 +175,38 @@ def _is_valid(
     placed: list[Placement],
     *,
     ignore_walkway: bool = False,
+    new_item_sub_category: str | None = None,
 ) -> bool:
     # Inside the room (the visual footprint must fit)
     if cx - eff_w / 2 < -1 or cz - eff_d / 2 < -1:
         return False
     if cx + eff_w / 2 > inp.width_mm + 1 or cz + eff_d / 2 > inp.depth_mm + 1:
         return False
+    # Overlay items (rug, ceiling fan, mirror, tabletop plant) only need to
+    # fit inside the room — they never collide with the floor furniture.
+    if new_item_sub_category and _is_overlay(new_item_sub_category):
+        return True
     # Don't overlap placed items (with a walkway pad around the new item)
     pad = 0.0 if ignore_walkway else inp.walkway_min_mm * 0.5
     for p in placed:
+        # Skip the overlay items we've already placed (rugs/fans don't block).
+        placed_item = _item_for(inp, p.item_id)
+        if placed_item and _is_overlay(placed_item.sub_category):
+            continue
         pw, pd = _eff_extent_for(inp, p.item_id, p.rotation_deg)
         if _aabb_overlap(cx, cz, eff_w + pad, eff_d + pad, p.x_mm, p.z_mm, pw, pd):
             return False
+        # Front-clearance check (FittingPlacer / Ringqvist 2018): the space in
+        # front of a placed item must remain free for the declared clearance depth.
+        if not ignore_walkway and placed_item and placed_item.front_clearance_mm > inp.walkway_min_mm:
+            extra = placed_item.front_clearance_mm - inp.walkway_min_mm
+            fx, fz = _facing_vector(p.rotation_deg)
+            zone_cx = p.x_mm + fx * (pw / 2 + extra / 2)
+            zone_cz = p.z_mm + fz * (pd / 2 + extra / 2)
+            zone_w = pw + pad
+            zone_d = extra
+            if _aabb_overlap(cx, cz, eff_w, eff_d, zone_cx, zone_cz, zone_w, zone_d):
+                return False
     # Door breathing room
     for door in inp.doors:
         dx, dz = _door_centre_mm(door, width_mm=inp.width_mm, depth_mm=inp.depth_mm)
@@ -286,6 +329,7 @@ def _place_anchor(
     placed: list[Placement],
     preferred_zones: tuple[VastuZone, ...] = (),
     rng: random.Random | None = None,
+    bounds: Rect | None = None,
 ) -> Placement | None:
     candidates: list[Placement] = []
     for rot in item.rotations_deg:
@@ -296,9 +340,17 @@ def _place_anchor(
         hi_cx = inp.width_mm - eff_w / 2 - _WALL_INSET_MM
         lo_cz = eff_d / 2 + _WALL_INSET_MM
         hi_cz = inp.depth_mm - eff_d / 2 - _WALL_INSET_MM
+        if bounds is not None:
+            lo_cx = max(lo_cx, bounds.x_min + eff_w / 2)
+            hi_cx = min(hi_cx, bounds.x_max - eff_w / 2)
+            lo_cz = max(lo_cz, bounds.z_min + eff_d / 2)
+            hi_cz = min(hi_cz, bounds.z_max - eff_d / 2)
+        if hi_cx < lo_cx or hi_cz < lo_cz:
+            continue
         for cx in _grid(lo_cx, hi_cx):
             for cz in _grid(lo_cz, hi_cz):
-                if not _is_valid(cx, cz, eff_w, eff_d, inp, placed):
+                if not _is_valid(cx, cz, eff_w, eff_d, inp, placed,
+                                 new_item_sub_category=item.sub_category):
                     continue
                 s = _score(item, cx, cz, rot, eff_w, eff_d, inp, preferred_zones)
                 candidates.append(Placement(item.id, int(round(cx)), int(round(cz)), rot, s))
@@ -347,8 +399,13 @@ def _place_member(
             ccz = max(m_lo_cz, min(target_cz + dz, m_hi_cz))
             candidates.append((ccx, ccz))
 
+    # Zone members are INTENDED to be close to their anchor (coffee table 450mm
+    # from sofa, dining chair 900mm from table). The 600mm walkway pad + the
+    # 900–1800mm front-clearance zones would push them away — disable both for
+    # member placement (anchor-to-anchor placement still enforces full clearance).
     for ccx, ccz in candidates:
-        if _is_valid(ccx, ccz, eff_w, eff_d, inp, placed):
+        if _is_valid(ccx, ccz, eff_w, eff_d, inp, placed,
+                     ignore_walkway=True, new_item_sub_category=member.sub_category):
             drift = math.hypot(ccx - target_cx, ccz - target_cz)
             return Placement(member.id, int(round(ccx)), int(round(ccz)), member_rot, 62.0 - drift / 120.0)
     return None
@@ -364,12 +421,24 @@ def _enforce_sight_line(
     inp: SolverInput,
 ) -> Placement:
     """Rotate the seating anchor so its front points at the target anchor,
-    then re-clamp the centre so the rotated footprint still fits the room."""
+    BUT only if the new rotation still lets it stay against its wall.
+
+    The original implementation just re-clamped centre to fit the room after
+    rotation, which pushed a sofa from the W-wall (rot=90) to the middle of
+    the room (rot=0). We now (1) skip the rotation if the current facing is
+    already within ±45° of the target — a small head-turn is fine, and
+    (2) abort the change if the rotated footprint would not fit within
+    `wall_inset` of any wall (it would float)."""
     dx, dz = target.x_mm - seating.x_mm, target.z_mm - seating.z_mm
     if abs(dx) < 1 and abs(dz) < 1:
         return seating
-    best_rot, best_cos = seating.rotation_deg, -2.0
     norm = math.hypot(dx, dz) or 1
+    # If already within ~45° of facing the target, leave it alone — a slight
+    # head-turn is more natural than a sofa pulled off the wall.
+    cur_fx, cur_fz = _facing_vector(seating.rotation_deg)
+    if (cur_fx * dx + cur_fz * dz) / norm > 0.707:
+        return seating
+    best_rot, best_cos = seating.rotation_deg, -2.0
     for rot in (0, 90, 180, 270):
         fx, fz = _facing_vector(rot)
         cos = (fx * dx + fz * dz) / norm
@@ -378,6 +447,17 @@ def _enforce_sight_line(
     if best_rot == seating.rotation_deg:
         return seating
     eff_w, eff_d = _eff_extent(seating_item.width_mm, seating_item.depth_mm, best_rot)
+    # If the rotated footprint cannot stay near a wall at the current centre,
+    # don't move it — sit-with-back-to-wall beats sit-floating-in-room.
+    if seating_item.against_wall:
+        wall_gap = min(
+            seating.x_mm - eff_w / 2,
+            seating.z_mm - eff_d / 2,
+            inp.width_mm - (seating.x_mm + eff_w / 2),
+            inp.depth_mm - (seating.z_mm + eff_d / 2),
+        )
+        if wall_gap > 350:  # > 350mm from every wall = floating
+            return seating
     cx = _clamp(seating.x_mm, eff_w / 2, inp.width_mm - eff_w / 2)
     cz = _clamp(seating.z_mm, eff_d / 2, inp.depth_mm - eff_d / 2)
     return Placement(seating.item_id, int(round(cx)), int(round(cz)), best_rot, seating.score + 6, seating.zone_id)
@@ -414,6 +494,27 @@ def _solve_zones(inp: SolverInput, rng: random.Random | None = None) -> SolverRe
     for item in inp.items:
         by_sub.setdefault(item.sub_category, []).append(item)
 
+    # Squarified treemap partitioning (Bruls et al. 2000 / Procedural-Building-Generator).
+    # For large open-plan rooms (short side ≥ 4500 mm) with ≥ 2 zones, divide the floor
+    # plate into zone-specific rectangular bounds proportional to each zone's furniture
+    # footprint area. Anchors are then constrained to their zone's rectangle so the room
+    # reads as zoned rather than clustering everything against one wall.
+    zone_weights: list[tuple[str, float]] = []
+    for zone in inp.zones:
+        pool = by_sub.get(zone.anchor_sub_category, [])
+        if not pool:
+            continue
+        a = pool[0]
+        w = float(a.width_mm * a.depth_mm)
+        for rel in zone.members:
+            mp = by_sub.get(rel.sub_category, [])
+            if mp:
+                w += float(mp[0].width_mm * mp[0].depth_mm)
+        zone_weights.append((zone.id, w))
+    zone_rects: dict[str, Rect] = {}
+    if min(inp.width_mm, inp.depth_mm) >= 4500 and len(zone_weights) >= 2:
+        zone_rects = partition_room(inp.width_mm, inp.depth_mm, zone_weights)
+
     placements: list[Placement] = []
     failures: list[PlacementFailure] = []
     zone_anchors: dict[str, Placement] = {}
@@ -426,7 +527,7 @@ def _solve_zones(inp: SolverInput, rng: random.Random | None = None) -> SolverRe
             continue
         anchor_item = pool[0]
         pref = tuple(VastuZone(z) for z in zone.preferred_compass_zones)
-        p = _place_anchor(anchor_item, inp, placements, preferred_zones=pref, rng=rng)
+        p = _place_anchor(anchor_item, inp, placements, preferred_zones=pref, rng=rng, bounds=zone_rects.get(zone.id))
         if p is None:
             failures.append(PlacementFailure(item_id=anchor_item.id, reason="no valid anchor position"))
             continue

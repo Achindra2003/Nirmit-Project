@@ -27,31 +27,41 @@ const DEFAULT: AssetTuning = { scaleMul: 1, yNudge: 0 };
  * wins (they should sit ~0.7–1.0 m up, not on the floor).
  */
 const OVERRIDES: Record<string, Partial<AssetTuning>> = {
-  // ── New living-room GLBs (12 replacements) ──────────────────────────────
-  // sofa_3seat origin is at base of mesh — no y-lift needed.
+  // ── Hero catalog GLBs (declared dims = native — uniform 1.0 auto-fit) ──
   "sofa_3seat.glb": { yNudge: 0.0 },
-  // sofa_l (L-shape) — flat base, tiny lift clears z-fight.
+  "sofa_2seater.glb": { yNudge: 0.003 },
   "sofa_l.glb": { yNudge: 0.003 },
-  // tv_unit sits flush on the floor.
+  "diwan.glb": { yNudge: 0.003 },
   "tv_unit.glb": { yNudge: 0.003 },
-  // coffee_table — thin, small lift to prevent z-fight.
   "coffee_table.glb": { yNudge: 0.003 },
-  // lounge_chair — standard floor clearance.
+  "tableRound.glb": { yNudge: 0.003 },
   "lounge_chair.glb": { yNudge: 0.003 },
-  // ottoman — standard floor clearance.
-  "ottoman.glb": { yNudge: 0.003 },
-  // bookshelf — tall upright, flush to floor.
-  "bookshelf.glb": { yNudge: 0.003 },
-  // lamp_floor — tall floor lamp, standard clearance.
-  "lamp_floor.glb": { yNudge: 0.003 },
-  // rug — very flat; tiny lift prevents z-fight with floor plane.
-  "rug.glb": { yNudge: 0.003 },
-  // chair — standard floor clearance.
   "chair.glb": { yNudge: 0.003 },
-  // fan — ceiling-mounted; catalog height=470 mm => nudge = 3.0 - 0.47 = 2.53
-  "fan.glb": { yNudge: 2.53 },
-  // plant — standard floor clearance.
+  "chairDesk.glb": { yNudge: 0.003 },
+  "ottoman.glb": { yNudge: 0.003 },
+  "bookshelf.glb": { yNudge: 0.003 },
+  "bookcaseClosed.glb": { yNudge: 0.003 },
+  "bookcaseClosedWide.glb": { yNudge: 0.003 },
+  "bookshelf_cabinet.glb": { yNudge: 0.003 },
+  "chest_drawers.glb": { yNudge: 0.003 },
+  "sideTableDrawers.glb": { yNudge: 0.003 },
+  "shoe_rack.glb": { yNudge: 0.003 },
+  "bed_queen.glb": { yNudge: 0.003 },
+  "bed_king.glb": { yNudge: 0.003 },
+  "desk.glb": { yNudge: 0.003 },
+  "dining_6.glb": { yNudge: 0.003 },
+  "dining_chair.glb": { yNudge: 0.003 },
+  "lamp_floor.glb": { yNudge: 0.003 },
+  "lampRoundTable.glb": { yNudge: 0.003 },
+  "rug.glb": { yNudge: 0.003 },
   "plant.glb": { yNudge: 0.003 },
+  "plantSmall1.glb": { yNudge: 0.003 },
+  "pooja_floor.glb": { yNudge: 0.003 },
+  "pooja_chowki.glb": { yNudge: 0.003 },
+  // Ceiling fan — hangs from a 3.0 m ceiling, fan body height ~470 mm
+  "fan.glb": { yNudge: 2.53 },
+  // Wall mirror — mounted at ~1.0 m (eye-level start)
+  "mirror.glb": { yNudge: 1.0 },
 
   // ── Legacy GLBs (kept for backwards compat with non-living-room entries) ──
   "loungeDesignSofa.glb": { yNudge: 0.005 },

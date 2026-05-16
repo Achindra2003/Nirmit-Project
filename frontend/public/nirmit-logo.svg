@@ -1,0 +1,9 @@
+<svg width="240" height="60" viewBox="0 0 240 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="38" fill="#0F172A" style="font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 500; letter-spacing: -0.01em;">Nirmit</text>
+  
+  <text x="95" y="36" fill="#0F172A" fill-opacity="0.6" style="font-family: serif; font-size: 18px;">निर्मित</text>
+  
+  <circle cx="90" cy="22" r="2.5" fill="#4F46E5"/>
+  
+  <line x1="0" y1="50" x2="145" y2="50" stroke="#4F46E5" stroke-width="0.5"/>
+</svg>

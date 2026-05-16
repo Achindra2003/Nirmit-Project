@@ -19,7 +19,18 @@
       "WebFetch(domain:discourse.threejs.org)",
       "Bash(curl -s http://127.0.0.1:8000/health)",
       "Bash(pip install *)",
-      "WebFetch(domain:www.sweethome3d.com)"
+      "WebFetch(domain:www.sweethome3d.com)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\achindras\\\\Documents\\\\Capstone Project Research\\\\nirmit-project\\\\frontend\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\achindras\\\\Documents\\\\Capstone Project Research\\\\nirmit-project\" -Directory)",
+      "Bash(dir /s \"C:\\\\Users\\\\achindras\\\\Documents\\\\Capstone Project Research\\\\nirmit-project\\\\frontend\")",
+      "Bash(Get-Content *)",
+      "Bash(xargs grep -l \"llm\\\\|LLM\\\\|get_llm\")",
+      "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
+      "Bash(powershell -Command \"\\(Get-Content 'src/routes/HomeRoute.tsx' -Raw\\) -replace '\\(drawLine [0-9.]+s\\) ease ', '\\\\$1 ease-out ' | Set-Content 'src/routes/HomeRoute.tsx' -NoNewline -Encoding utf8\")",
+      "Bash(powershell -Command \"\\(Get-Content 'src/routes/HomeRoute.tsx' -Raw\\) -replace '\\(\\(?:fade\\) [0-9.]+s\\) ease \\([0-9.]+s \\(?:both|forwards\\)\\)', '\\\\$1 ease-out \\\\$2' | Set-Content 'src/routes/HomeRoute.tsx' -NoNewline -Encoding utf8\")",
+      "Bash(grep -v \"//[^a-zA-Z]\")",
+      "Bash(npx vite *)"
     ]
   }
 }

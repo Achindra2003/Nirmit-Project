@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { ExportRequest, RoomState } from "@/api/types";
+import { api } from "@/api/client";
 import { useAppStore } from "@/store/useAppStore";
+import { TopNav } from "@/components/shell/TopNav";
 
 interface BOQResponse {
   city: string;
@@ -39,13 +41,15 @@ interface BOQResponse {
 type ExportOption = "pdf" | "whatsapp" | "contractor";
 
 export function ExportRoute() {
-  const { visions, selectedVisionId, setStage, reset } = useAppStore();
+  const { visions, selectedVisionId, reset } = useAppStore();
   const vision = visions.find((v) => v.id === selectedVisionId) ?? visions[0];
 
   const [boq, setBoq]           = useState<BOQResponse | null>(null);
   const [downloading, setDl]    = useState(false);
   const [error, setError]       = useState<string | null>(null);
   const [selected, setSelected] = useState<ExportOption>("pdf");
+  const [saving, setSaving]     = useState(false);
+  const [savedId, setSavedId]   = useState<string | null>(null);
 
   useEffect(() => {
     if (!vision) return;
@@ -72,6 +76,19 @@ export function ExportRoute() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setDl(false);
+    }
+  }
+
+  async function save() {
+    if (!vision || saving) return;
+    setSaving(true);
+    try {
+      const r = await api.saveDesign({ name: vision.name, philosophy: vision.philosophy, room_state: vision.room_state, existing_id: savedId });
+      setSavedId(r.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -115,38 +132,20 @@ export function ExportRoute() {
     <div className="paper" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
 
       {/* Header */}
-      <div style={{ height: 62, padding: "0 40px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderBottom: "1px solid var(--line)" }}>
-        <div onClick={() => setStage("planner")} style={{ cursor: "pointer", display: "flex", alignItems: "baseline", gap: 10 }}>
-          <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 500, color: "var(--ink)" }}>Nirmit</span>
-          <span style={{ fontFamily: "var(--fh)", fontSize: 15, color: "var(--ink-3)" }}>निर्मित</span>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-          <span className="eyebrow">Drawing No. 0042 · </span>
-          <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 18, fontWeight: 500, color: "var(--ink)" }}>{vision.name}</span>
-          <span style={{ fontFamily: "var(--fm)", fontSize: 11, color: "var(--ink-3)" }}>{wFt}′-0″ × {dFt}′-0″</span>
-        </div>
-
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      <TopNav
+        stage="export"
+        hideTrail
+        rightContent={
           <button
-            onClick={() => setStage("planner")}
-            style={{ background: "transparent", border: "1px solid var(--line)", color: "var(--ink-2)", padding: "9px 20px", fontFamily: "var(--fb)", fontSize: 12, fontWeight: 500, letterSpacing: "0.04em", cursor: "pointer", textTransform: "uppercase" as const, transition: "all .2s ease" }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--ink)"; e.currentTarget.style.color = "var(--ink)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.color = "var(--ink-2)"; }}
-          >
-            ← Back to planner
-          </button>
-          <button
+            className="btn-primary"
             onClick={() => downloadPdf(vision.room_state)}
             disabled={downloading}
-            style={{ background: "var(--ink)", color: "var(--paper)", border: "none", padding: "9px 22px", fontFamily: "var(--fb)", fontSize: 12, fontWeight: 600, letterSpacing: "0.04em", cursor: downloading ? "default" : "pointer", textTransform: "uppercase" as const, opacity: downloading ? 0.5 : 1, transition: "background .2s" }}
-            onMouseEnter={(e) => { if (!downloading) e.currentTarget.style.background = "var(--terra)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "var(--ink)"; }}
+            style={{ padding: "8px 20px" }}
           >
             {downloading ? "Preparing…" : "Download PDF →"}
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Body */}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "340px 1fr", minHeight: 0 }}>
@@ -201,37 +200,9 @@ export function ExportRoute() {
             })}
           </div>
 
-          {/* Cost breakdown */}
-          {boq && (
-            <div style={{ padding: "28px 32px", marginTop: 8 }}>
-              <span className="eyebrow" style={{ display: "block", marginBottom: 14 }}>Cost breakdown</span>
-              <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-                <AmountRow label="Subtotal"        value={boq.subtotal_inr} />
-                <AmountRow label="Contingency 10%" value={boq.contingency_inr} />
-                <AmountRow label="GST"             value={boq.gst_inr} />
-                <div style={{ height: 1, background: "var(--line)", margin: "3px 0" }} />
-                <AmountRow label="Grand total"     value={boq.grand_total_inr} bold />
-              </div>
-              {boq.valid_until && (
-                <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12.5, color: "var(--ink-3)", marginTop: 12 }}>
-                  Valid until {boq.valid_until}
-                </div>
-              )}
-            </div>
-          )}
-
           {error && (
-            <p style={{ padding: "0 32px", fontFamily: "var(--fd)", fontStyle: "italic", color: "var(--terra-dk)", fontSize: 14 }}>{error}</p>
+            <p style={{ padding: "0 32px 16px", fontFamily: "var(--fd)", fontStyle: "italic", color: "var(--terra-dk)", fontSize: 14 }}>{error}</p>
           )}
-
-          <button
-            onClick={reset}
-            style={{ background: "transparent", border: "none", color: "var(--ink-3)", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 15, cursor: "pointer", textAlign: "left" as const, padding: "16px 32px", marginTop: "auto" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--ink-3)"; }}
-          >
-            Start a new room →
-          </button>
         </div>
 
         {/* RIGHT — PDF preview / BOQ content */}
@@ -242,21 +213,23 @@ export function ExportRoute() {
               <div style={{ width: 32, height: 32, border: "2px solid var(--line)", borderTopColor: "var(--terra)", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
             </div>
           ) : (
-            <div style={{ background: "white", border: "1px solid var(--line)", boxShadow: "0 2px 20px rgba(0,0,0,.07)", padding: "40px 44px", maxWidth: 740, margin: "0 auto" }}>
+            <div className="card-inset" style={{ maxWidth: 740, margin: "0 auto", background: "var(--paper)" }}>
 
-              {/* Document header */}
+              {/* Document header — with Nirmit / निर्मित logotype */}
               <div style={{ borderBottom: "2px solid var(--ink)", paddingBottom: 20, marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <div style={{ fontFamily: "var(--fm)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", marginBottom: 8, textTransform: "uppercase" as const }}>Nirmit · Room Quotation</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 26, fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.01em", lineHeight: 1 }}>Nirmit</span>
+                    <span style={{ fontFamily: "var(--fh)", fontSize: 16, color: "var(--ink)", opacity: 0.5, lineHeight: 1 }}>निर्मित</span>
+                    <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "var(--terra)", margin: "0 4px 2px" }} />
+                    <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, letterSpacing: "0.18em", color: "var(--ink-3)", textTransform: "uppercase" as const, lineHeight: 1 }}>Room Quotation</span>
+                  </div>
                   <div style={{ fontFamily: "var(--fd)", fontSize: 28, fontWeight: 500, color: "var(--ink)" }}>{vision.name}</div>
                   <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)", marginTop: 4 }}>{vision.tagline}</div>
                 </div>
                 <div style={{ textAlign: "right" as const }}>
                   <div style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>DRAWING NO. 0042</div>
                   <div style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em", marginTop: 4 }}>{wFt}′-0″ × {dFt}′-0″</div>
-                  {boq.valid_until && (
-                    <div style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em", marginTop: 4 }}>VALID UNTIL {boq.valid_until}</div>
-                  )}
                 </div>
               </div>
 
@@ -267,49 +240,153 @@ export function ExportRoute() {
                 <SummaryCell label="Vibe" value={vision.philosophy.replace("_", " ").replace(/\b\w/g, c => c.toUpperCase())} />
                 <SummaryCell label="Budget" value={`₹${(vision.room_state.intake.budget_inr / 100000).toFixed(1)}L`} />
                 <SummaryCell label="Total" value={`₹${(boq.grand_total_inr / 100000).toFixed(2)}L`} accent />
-                <SummaryCell label="Remaining" value={(() => { const r = vision.room_state.intake.budget_inr - boq.grand_total_inr; return r >= 0 ? `+₹${Math.round(r/1000)}k` : `-₹${Math.round(Math.abs(r)/1000)}k`; })()} />
+                <SummaryCell label="Remaining" value={(() => { const r = vision.room_state.intake.budget_inr - boq.grand_total_inr; return `${r >= 0 ? "+" : "−"}${formatAmount(Math.abs(r))}`; })()} />
               </div>
 
               {/* Furniture BOQ */}
-              <div style={{ marginBottom: 32 }}>
-                <span className="eyebrow" style={{ display: "block", marginBottom: 14 }}>Furniture & Materials</span>
+              <div style={{ marginBottom: 28 }}>
+                <span className="eyebrow" style={{ display: "block", marginBottom: 14 }}>A — Furniture & Furnishings</span>
                 <table style={{ width: "100%", borderCollapse: "collapse" as const }}>
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--ink)" }}>
                       <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "left" as const, padding: "0 0 8px", fontWeight: 500 }}>#</th>
-                      <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "left" as const, padding: "0 0 8px", fontWeight: 500 }}>Description</th>
-                      <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "center" as const, padding: "0 0 8px", fontWeight: 500 }}>Type</th>
-                      <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "right" as const, padding: "0 0 8px", fontWeight: 500 }}>Amount</th>
+                      <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "left" as const, padding: "0 0 8px", fontWeight: 500 }}>Item</th>
+                      <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "center" as const, padding: "0 0 8px", fontWeight: 500 }}>Qty</th>
+                      <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "center" as const, padding: "0 0 8px", fontWeight: 500 }}>How to get</th>
+                      <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "right" as const, padding: "0 0 8px", fontWeight: 500 }}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {boq.furniture.map((it) => (
-                      <tr key={it.sl_no} style={{ borderBottom: "1px solid var(--line)" }}>
-                        <td style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", padding: "12px 12px 12px 0", verticalAlign: "top" as const }}>{String(it.sl_no).padStart(2, "0")}</td>
-                        <td style={{ padding: "12px 12px", verticalAlign: "top" as const }}>
-                          <div style={{ fontFamily: "var(--fd)", fontSize: 16, fontWeight: 500, color: "var(--ink)" }}>{it.description}</div>
-                          {it.carpenter_spec && (
-                            <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12.5, color: "var(--ink-3)", marginTop: 2 }}>{it.carpenter_spec}</div>
-                          )}
-                        </td>
-                        <td style={{ textAlign: "center" as const, verticalAlign: "top" as const, padding: "12px 8px" }}>
-                          <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.1em", color: it.procurement === "build" ? "var(--leaf)" : "var(--ink-3)", border: `1px solid ${it.procurement === "build" ? "var(--leaf)" : "var(--line)"}`, padding: "3px 7px" }}>
-                            {it.procurement.toUpperCase()}
-                          </span>
-                        </td>
-                        <td style={{ fontFamily: "var(--fd)", fontSize: 16, color: "var(--ink)", textAlign: "right" as const, verticalAlign: "top" as const, padding: "12px 0 12px 8px" }}>
-                          ₹{Math.round(it.amount_inr / 1000)}k
-                        </td>
-                      </tr>
-                    ))}
-                    <tr style={{ borderTop: "2px solid var(--ink)" }}>
-                      <td colSpan={3} style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 15, color: "var(--ink)", padding: "14px 12px 0 0", textAlign: "right" as const }}>Grand total</td>
-                      <td style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 500, color: "var(--ink)", textAlign: "right" as const, padding: "14px 0 0" }}>
-                        ₹{(boq.grand_total_inr / 100000).toFixed(2)}L
-                      </td>
-                    </tr>
+                    {(() => {
+                      // Group identical items by description
+                      const grouped = new Map<string, typeof boq.furniture[0] & { qty: number }>();
+                      boq.furniture.forEach((it) => {
+                        const key = it.description.toLowerCase().trim();
+                        if (grouped.has(key)) {
+                          const existing = grouped.get(key)!;
+                          existing.qty += 1;
+                          existing.amount_inr += it.amount_inr;
+                        } else {
+                          grouped.set(key, { ...it, qty: 1 });
+                        }
+                      });
+                      return Array.from(grouped.values()).map((it, idx) => {
+                        const pepperQuery = encodeURIComponent(it.description.replace(/\s+/g, "+"));
+                        const pepperUrl = `https://www.pepperfry.com/search?q=${pepperQuery}`;
+                        return (
+                          <tr key={it.sl_no} style={{ borderBottom: "1px solid var(--line)" }}>
+                            <td style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", padding: "12px 12px 12px 0", verticalAlign: "top" as const }}>{String(idx + 1).padStart(2, "0")}</td>
+                            <td style={{ padding: "12px 12px", verticalAlign: "top" as const }}>
+                              <div style={{ fontFamily: "var(--fd)", fontSize: 15, fontWeight: 500, color: "var(--ink)", lineHeight: 1.3 }}>{it.description}</div>
+                              {it.carpenter_spec && (
+                                <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12, color: "var(--ink-3)", marginTop: 3 }}>{it.carpenter_spec}</div>
+                              )}
+                            </td>
+                            <td style={{ fontFamily: "var(--fm)", fontSize: 12, color: "var(--ink-2)", textAlign: "center" as const, verticalAlign: "top" as const, padding: "12px 8px" }}>{it.qty}</td>
+                            <td style={{ textAlign: "center" as const, verticalAlign: "top" as const, padding: "12px 8px" }}>
+                              {it.procurement === "build" ? (
+                                <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.1em", color: "var(--leaf)", border: "1px solid var(--leaf)", padding: "3px 7px" }}>CARPENTER</span>
+                              ) : (
+                                <a
+                                  href={pepperUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.1em", color: "var(--terra)", border: "1px solid var(--terra)", padding: "3px 7px", textDecoration: "none", display: "inline-block" }}
+                                >
+                                  BUY ↗
+                                </a>
+                              )}
+                            </td>
+                            <td style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink)", textAlign: "right" as const, verticalAlign: "top" as const, padding: "12px 0 12px 8px" }}>
+                              {formatAmount(it.amount_inr)}
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Materials BOQ */}
+              {boq.materials.length > 0 && (
+                <div style={{ marginBottom: 28 }}>
+                  <span className="eyebrow" style={{ display: "block", marginBottom: 14 }}>B — Materials & Finishing</span>
+                  <table style={{ width: "100%", borderCollapse: "collapse" as const }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid var(--ink)" }}>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "left" as const, padding: "0 0 8px", fontWeight: 500 }}>#</th>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "left" as const, padding: "0 0 8px", fontWeight: 500 }}>Description</th>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "center" as const, padding: "0 0 8px", fontWeight: 500 }}>Qty</th>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "right" as const, padding: "0 0 8px", fontWeight: 500 }}>Rate</th>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "right" as const, padding: "0 0 8px", fontWeight: 500 }}>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {boq.materials.map((m) => (
+                        <tr key={m.sl_no} style={{ borderBottom: "1px solid var(--line)" }}>
+                          <td style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", padding: "10px 12px 10px 0", verticalAlign: "top" as const }}>{String(m.sl_no).padStart(2, "0")}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 15, fontWeight: 500, color: "var(--ink)", padding: "10px 12px", verticalAlign: "top" as const }}>{m.description}</td>
+                          <td style={{ fontFamily: "var(--fm)", fontSize: 11, color: "var(--ink-2)", textAlign: "center" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{m.qty} {m.unit}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 14, color: "var(--ink-2)", textAlign: "right" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{formatRate(m.rate_inr, m.unit)}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink)", textAlign: "right" as const, padding: "10px 0 10px 8px", verticalAlign: "top" as const }}>{formatAmount(m.amount_inr)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Labour BOQ */}
+              {boq.labor.length > 0 && (
+                <div style={{ marginBottom: 28 }}>
+                  <span className="eyebrow" style={{ display: "block", marginBottom: 14 }}>C — Labour</span>
+                  <table style={{ width: "100%", borderCollapse: "collapse" as const }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid var(--ink)" }}>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "left" as const, padding: "0 0 8px", fontWeight: 500 }}>#</th>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "left" as const, padding: "0 0 8px", fontWeight: 500 }}>Work Item</th>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "center" as const, padding: "0 0 8px", fontWeight: 500 }}>Qty</th>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "right" as const, padding: "0 0 8px", fontWeight: 500 }}>Rate</th>
+                        <th style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)", textAlign: "right" as const, padding: "0 0 8px", fontWeight: 500 }}>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {boq.labor.map((l) => (
+                        <tr key={l.sl_no} style={{ borderBottom: "1px solid var(--line)" }}>
+                          <td style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", padding: "10px 12px 10px 0", verticalAlign: "top" as const }}>{String(l.sl_no).padStart(2, "0")}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 15, fontWeight: 500, color: "var(--ink)", padding: "10px 12px", verticalAlign: "top" as const }}>{l.description}</td>
+                          <td style={{ fontFamily: "var(--fm)", fontSize: 11, color: "var(--ink-2)", textAlign: "center" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{l.qty} {l.unit}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 14, color: "var(--ink-2)", textAlign: "right" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{formatRate(l.rate_inr, l.unit)}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink)", textAlign: "right" as const, padding: "10px 0 10px 8px", verticalAlign: "top" as const }}>{formatAmount(l.amount_inr)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Cost summary — always after all line items */}
+              <div style={{ marginBottom: 32, padding: "18px 20px", background: "var(--paper-3)", border: "1px solid var(--line)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)" }}>Subtotal (A + B + C)</span>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink-2)" }}>{formatAmount(boq.subtotal_inr)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)" }}>Contingency (10%)</span>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink-2)" }}>{formatAmount(boq.contingency_inr)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)" }}>GST</span>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink-2)" }}>{formatAmount(boq.gst_inr)}</span>
+                  </div>
+                  <div style={{ height: "0.5px", background: "var(--line-2)", margin: "4px 0" }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 17, fontWeight: 600, color: "var(--ink)" }}>Grand Total</span>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 600, color: "var(--ink)" }}>₹{(boq.grand_total_inr / 100000).toFixed(2)}L</span>
+                  </div>
+                </div>
               </div>
 
               {/* Execution phases */}
@@ -327,7 +404,7 @@ export function ExportRoute() {
                           <div style={{ fontFamily: "var(--fd)", fontSize: 16, fontWeight: 500, color: "var(--ink)" }}>{p.label.replace(/^\d+\.\s*/, "")}</div>
                           <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
                             <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>~{p.duration_days} DAYS</span>
-                            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>₹{Math.round(p.total_inr / 1000)}K</span>
+                            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>{formatAmount(p.total_inr).toUpperCase()}</span>
                           </div>
                         </div>
                       </div>
@@ -351,7 +428,7 @@ export function ExportRoute() {
 
               {/* Document footer */}
               <div style={{ borderTop: "1px solid var(--line)", marginTop: 32, paddingTop: 16, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.12em" }}>NIRMIT · निर्मित · SURESH CAN BUILD THIS</span>
+                <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.12em" }}>NIRMIT · BUILT FOR YOUR HOME</span>
                 <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.1em" }}>DRAWING 0042-A · SCALE 1:48</span>
               </div>
             </div>
@@ -359,32 +436,56 @@ export function ExportRoute() {
         </div>
       </div>
 
-      {/* Grand total bar */}
-      {boq && (
-        <div style={{ height: 48, padding: "0 40px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid var(--line)", background: "var(--paper-2)" }}>
+      {/* Bottom bar */}
+      <div style={{ height: 52, padding: "0 40px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid var(--line)", background: "var(--paper-2)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <button
+            className="btn-secondary"
+            onClick={save}
+            disabled={saving}
+            style={{ padding: "8px 18px" }}
+          >
+            {saving ? "Saving…" : savedId ? "Saved ✓" : "← Save design"}
+          </button>
+          <button
+            onClick={reset}
+            className="tool-action-lnk"
+            style={{ padding: 0 }}
+          >
+            Start a new room →
+          </button>
+        </div>
+        {boq && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
             <span className="eyebrow">Grand total</span>
             <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 500, color: "var(--ink)" }}>
               ₹{(boq.grand_total_inr / 100000).toFixed(2)}L
             </span>
           </div>
-          <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 13.5, color: "var(--ink-3)" }}>
-            Valid until {boq.valid_until} · Suresh can build this.
-          </span>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
-function AmountRow({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-      <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: bold ? "var(--ink)" : "var(--ink-2)", fontWeight: bold ? 500 : 400 }}>{label}</span>
-      <span style={{ fontFamily: "var(--fd)", fontSize: bold ? 18 : 15, fontWeight: bold ? 600 : 400, color: bold ? "var(--ink)" : "var(--ink-2)" }}>₹{Math.round(value / 1000)}k</span>
-    </div>
-  );
+/**
+ * Format a rupee amount for display: small values in plain rupees, larger
+ * values abbreviated (k for thousands, L for lakhs). Avoids the bug where
+ * dividing ₹38/sqft by 1000 displays as "₹0k".
+ */
+function formatAmount(inr: number): string {
+  if (!Number.isFinite(inr)) return "—";
+  const abs = Math.abs(inr);
+  if (abs >= 100000) return `₹${(inr / 100000).toFixed(2)}L`;
+  if (abs >= 1000)   return `₹${Math.round(inr / 1000)}k`;
+  return `₹${Math.round(inr)}`;
 }
+
+/** Per-unit rate (₹38/sqft, ₹120/rft, ₹2.5k/each, etc.) */
+function formatRate(rate: number, unit: string): string {
+  return `${formatAmount(rate)}/${unit}`;
+}
+
 
 function SummaryCell({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (

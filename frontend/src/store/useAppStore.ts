@@ -18,6 +18,7 @@ interface AppState {
   intake: Intake | null;
   visions: Vision[];
   selectedVisionId: string | null;
+  visionsLoaded: boolean;
 
   // ── Planner editing ──
   selectedItemId: string | null;
@@ -41,6 +42,7 @@ export const useAppStore = create<AppState>((set) => ({
   intake: null,
   visions: [],
   selectedVisionId: null,
+  visionsLoaded: false,
 
   selectedItemId: null,
   editMode: "browse",
@@ -48,7 +50,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   setStage: (stage) => set({ stage }),
   setIntake: (intake) => set({ intake }),
-  setVisions: (visions) => set({ visions, selectedVisionId: visions[0]?.id ?? null }),
+  setVisions: (visions) => set({ visions, selectedVisionId: visions[0]?.id ?? null, visionsLoaded: true }),
   selectVision: (selectedVisionId) => set({ selectedVisionId }),
 
   setSelectedItem: (selectedItemId) =>
@@ -69,6 +71,7 @@ export const useAppStore = create<AppState>((set) => ({
       intake: null,
       visions: [],
       selectedVisionId: null,
+      visionsLoaded: false,
       selectedItemId: null,
       editMode: "browse",
       layoutEditMode: false,
