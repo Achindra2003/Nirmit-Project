@@ -52,6 +52,7 @@ class CollabState(TypedDict, total=False):
     history: list[dict[str, str]]
     message: str
     available_visions: list
+    first_look_mode: bool
     raw_llm_text: str
     parsed: dict[str, Any]
     response: ChatResponse
@@ -114,7 +115,8 @@ def _apply(state: CollabState) -> CollabState:
 
     proposed: RoomState | None = None
     cost_delta = 0
-    if intents:
+    # In first-look mode intents are suggestions only — do not apply them
+    if intents and not state.get("first_look_mode"):
         try:
             proposed = apply_intents(
                 state["room_state"],

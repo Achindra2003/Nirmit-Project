@@ -47,6 +47,7 @@ export interface CatalogRef {
   size_label: string | null;
   material_label: string | null;
   finish_label: string | null;
+  placement_type: "floor" | "wall" | "ceiling";
 }
 
 export interface PlacedItem {

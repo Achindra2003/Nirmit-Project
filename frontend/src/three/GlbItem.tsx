@@ -60,6 +60,7 @@ export function GlbItem({ item, room, accent, selected, draggable, onSelect, onM
   const h = mmToM(item.dimensions.height_mm);
   const roomWmm = room.intake.room_dimensions.width_mm;
   const roomDmm = room.intake.room_dimensions.depth_mm;
+  const roomHm = mmToM(room.intake.room_dimensions.height_mm);
   const { raycaster, camera, gl } = useThree();
   const groundPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
   const tmp = useMemo(() => new THREE.Vector3(), []);
@@ -136,8 +137,23 @@ export function GlbItem({ item, room, accent, selected, draggable, onSelect, onM
   const fallback = <BoxFallback w={w} d={d} h={h} category={item.category} accent={accent} selected={isHot} draggable={draggable} />;
   const assetUrl = item.catalog?.asset_url;
 
+  const placementType = item.catalog?.placement_type ?? "floor";
+  const tuning = assetTuning(assetUrl ?? "");
+  let groupY: number;
+  let meshYNudge: number;
+  if (placementType === "ceiling") {
+    groupY = roomHm - h;
+    meshYNudge = 0;
+  } else if (placementType === "wall") {
+    groupY = tuning.yNudge;
+    meshYNudge = 0;
+  } else {
+    groupY = 0;
+    meshYNudge = tuning.yNudge;
+  }
+
   return (
-    <group position={[x, 0, z]} rotation={[0, rot, 0]} onPointerDown={onPointerDown}>
+    <group position={[x, groupY, z]} rotation={[0, rot, 0]} onPointerDown={onPointerDown}>
       {assetUrl ? (
         <GlbErrorBoundary fallback={fallback}>
           <Suspense fallback={fallback}>
@@ -145,6 +161,7 @@ export function GlbItem({ item, room, accent, selected, draggable, onSelect, onM
               assetUrl={assetUrl}
               tint={item.catalog.tint_hex}
               roughness={item.catalog.roughness_hint}
+              yNudge={meshYNudge}
               w={w} d={d} h={h}
               selected={isHot}
               draggable={draggable}
@@ -182,11 +199,12 @@ function applyMat(mat: THREE.MeshStandardMaterial, tint: string | null, roughnes
 }
 
 function GlbMesh({
-  assetUrl, tint, roughness, w, d, h, selected, draggable,
+  assetUrl, tint, roughness, yNudge, w, d, h, selected, draggable,
 }: {
   assetUrl: string;
   tint: string | null;
   roughness: number | null;
+  yNudge: number;
   w: number; d: number; h: number;
   selected: boolean;
   draggable: boolean;
@@ -240,16 +258,16 @@ function GlbMesh({
     const size = new THREE.Vector3();
     native.getSize(size);
     if (size.x < 1e-5 || size.y < 1e-5 || size.z < 1e-5) {
-      return { scaleX: 1, scaleY: 1, scaleZ: 1, offset: new THREE.Vector3(0, tuning.yNudge, 0) };
+      return { scaleX: 1, scaleY: 1, scaleZ: 1, offset: new THREE.Vector3(0, yNudge, 0) };
     }
     const scaleX = (w / size.x) * tuning.scaleMul;
     const scaleY = (h / size.y) * tuning.scaleMul;
     const scaleZ = (d / size.z) * tuning.scaleMul;
-    const minY = native.min.y * scaleY;
+    const floorOffset = -native.min.y * scaleY;
     const cX = (native.min.x + native.max.x) * 0.5 * scaleX;
     const cZ = (native.min.z + native.max.z) * 0.5 * scaleZ;
-    return { scaleX, scaleY, scaleZ, offset: new THREE.Vector3(-cX, -minY + tuning.yNudge, -cZ) };
-  }, [cloned, assetUrl, w, d, h]);
+    return { scaleX, scaleY, scaleZ, offset: new THREE.Vector3(-cX, floorOffset + yNudge, -cZ) };
+  }, [cloned, assetUrl, yNudge, w, d, h]);
 
   return (
     <group scale={[fit.scaleX, fit.scaleY, fit.scaleZ]} position={fit.offset}>

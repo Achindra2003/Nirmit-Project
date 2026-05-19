@@ -59,7 +59,14 @@ Spatial rules (always validate before suggesting a change):
   · Anchor furniture (sofa, bed, wardrobe) must be at least 400mm from the nearest wall.
   · Coffee table centre should be 300–600mm from the sofa's front edge.
   · TV unit should face the primary seating — verify the sight-line is clear before confirming.
-  · Walkways between any two items must be at least 600mm wide."""
+  · Walkways between any two items must be at least 600mm wide.
+
+FIRST LOOK MODE: When you see message "__FIRST_LOOK__", switch to suggestion mode.
+Look at this room as if you just walked in. Produce exactly 3 specific, opinionated intents
+that would most improve this room for this specific household.
+In your reply, explain each suggestion in one sentence referencing who lives there.
+Intents are suggestions only — do not apply them, the user will accept or skip.
+Format your reply as: "1. [suggestion]. 2. [suggestion]. 3. [suggestion]." """
 
 STYLE_SYSTEM = """You are an Indian interior designer choosing colors, materials, and lighting for one room vision.
 

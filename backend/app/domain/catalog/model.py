@@ -1,6 +1,8 @@
 """Catalog domain types. Independent of the API contract — these are internal."""
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.state import Dimensions, RoomType, Vibe
@@ -31,6 +33,12 @@ class CatalogItem(BaseModel):
     finish_label: str | None = None
     roughness_hint: float | None = None
     front_clearance_mm: int = 600
+    # How the renderer should position the item on the Y axis.
+    # "floor"   — bottom of mesh sits on y=0 (the floor). Default.
+    # "ceiling" — bottom sits at roomHeight - itemHeight (hangs from ceiling).
+    # "wall"    — bottom sits at assetTuning.yNudge metres above the floor
+    #             (yNudge encodes the mount height for each wall item).
+    placement_type: Literal["floor", "wall", "ceiling"] = "floor"
 
 
 class CatalogQuery(BaseModel):

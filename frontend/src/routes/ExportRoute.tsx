@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
-import type { ExportRequest, RoomState } from "@/api/types";
+import { useEffect, useRef, useState } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import type { ExportRequest } from "@/api/types";
 import { api } from "@/api/client";
 import { useAppStore } from "@/store/useAppStore";
 import { TopNav } from "@/components/shell/TopNav";
@@ -50,6 +52,7 @@ export function ExportRoute() {
   const [selected, setSelected] = useState<ExportOption>("pdf");
   const [saving, setSaving]     = useState(false);
   const [savedId, setSavedId]   = useState<string | null>(null);
+  const boqRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!vision) return;
@@ -60,31 +63,43 @@ export function ExportRoute() {
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
   }, [vision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function downloadPdf(roomState: RoomState) {
+  async function downloadPdf() {
+    if (!boqRef.current) {
+      setError("Quotation preview not ready — please wait a moment and try again.");
+      return;
+    }
     setDl(true);
     setError(null);
     try {
-      const res = await fetch("/api/export", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          room_state: roomState,
-          format: "pdf",
-          include_hindi_section: true,
-          vision_name: vision.name,
-          vision_tagline: vision.tagline,
-          philosophy: vision.philosophy,
-        }),
+      const canvas = await html2canvas(boqRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#F2EBDD",
+        logging: false,
       });
-      if (!res.ok) throw new Error(`/export ${res.status}`);
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href = url; a.download = "nirmit-quotation.pdf";
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      if (pdfHeight <= pageHeight) {
+        pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+      } else {
+        let yOffset = 0;
+        let remaining = pdfHeight;
+        while (remaining > 0) {
+          pdf.addImage(imgData, "JPEG", 0, -yOffset, pdfWidth, pdfHeight);
+          remaining -= pageHeight;
+          yOffset += pageHeight;
+          if (remaining > 0) pdf.addPage();
+        }
+      }
+
+      pdf.save("nirmit-quotation.pdf");
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof Error ? e.message : "PDF export failed");
     } finally {
       setDl(false);
     }
@@ -149,11 +164,11 @@ export function ExportRoute() {
         rightContent={
           <button
             className="btn-primary"
-            onClick={() => downloadPdf(vision.room_state)}
-            disabled={downloading}
+            onClick={() => void downloadPdf()}
+            disabled={downloading || !boq}
             style={{ padding: "8px 20px" }}
           >
-            {downloading ? "Preparing…" : "Download PDF →"}
+            {downloading ? "Preparing…" : !boq ? "Loading…" : "Download PDF →"}
           </button>
         }
       />
@@ -224,7 +239,7 @@ export function ExportRoute() {
               <div style={{ width: 32, height: 32, border: "2px solid var(--line)", borderTopColor: "var(--terra)", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
             </div>
           ) : (
-            <div className="card-inset" style={{ maxWidth: 740, margin: "0 auto", background: "var(--paper)" }}>
+            <div ref={boqRef} className="card-inset" style={{ maxWidth: 740, margin: "0 auto", background: "var(--paper)" }}>
 
               {/* Document header — with Nirmit / निर्मित logotype */}
               <div style={{ borderBottom: "2px solid var(--ink)", paddingBottom: 20, marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>

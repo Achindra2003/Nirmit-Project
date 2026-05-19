@@ -35,6 +35,8 @@ export function PlannerRoute() {
   const [camView, setCamView]   = useState<CameraView>("corner");
   const [advisory, setAdvisory] = useState(false);
   const [backendUp, setBackendUp] = useState(true);
+  const [firstLookSuggestions, setFirstLookSuggestions] = useState<Intent[]>([]);
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<number>>(new Set());
   const [showRoomEdit, setShowRoomEdit] = useState(false);
   const [showCatalogue, setShowCatalogue] = useState(false);
   const [roomW, setRoomW] = useState(baseVision?.room_state.intake.room_dimensions.width_mm ?? 3600);
@@ -66,6 +68,23 @@ export function PlannerRoute() {
   useEffect(() => {
     fetch("/health").then((r) => setBackendUp(r.ok)).catch(() => setBackendUp(false));
   }, []);
+
+  // First-look proactive suggestions — fire once when a room loads
+  useEffect(() => {
+    if (!room) return;
+    setFirstLookSuggestions([]);
+    setDismissedSuggestions(new Set());
+    fetch("/api/chat/first-look", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ room_state: room, history: [], message: "__FIRST_LOOK__", available_visions: visions }),
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.intents?.length > 0) setFirstLookSuggestions(res.intents.slice(0, 3));
+      })
+      .catch(() => {});
+  }, [baseVision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!baseVision || !room) return (
     <div style={{ height: "100vh", display: "grid", placeItems: "center", background: "var(--basalt)", color: "var(--paper)", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 20 }}>
@@ -512,6 +531,32 @@ export function PlannerRoute() {
           roomDepth={room.intake.room_dimensions.depth_mm}
         />
 
+        {/* First-look suggestion cards */}
+        {firstLookSuggestions.length > 0 && firstLookSuggestions.some((_, i) => !dismissedSuggestions.has(i)) && (
+          <div style={{ padding: "8px 20px", borderTop: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)" }}>SUGGESTED IMPROVEMENTS</span>
+            {firstLookSuggestions.map((intent, i) => {
+              if (dismissedSuggestions.has(i)) return null;
+              const label = intent.parameters.sku
+                ? `Add ${intent.parameters.sub_category || intent.parameters.sku}`
+                : intent.kind.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "var(--paper-3)", border: "1px solid var(--line)", borderLeft: "3px solid var(--terra)" }}>
+                  <span style={{ flex: 1, fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.4 }}>{label}</span>
+                  <button
+                    onClick={() => { void applyOneIntent(intent); setDismissedSuggestions((s) => new Set([...s, i])); }}
+                    style={{ background: "var(--terra)", border: "none", color: "var(--paper)", fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.1em", padding: "4px 10px", cursor: "pointer" }}
+                  >APPLY</button>
+                  <button
+                    onClick={() => setDismissedSuggestions((s) => new Set([...s, i]))}
+                    style={{ background: "transparent", border: "1px solid var(--line)", color: "var(--ink-3)", fontFamily: "var(--fm)", fontSize: 9, padding: "4px 8px", cursor: "pointer" }}
+                  >SKIP</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Suggestion chips */}
         <div style={{ padding: "8px 20px 4px", display: "flex", flexWrap: "wrap" as const, gap: 6, flexShrink: 0, borderTop: "1px solid var(--line)" }}>
           {SUGGESTIONS.map((s) => (
@@ -551,17 +596,6 @@ export function PlannerRoute() {
   );
 }
 
-function PillSeg({ options, value, onChange }: { options: [string, string][]; value: string; onChange: (v: string) => void }) {
-  return (
-    <div style={{ display: "flex", background: "rgba(242,235,221,.06)", padding: 3, gap: 1 }}>
-      {options.map(([k, label]) => (
-        <div key={k} onClick={() => onChange(k)} style={{ padding: "5px 14px", cursor: "pointer", background: value === k ? "rgba(242,235,221,.12)" : "transparent", color: value === k ? "var(--paper)" : "rgba(242,235,221,.32)", fontFamily: "var(--fm)", fontSize: 10, letterSpacing: "0.08em", transition: "all .18s" }}>
-          {label}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function AdvisoryPanel({ open, onToggle, vastuNotes, items, roomDepth }: {
   open: boolean;

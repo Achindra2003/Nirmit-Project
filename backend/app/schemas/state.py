@@ -107,6 +107,7 @@ class CatalogRef(StrictModel):
     size_label: str | None = None
     material_label: str | None = None
     finish_label: str | None = None
+    placement_type: Literal["floor", "wall", "ceiling"] = "floor"
 
 
 class PlacedItem(StrictModel):
@@ -183,6 +184,7 @@ class RoomState(StrictModel):
     """The complete description of a designed room. The frontend renders this verbatim."""
 
     id: str
+    philosophy: str | None = None   # "gathering" | "breath" | "keeper"
     intake: Intake
     items: list[PlacedItem] = Field(default_factory=list)
     palette: dict[str, str] = Field(

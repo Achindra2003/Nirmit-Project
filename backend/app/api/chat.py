@@ -24,3 +24,18 @@ async def chat(req: ChatRequest) -> ChatResponse:
         }
     )
     return result["response"]
+
+
+@router.post("/chat/first-look", response_model=ChatResponse)
+async def chat_first_look(req: ChatRequest) -> ChatResponse:
+    """Fire on PlannerRoute mount. Returns 3 opinionated suggestions but does NOT apply them."""
+    result = await _graph.ainvoke(
+        {
+            "room_state": req.room_state,
+            "history": [],
+            "message": "__FIRST_LOOK__",
+            "available_visions": req.available_visions,
+            "first_look_mode": True,
+        }
+    )
+    return result["response"]

@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 
 from app.domain.catalog import CatalogQuery, get_catalog
-from app.domain.solver import DoorOpening, SolverInput, SolverItem, solve
+from app.domain.solver import DoorOpening, SolverInput, SolverItem, composition_for, solve
 from app.schemas.state import (
     CatalogRef,
     Dimensions,
@@ -258,6 +258,7 @@ def _replace(room: RoomState, target_id: str | None, params: dict) -> RoomState 
                     size_label=new_catalog_item.size_label,
                     material_label=new_catalog_item.material_label,
                     finish_label=new_catalog_item.finish_label,
+                    placement_type=new_catalog_item.placement_type,
                 ),
                 name_en=new_catalog_item.name_en,
                 name_hi=new_catalog_item.name_hi,
@@ -309,6 +310,7 @@ def _add(room: RoomState, params: dict) -> RoomState | None:
             size_label=item.size_label,
             material_label=item.material_label,
             finish_label=item.finish_label,
+            placement_type=item.placement_type,
         ),
         name_en=item.name_en,
         name_hi=item.name_hi,
@@ -462,12 +464,14 @@ def _resolve(room: RoomState) -> RoomState:
         )
         for i in room.items
     )
+    zones = composition_for(room.intake.room_type.value, room.philosophy) if room.philosophy else ()
     res = solve(
         SolverInput(
             width_mm=room.intake.room_dimensions.width_mm,
             depth_mm=room.intake.room_dimensions.depth_mm,
             entrance=room.intake.entrance_direction,
             items=solver_items,
+            zones=zones,
             vastu_enabled=room.intake.vastu_matters,
             room_type=room.intake.room_type.value,
             doors=(entrance_door,),

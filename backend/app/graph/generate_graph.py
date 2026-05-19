@@ -66,10 +66,51 @@ class GenerateState(TypedDict, total=False):
 
 def _interpret(state: GenerateState) -> GenerateState:
     intake = state["intake"]
-    text = intake.who_lives_here.lower()
-    has_kids = any(k in text for k in ("kid", "child", "son", "daughter", "baby", "toddler"))
+
+    INTERPRET_SYSTEM = """You extract a structured design brief from an Indian homeowner's intake.
+Output ONLY valid JSON, no markdown, no commentary.
+{
+  "has_kids": bool,
+  "kid_age": "toddler|school|teen|none",
+  "has_elderly": bool,
+  "mobility_concern": bool,
+  "entertains_guests": "frequent|occasional|rare",
+  "needs_storage": "high|medium|low",
+  "spiritual_practice": "daily_mandir|occasional|none",
+  "works_from_home": bool,
+  "avoid_glass_surfaces": bool,
+  "vibe": "<echo the vibe>",
+  "vastu_enabled": bool
+}
+Be conservative: only set a flag true if the text clearly supports it."""
+
+    prompt = (
+        f"Room: {intake.room_type.value}\n"
+        f"Who lives here: {intake.who_lives_here}\n"
+        f"Vibe: {intake.vibe.value}\n"
+        f"Vastu matters: {intake.vastu_matters}\n"
+        f"Budget: ₹{intake.budget_inr}\n"
+        f"Keep existing: {intake.keep_existing or 'nothing mentioned'}"
+    )
+
+    try:
+        from langchain_core.messages import HumanMessage, SystemMessage
+        from app.llm import get_llm
+        llm = get_llm(temperature=0.2)
+        raw = llm.invoke([SystemMessage(content=INTERPRET_SYSTEM), HumanMessage(content=prompt)])
+        text = raw.content if hasattr(raw, "content") else str(raw)
+        m = _JSON_BLOCK.search(text)
+        if m:
+            brief = json.loads(m.group(0))
+            return {**state, "design_brief": brief}
+    except Exception:
+        log.warning("LLM interpret failed, falling back to keyword matching", exc_info=True)
+
+    # Fallback: keyword matching
+    text_lower = intake.who_lives_here.lower()
+    has_kids = any(k in text_lower for k in ("kid", "child", "son", "daughter", "baby", "toddler"))
     has_elderly = any(
-        k in text
+        k in text_lower
         for k in ("mother-in-law", "mother in law", "grand", "elder", "parents", "father-in-law")
     )
     return {
@@ -77,6 +118,13 @@ def _interpret(state: GenerateState) -> GenerateState:
         "design_brief": {
             "has_kids": has_kids,
             "has_elderly": has_elderly,
+            "kid_age": "none",
+            "mobility_concern": has_elderly,
+            "entertains_guests": "occasional",
+            "needs_storage": "medium",
+            "spiritual_practice": "none",
+            "works_from_home": False,
+            "avoid_glass_surfaces": has_kids,
             "vibe": intake.vibe.value,
             "vastu_enabled": intake.vastu_matters,
         },
@@ -231,6 +279,7 @@ def _build_vision(
                     size_label=s.catalog.size_label,
                     material_label=s.catalog.material_label,
                     finish_label=s.catalog.finish_label,
+                    placement_type=s.catalog.placement_type,
                 ),
                 name_en=s.catalog.name_en,
                 name_hi=s.catalog.name_hi,
@@ -270,6 +319,7 @@ def _build_vision(
 
     room = RoomState(
         id=f"room_{uuid.uuid4().hex[:8]}",
+        philosophy=philosophy.value,
         intake=intake,
         items=placed_items,
         palette=palette,
