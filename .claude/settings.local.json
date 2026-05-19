@@ -30,7 +30,9 @@
       "Bash(powershell -Command \"\\(Get-Content 'src/routes/HomeRoute.tsx' -Raw\\) -replace '\\(drawLine [0-9.]+s\\) ease ', '\\\\$1 ease-out ' | Set-Content 'src/routes/HomeRoute.tsx' -NoNewline -Encoding utf8\")",
       "Bash(powershell -Command \"\\(Get-Content 'src/routes/HomeRoute.tsx' -Raw\\) -replace '\\(\\(?:fade\\) [0-9.]+s\\) ease \\([0-9.]+s \\(?:both|forwards\\)\\)', '\\\\$1 ease-out \\\\$2' | Set-Content 'src/routes/HomeRoute.tsx' -NoNewline -Encoding utf8\")",
       "Bash(grep -v \"//[^a-zA-Z]\")",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\achindras\\\\Documents\\\\Capstone Project Research\\\\nirmit-project\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

@@ -30,7 +30,7 @@ class Requirement:
 # fit them.
 
 _LIVING_GATHERING: tuple[Requirement, ...] = (
-    Requirement("sofa", "mandatory", against_wall=True),
+    Requirement("sofa_l", "mandatory", against_wall=True),       # L-shape for group seating
     Requirement("tv_unit", "mandatory", against_wall=True),
     Requirement("coffee_table", "mandatory"),
     Requirement("lounge_chair", "recommended"),
@@ -38,7 +38,7 @@ _LIVING_GATHERING: tuple[Requirement, ...] = (
     Requirement("ottoman", "recommended"),
     Requirement("side_table", "recommended"),
     Requirement("bookshelf", "recommended", against_wall=True),
-    Requirement("ceiling_fan", "recommended"),  # Indian-essential — almost every room has one
+    Requirement("ceiling_fan", "recommended"),
     Requirement("plant", "optional"),
     Requirement("lamp", "optional"),
     Requirement("table_lamp", "optional"),
@@ -47,19 +47,19 @@ _LIVING_GATHERING: tuple[Requirement, ...] = (
 )
 
 _LIVING_BREATH: tuple[Requirement, ...] = (
-    Requirement("sofa", "mandatory", against_wall=True),
+    Requirement("sofa_2seat", "mandatory", against_wall=True),   # Minimal 2-seater
     Requirement("tv_unit", "mandatory", against_wall=True),
-    Requirement("coffee_table", "mandatory"),
+    Requirement("coffee_table_round", "mandatory"),              # Round table, softer geometry
     Requirement("ceiling_fan", "recommended"),
     Requirement("plant", "recommended"),
-    Requirement("rug", "recommended"),
-    Requirement("lamp", "optional"),
-    Requirement("mirror", "optional"),  # bounces light around for the airy feel
+    Requirement("rug_round", "recommended"),                     # Round rug, airy feel
+    Requirement("lamp_round", "optional"),
+    Requirement("mirror", "optional"),
     Requirement("mandir_wall", "recommended", against_wall=True),
 )
 
 _LIVING_KEEPER: tuple[Requirement, ...] = (
-    Requirement("sofa", "mandatory", against_wall=True),
+    Requirement("sofa", "mandatory", against_wall=True),         # Standard 3-seat workhorse
     Requirement("tv_unit", "mandatory", against_wall=True),
     Requirement("coffee_table", "mandatory"),
     Requirement("bookshelf", "recommended", against_wall=True),
@@ -160,6 +160,37 @@ _STUDY_KEEPER: tuple[Requirement, ...] = (
     Requirement("ceiling_fan", "recommended"),
 )
 
+_KITCHEN_GATHERING: tuple[Requirement, ...] = (
+    Requirement("kitchen_counter_l", "mandatory", against_wall=True),
+    Requirement("kitchen_overhead", "mandatory", against_wall=True),
+    Requirement("fridge", "mandatory", against_wall=True),
+    Requirement("stove", "mandatory"),
+    Requirement("kitchen_sink", "recommended", against_wall=True),
+    Requirement("bar_stool", "recommended", count=2),
+    Requirement("ceiling_fan", "recommended"),
+    Requirement("plant_small", "optional"),
+)
+
+_KITCHEN_BREATH: tuple[Requirement, ...] = (
+    Requirement("kitchen_counter", "mandatory", against_wall=True),
+    Requirement("kitchen_overhead", "recommended", against_wall=True),
+    Requirement("fridge", "mandatory", against_wall=True),
+    Requirement("stove", "mandatory"),
+    Requirement("kitchen_sink", "recommended", against_wall=True),
+    Requirement("ceiling_fan", "recommended"),
+    Requirement("plant_small", "optional"),
+)
+
+_KITCHEN_KEEPER: tuple[Requirement, ...] = (
+    Requirement("kitchen_counter_l", "mandatory", against_wall=True),
+    Requirement("kitchen_overhead", "mandatory", against_wall=True),
+    Requirement("fridge", "mandatory", against_wall=True),
+    Requirement("stove", "mandatory"),
+    Requirement("kitchen_sink", "mandatory", against_wall=True),
+    Requirement("bar_stool", "optional", count=2),
+    Requirement("ceiling_fan", "recommended"),
+)
+
 _TEMPLATES: dict[tuple[RoomType, VisionPhilosophy], tuple[Requirement, ...]] = {
     (RoomType.LIVING, VisionPhilosophy.GATHERING): _LIVING_GATHERING,
     (RoomType.LIVING, VisionPhilosophy.BREATH): _LIVING_BREATH,
@@ -173,6 +204,9 @@ _TEMPLATES: dict[tuple[RoomType, VisionPhilosophy], tuple[Requirement, ...]] = {
     (RoomType.STUDY, VisionPhilosophy.GATHERING): _STUDY_GATHERING,
     (RoomType.STUDY, VisionPhilosophy.BREATH): _STUDY_BREATH,
     (RoomType.STUDY, VisionPhilosophy.KEEPER): _STUDY_KEEPER,
+    (RoomType.KITCHEN, VisionPhilosophy.GATHERING): _KITCHEN_GATHERING,
+    (RoomType.KITCHEN, VisionPhilosophy.BREATH): _KITCHEN_BREATH,
+    (RoomType.KITCHEN, VisionPhilosophy.KEEPER): _KITCHEN_KEEPER,
 }
 
 _BUDGET_TARGET_PCT: dict[VisionPhilosophy, float] = {
@@ -263,23 +297,49 @@ def select_items(
     return chosen
 
 
+# Sub-category fallbacks: if the preferred sub_category has no items, try these
+# in order. Prevents mandatory requirements from silently producing empty rooms.
+_SUB_ALIASES: dict[str, list[str]] = {
+    "sofa_l":           ["sofa_l", "sofa_modern", "sofa"],
+    "sofa_2seat":       ["sofa_2seat", "sofa_modern", "sofa"],
+    "sofa_modern":      ["sofa_modern", "sofa"],
+    "coffee_table_round": ["coffee_table_round", "coffee_table"],
+    "rug_round":        ["rug_round", "rug_rounded", "rug_rectangle", "rug"],
+    "rug_rectangle":    ["rug_rectangle", "rug"],
+    "rug_rounded":      ["rug_rounded", "rug_rectangle", "rug"],
+    "lamp_round":       ["lamp_round", "lamp"],
+    "lounge_chair_relax": ["lounge_chair_relax", "lounge_chair"],
+    "accent_chair_cushion": ["accent_chair_cushion", "accent_chair"],
+    "accent_chair_modern":  ["accent_chair_modern", "accent_chair"],
+    "bookshelf_closed": ["bookshelf_closed", "bookshelf"],
+    "bookshelf_low":    ["bookshelf_low", "bookshelf"],
+    "bedside_cabinet":  ["bedside_cabinet", "side_table"],
+    "dining_table_compact": ["dining_table_compact", "dining_table"],
+    "desk_corner":      ["desk_corner", "desk"],
+}
+
+
 def _candidates_for(
     sub: str,
     room: RoomType,
     vibe: Vibe,
     catalog: CatalogRepository,
 ) -> list[CatalogItem]:
-    """Catalog items matching sub_category + room. Vibe is a soft preference:
-    prefer items that include the vibe, fall through to all room matches."""
-    matches: list[CatalogItem] = []
-    fallback: list[CatalogItem] = []
-    for item in catalog._items:  # noqa: SLF001 — internal access acceptable inside domain
-        if item.sub_category != sub:
-            continue
-        if room not in item.rooms:
-            continue
-        if vibe in item.vibes:
-            matches.append(item)
-        else:
-            fallback.append(item)
-    return matches if matches else fallback
+    """Catalog items matching sub_category + room, with vibe preference and
+    sub-category fallback so philosophy-specific requests don't silently fail."""
+    for sub_try in _SUB_ALIASES.get(sub, [sub]):
+        matches: list[CatalogItem] = []
+        fallback: list[CatalogItem] = []
+        for item in catalog._items:  # noqa: SLF001
+            if item.sub_category != sub_try:
+                continue
+            if room not in item.rooms:
+                continue
+            if vibe in item.vibes:
+                matches.append(item)
+            else:
+                fallback.append(item)
+        candidates = matches if matches else fallback
+        if candidates:
+            return candidates
+    return []

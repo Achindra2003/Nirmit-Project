@@ -1,13 +1,10 @@
 /**
- * Procedural SVG vibe illustrations — one per vibe, no external images.
+ * Vibe selection card — photography-first with label overlay.
  *
- * Each card depicts an abstract room interior using the vibe's signature
- * palette and motifs. Tap to select. Selected card glows.
- *
- * Why SVG: zero-cost (no licensing, no CDN), pin-sharp at any size, animates
- * cleanly, and stays in the warm Indian aesthetic without depending on stock
- * photography that may rot.
+ * Images live in /public/vibes/ mapped by vibe key. Falls back to
+ * the background color if the image fails to load.
  */
+import { useState } from "react";
 import type { Vibe } from "@/api/types";
 
 interface Props {
@@ -19,154 +16,124 @@ interface Props {
 interface VibeMeta {
   label: string;
   description: string;
-  palette: string[]; // [bg, wall, floor, accent, dark]
-  motif: "warm" | "modern" | "earthy" | "airy";
+  image: string;
+  fallbackBg: string;
 }
 
 const META: Record<Vibe, VibeMeta> = {
   warm_traditional: {
     label: "Warm + Traditional",
     description: "Wood, brass, layered textiles. Diwali every evening.",
-    palette: ["#F4E5C8", "#E8C97A", "#9C5E2C", "#5C2E12", "#2A1808"],
-    motif: "warm",
+    image: "/vibes/gathering.png",
+    fallbackBg: "#B8845A",
   },
   modern_minimal: {
     label: "Modern + Minimal",
     description: "Clean lines, neutral palette. Less is more.",
-    palette: ["#F2EFEA", "#DCDDD9", "#A89A8C", "#3F3A33", "#1C1917"],
-    motif: "modern",
+    image: "/vibes/studio.png",
+    fallbackBg: "#C8C4BE",
   },
   earthy_crafted: {
     label: "Earthy + Crafted",
     description: "Terracotta, jute, handmade. Pol house energy.",
-    palette: ["#EFE0CC", "#D8A66E", "#A35A2A", "#5C3919", "#2A1A0E"],
-    motif: "earthy",
+    image: "/vibes/keeper.png",
+    fallbackBg: "#A35A2A",
   },
   light_airy: {
     label: "Light + Airy",
     description: "Pale wood, white walls, breathing space.",
-    palette: ["#F8F4ED", "#EFE9DD", "#C9B89D", "#6E8388", "#243743"],
-    motif: "airy",
+    image: "/vibes/breath.png",
+    fallbackBg: "#D8E0DC",
   },
   maximalist: {
     label: "Maximalist",
     description: "Bold colours, layered patterns, nothing held back.",
-    palette: ["#E8D8C4", "#8B6914", "#8B1A1A", "#2C4B1E", "#1A0E0A"],
-    motif: "warm",
+    image: "/vibes/bazaar.png",
+    fallbackBg: "#8B1A1A",
   },
   coastal: {
     label: "Coastal",
     description: "Breezy, salt-bleached, open to the sea.",
-    palette: ["#EBF0ED", "#C9B8A0", "#6E9090", "#A8C5C0", "#243743"],
-    motif: "airy",
+    image: "/vibes/shore.png",
+    fallbackBg: "#6E9090",
   },
 };
 
 export function VibeCard({ vibe, selected, onSelect }: Props) {
   const meta = META[vibe];
+  const [imgFailed, setImgFailed] = useState(false);
+
   return (
     <button
       type="button"
       onClick={() => onSelect(vibe)}
       style={{
-        ...cardStyle,
+        background: "transparent",
+        border: "none",
+        padding: 0,
+        textAlign: "left",
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        position: "relative",
         outline: selected ? "3px solid var(--terra)" : "1px solid var(--line)",
         transform: selected ? "translateY(-2px)" : "translateY(0)",
         boxShadow: selected
-          ? "0 14px 36px rgba(0, 0, 0, 0.15)"
-          : "0 6px 18px rgba(0, 0, 0, 0.05)",
+          ? "0 14px 36px rgba(0,0,0,0.18)"
+          : "0 4px 14px rgba(0,0,0,0.06)",
+        transition: "transform 220ms ease, box-shadow 220ms ease, outline 220ms ease",
+        font: "inherit",
       }}
     >
-      <VibeIllustration motif={meta.motif} palette={meta.palette} />
-      <div style={textBlock}>
-        <strong style={titleStyle}>{meta.label}</strong>
-        <small style={descStyle}>{meta.description}</small>
+      {/* Image */}
+      <div style={{ position: "relative", width: "100%", height: 148, overflow: "hidden", background: meta.fallbackBg }}>
+        {!imgFailed && (
+          <img
+            src={meta.image}
+            alt={meta.label}
+            onError={() => setImgFailed(true)}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        )}
+        {/* Gradient fade toward bottom so text stays legible */}
+        <div style={{
+          position: "absolute",
+          left: 0, right: 0, bottom: 0,
+          height: 80,
+          background: "linear-gradient(to bottom, transparent, rgba(20,14,8,.72))",
+          pointerEvents: "none",
+        }} />
+        {/* Selected checkmark */}
+        {selected && (
+          <div style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            width: 22,
+            height: 22,
+            borderRadius: "50%",
+            background: "var(--terra)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+            <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+              <path d="M1 4.5L4.5 8L11 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        )}
+      </div>
+
+      {/* Text below image */}
+      <div style={{ padding: "11px 13px 13px", background: "var(--paper-3)", display: "flex", flexDirection: "column", gap: 3 }}>
+        <strong style={{ fontFamily: "var(--fb)", fontSize: 13.5, fontWeight: 600, color: "var(--ink)", lineHeight: 1.2 }}>
+          {meta.label}
+        </strong>
+        <small style={{ fontFamily: "var(--fb)", fontSize: 11.5, color: "var(--ink-2)", lineHeight: 1.4 }}>
+          {meta.description}
+        </small>
       </div>
     </button>
   );
 }
-
-function VibeIllustration({
-  motif,
-  palette,
-}: {
-  motif: VibeMeta["motif"];
-  palette: string[];
-}) {
-  const [bg, wall, floor, accent, dark] = palette;
-  return (
-    <svg viewBox="0 0 200 130" width="100%" height="130" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id={`light-${motif}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={bg} stopOpacity="0.95" />
-          <stop offset="100%" stopColor={wall} stopOpacity="0.4" />
-        </linearGradient>
-      </defs>
-
-      {/* Wall + floor */}
-      <rect x="0" y="0" width="200" height="80" fill={wall} />
-      <rect x="0" y="80" width="200" height="50" fill={floor} />
-      <rect x="0" y="0" width="200" height="80" fill={`url(#light-${motif})`} />
-
-      {/* Window */}
-      <rect x="20" y="14" width="50" height="44" fill={bg} stroke={dark} strokeWidth="1" opacity="0.85" />
-      <line x1="45" y1="14" x2="45" y2="58" stroke={dark} strokeWidth="0.6" opacity="0.6" />
-      <line x1="20" y1="36" x2="70" y2="36" stroke={dark} strokeWidth="0.6" opacity="0.6" />
-
-      {motif === "warm" && (
-        <>
-          <rect x="90" y="60" width="80" height="22" rx="3" fill={accent} />
-          <rect x="105" y="55" width="50" height="8" rx="2" fill="#F2C66A" />
-          <rect x="95" y="82" width="70" height="4" fill={dark} opacity="0.5" />
-          <circle cx="178" cy="62" r="6" fill="#E8C97A" />
-          <rect x="130" y="36" width="20" height="22" fill={dark} opacity="0.55" />
-          <line x1="0" y1="80" x2="200" y2="80" stroke={dark} strokeWidth="0.7" opacity="0.4" />
-        </>
-      )}
-      {motif === "modern" && (
-        <>
-          <rect x="86" y="62" width="92" height="18" rx="2" fill={accent} />
-          <rect x="92" y="48" width="80" height="14" fill={dark} opacity="0.85" />
-          <line x1="0" y1="80" x2="200" y2="80" stroke={dark} strokeWidth="0.5" opacity="0.3" />
-          <circle cx="180" cy="56" r="3" fill={accent} />
-        </>
-      )}
-      {motif === "earthy" && (
-        <>
-          <rect x="88" y="60" width="80" height="22" rx="6" fill={accent} />
-          <ellipse cx="128" cy="58" rx="10" ry="4" fill="#88533A" />
-          <ellipse cx="148" cy="55" rx="6" ry="3" fill="#88533A" />
-          <rect x="160" y="44" width="14" height="38" fill={dark} opacity="0.6" />
-          <path d="M 90 80 Q 100 76 110 80 Q 120 76 130 80" stroke={dark} strokeWidth="0.6" fill="none" opacity="0.5" />
-        </>
-      )}
-      {motif === "airy" && (
-        <>
-          <rect x="90" y="64" width="80" height="18" rx="3" fill={bg} stroke={accent} strokeWidth="1" />
-          <rect x="100" y="50" width="60" height="14" fill={accent} opacity="0.6" />
-          <line x1="0" y1="80" x2="200" y2="80" stroke={accent} strokeWidth="0.5" opacity="0.3" />
-        </>
-      )}
-
-      {/* Subtle floor shadow under hero piece */}
-      <ellipse cx="130" cy="98" rx="58" ry="3" fill={dark} opacity="0.12" />
-    </svg>
-  );
-}
-
-const cardStyle = {
-  background: "var(--paper-3)",
-  border: "1px solid var(--line)",
-  borderRadius: 0,
-  padding: 0,
-  textAlign: "left" as const,
-  cursor: "pointer",
-  display: "flex",
-  flexDirection: "column" as const,
-  overflow: "hidden",
-  transition: "transform 220ms ease, box-shadow 220ms ease, outline 220ms ease",
-  font: "inherit",
-};
-const textBlock = { padding: "12px 14px 14px", display: "flex", flexDirection: "column" as const, gap: 3 };
-const titleStyle = { fontFamily: "var(--fb)", fontSize: 14, fontWeight: 600, color: "var(--ink)" } as const;
-const descStyle = { fontFamily: "var(--fb)", fontSize: 12, color: "var(--ink-2)" } as const;

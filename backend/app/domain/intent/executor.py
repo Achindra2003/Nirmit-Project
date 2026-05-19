@@ -403,13 +403,33 @@ def _find_item(source_room: RoomState, bring: str):
 
 
 def _change_finish(room: RoomState, target_id: str | None, params: dict) -> RoomState | None:
-    """Phase-3 stub: finish/material is a presentation-layer concern in the
-    current schema (we don't store per-item material on PlacedItem). We
-    accept the intent silently rather than failing — the collaborator's
-    reply already explained the change to the user."""
+    """Apply a finish/material change visually via tint_hex and roughness_hint on CatalogRef."""
     if not target_id:
         return None
-    return room  # no structural change yet; future PR adds material slot.
+    tint = params.get("tint_hex")
+    roughness = params.get("roughness_hint")
+    if not tint and roughness is None:
+        return room
+    out: list[PlacedItem] = []
+    found = False
+    for i in room.items:
+        if i.id != target_id:
+            out.append(i)
+            continue
+        updates: dict = {}
+        if tint and isinstance(tint, str) and tint.startswith("#"):
+            updates["tint_hex"] = tint
+        if roughness is not None:
+            try:
+                updates["roughness_hint"] = max(0.0, min(1.0, float(roughness)))
+            except (TypeError, ValueError):
+                pass
+        new_catalog = i.catalog.model_copy(update=updates) if updates else i.catalog
+        out.append(i.model_copy(update={"catalog": new_catalog}))
+        found = True
+    if not found:
+        return None
+    return room.model_copy(update={"items": out})
 
 
 # ---------- Solver re-run ----------

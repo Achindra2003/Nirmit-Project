@@ -29,6 +29,8 @@ from typing import Any, TypedDict
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 
+from app.domain.catalog import get_catalog
+from app.domain.catalog.model import CatalogQuery
 from app.domain.costing import build_cost_breakdown
 from app.domain.intent import IntentExecutionError, apply_intents
 from app.llm import get_llm
@@ -60,6 +62,8 @@ class CollabState(TypedDict, total=False):
 
 def _generate(state: CollabState) -> CollabState:
     intake = state["room_state"].intake
+    catalog = get_catalog()
+    catalog_items = catalog.query(CatalogQuery(room=intake.room_type, limit=30))
     msgs = [
         SystemMessage(content=COLLABORATOR_SYSTEM),
         HumanMessage(
@@ -68,6 +72,7 @@ def _generate(state: CollabState) -> CollabState:
                 room=state["room_state"],
                 history=state.get("history", []),
                 user_message=state["message"],
+                catalog_snapshot=catalog_items,
             )
         ),
     ]
@@ -106,10 +111,6 @@ def _apply(state: CollabState) -> CollabState:
             intents.append(_coerce_intent(raw))
         except (ValueError, KeyError):
             continue
-
-    # Positions are owned by the layout engine; the AI must not teleport items.
-    _BLOCKED = {IntentKind.MOVE, IntentKind.ROTATE}
-    intents = [i for i in intents if i.kind not in _BLOCKED]
 
     proposed: RoomState | None = None
     cost_delta = 0

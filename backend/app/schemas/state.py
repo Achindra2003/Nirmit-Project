@@ -59,7 +59,7 @@ class Dimensions(StrictModel):
 
     width_mm: int = Field(gt=0, description="X-axis extent")
     depth_mm: int = Field(gt=0, description="Z-axis extent")
-    height_mm: int = Field(gt=0, description="Y-axis extent")
+    height_mm: int = Field(default=2700, gt=0, description="Y-axis extent; defaults to standard 9ft ceiling")
 
 
 class Position(StrictModel):
@@ -197,6 +197,13 @@ class RoomState(StrictModel):
         le=6500,
         description="Lighting colour temperature in Kelvin. Drives the 3D scene's sun warmth.",
     )
+
+    @field_validator("lighting_kelvin", mode="before")
+    @classmethod
+    def _coerce_kelvin(cls, v: object) -> int:
+        if isinstance(v, float):
+            return int(round(v))
+        return v  # type: ignore[return-value]
     openings: list[Opening] = Field(
         default_factory=list,
         description="Door and window openings in the room walls. Drives 3D gap rendering and solver clearance.",
@@ -369,6 +376,9 @@ class ExportRequest(StrictModel):
     room_state: RoomState
     format: Literal["pdf", "json"] = "pdf"
     include_hindi_section: bool = True
+    vision_name: str | None = None
+    vision_tagline: str | None = None
+    philosophy: str | None = None
 
 
 class ExportResponse(StrictModel):

@@ -36,6 +36,14 @@ from app.schemas.state import Dimensions, RoomType, Vibe
 
 _ALL_VIBES = list(Vibe)
 
+# Vibe groupings — items tagged to these vibes are preferred by the selector
+# when that vibe is active, giving each style a genuinely different furniture set.
+_TRADITIONAL = [Vibe.WARM_TRADITIONAL, Vibe.EARTHY_CRAFTED, Vibe.MAXIMALIST]
+_MINIMAL = [Vibe.MODERN_MINIMAL, Vibe.LIGHT_AIRY]
+_COASTAL = [Vibe.COASTAL, Vibe.LIGHT_AIRY]
+_EARTHY = [Vibe.EARTHY_CRAFTED, Vibe.WARM_TRADITIONAL]
+_BOLD = [Vibe.MAXIMALIST, Vibe.WARM_TRADITIONAL]
+
 
 def _item(
     *,
@@ -55,6 +63,9 @@ def _item(
     tags: list[str],
     roughness: float,
     front_clearance_mm: int = 600,
+    vibes: list[Vibe] | None = None,
+    size_label: str | None = None,
+    material_label: str | None = None,
 ) -> CatalogItem:
     return CatalogItem(
         sku=sku,
@@ -64,15 +75,15 @@ def _item(
         category=category,
         sub_category=sub_category,
         rooms=rooms,
-        vibes=_ALL_VIBES,  # hero pieces are versatile — match any chosen vibe
+        vibes=vibes if vibes is not None else _ALL_VIBES,
         dimensions=Dimensions(width_mm=w, depth_mm=d, height_mm=h),
         price_inr=price,
         build_price_inr=build_price,
         materials=materials,
         tags=tags,
-        tint_hex=None,  # keep the model's own colours; palette drives walls/floor
-        size_label=None,
-        material_label=None,
+        tint_hex=None,
+        size_label=size_label,
+        material_label=material_label,
         finish_label=None,
         roughness_hint=roughness,
         front_clearance_mm=front_clearance_mm,
@@ -355,6 +366,315 @@ HERO_ITEMS: list[CatalogItem] = [
         category="seating", sub_category="dining_chair", rooms=_LIVING_DINING,
         w=480, h=920, d=520, price=4500, build_price=2800,
         materials=["wood_teak", "fabric"], tags=["chair", "dining_chair", "dining"], roughness=0.7,
+    ),
+
+    # ── Seating: vibe-differentiated accent chairs ───────────────────────
+    _item(  # chairCushion.glb — padded accent chair, warm & traditional
+        sku="HERO-ACHAIR-TRAD-01", asset_url="chairCushion.glb",
+        name_en="Cushion Accent Chair", name_hi="गद्देदार कुर्सी",
+        category="seating", sub_category="accent_chair_cushion", rooms=_LIVING_BEDROOM,
+        w=700, h=850, d=700, price=11000, build_price=7000,
+        materials=["fabric", "wood_frame"], tags=["chair", "seating", "accent", "cushion"],
+        roughness=0.85, vibes=_TRADITIONAL, size_label="standard", material_label="fabric",
+    ),
+    _item(  # chairModernCushion.glb — clean-line modern accent chair
+        sku="HERO-ACHAIR-MOD-01", asset_url="chairModernCushion.glb",
+        name_en="Modern Accent Chair", name_hi="आधुनिक कुर्सी",
+        category="seating", sub_category="accent_chair_modern", rooms=_LIVING_BEDROOM,
+        w=650, h=820, d=650, price=10000, build_price=6500,
+        materials=["fabric", "metal_frame"], tags=["chair", "seating", "accent", "modern"],
+        roughness=0.75, vibes=_MINIMAL, size_label="compact", material_label="fabric",
+    ),
+    _item(  # loungeChairRelax.glb — fully reclined relax chair
+        sku="HERO-RELAX-01", asset_url="loungeChairRelax.glb",
+        name_en="Relax Lounger", name_hi="रिलैक्स चेयर",
+        category="seating", sub_category="lounge_chair_relax", rooms=_LIVING_BEDROOM,
+        w=850, h=950, d=1050, price=18000, build_price=11000,
+        materials=["fabric", "wood_frame"], tags=["chair", "seating", "lounge", "relax"],
+        roughness=0.85, vibes=_COASTAL + [Vibe.WARM_TRADITIONAL],
+        size_label="large", material_label="fabric",
+    ),
+    _item(  # benchCushion.glb — upholstered bench, versatile seating
+        sku="HERO-BENCH-01", asset_url="benchCushion.glb",
+        name_en="Upholstered Bench", name_hi="गद्देदार बेंच",
+        category="seating", sub_category="bench", rooms=_LIVING_BEDROOM,
+        w=1200, h=460, d=450, price=8000, build_price=5000,
+        materials=["fabric", "wood_frame"], tags=["bench", "seating", "entry"],
+        roughness=0.85, vibes=_EARTHY + _COASTAL,
+        size_label="standard", material_label="fabric",
+    ),
+    _item(  # sofa_3seater.glb — alternate 3-seat sofa mesh, cleaner silhouette
+        sku="HERO-SOFA3-MOD-01", asset_url="sofa_3seater.glb",
+        name_en="Modern 3-Seat Sofa", name_hi="आधुनिक सोफा",
+        category="seating", sub_category="sofa_modern", rooms=_LIVING,
+        w=2100, h=840, d=880, price=38000, build_price=24000,
+        materials=["fabric", "metal_frame"], tags=["sofa", "seating", "modern", "three_seat"],
+        roughness=0.8, vibes=_MINIMAL + [Vibe.MAXIMALIST],
+        front_clearance_mm=900, size_label="large", material_label="fabric",
+    ),
+    _item(  # sofa_single.glb — single-seat accent sofa / slipper chair
+        sku="HERO-SOFASINGLE-01", asset_url="sofa_single.glb",
+        name_en="Single Seat Sofa", name_hi="एकल सोफा",
+        category="seating", sub_category="sofa_single", rooms=_LIVING_BEDROOM,
+        w=900, h=800, d=900, price=15000, build_price=9500,
+        materials=["fabric", "wood_frame"], tags=["sofa", "seating", "single", "accent"],
+        roughness=0.82, vibes=_MINIMAL,
+        front_clearance_mm=700, size_label="compact", material_label="fabric",
+    ),
+    _item(  # pouffe.glb — round pouffe / floor cushion seating
+        sku="HERO-POUFFE-01", asset_url="pouffe.glb",
+        name_en="Round Pouffe", name_hi="पूफ",
+        category="seating", sub_category="pouffe", rooms=_ALL_ROOMS,
+        w=600, h=380, d=600, price=3500, build_price=2200,
+        materials=["fabric"], tags=["pouffe", "seating", "floor", "casual"],
+        roughness=0.9, vibes=_EARTHY + _COASTAL,
+        size_label="standard", material_label="fabric",
+    ),
+
+    # ── Storage variants ─────────────────────────────────────────────────
+    _item(  # bookcaseClosedDoors.glb — formal closed-door bookcase
+        sku="HERO-BOOK-CLOSED-01", asset_url="bookcaseClosedDoors.glb",
+        name_en="Closed-Door Bookcase", name_hi="बंद अलमारी",
+        category="storage", sub_category="bookshelf_closed", rooms=_LIVING_BEDROOM_STUDY,
+        w=800, h=1800, d=380, price=21000, build_price=13000,
+        materials=["wood_engineered", "laminate"], tags=["storage", "bookshelf", "closed", "formal"],
+        roughness=0.65, vibes=_TRADITIONAL,
+        size_label="standard", material_label="laminate",
+    ),
+    _item(  # bookcaseOpenLow.glb — low open shelf unit, airy feel
+        sku="HERO-BOOK-LOW-01", asset_url="bookcaseOpenLow.glb",
+        name_en="Low Open Shelf", name_hi="लो ओपन शेल्फ",
+        category="storage", sub_category="bookshelf_low", rooms=_LIVING_BEDROOM_STUDY,
+        w=900, h=900, d=300, price=11000, build_price=7000,
+        materials=["wood_engineered"], tags=["storage", "bookshelf", "open", "low"],
+        roughness=0.7, vibes=_MINIMAL + _COASTAL,
+        size_label="compact", material_label="wood",
+    ),
+    _item(  # cabinetBed.glb — bedside cabinet with drawer
+        sku="HERO-BEDSIDE-01", asset_url="cabinetBed.glb",
+        name_en="Bedside Cabinet", name_hi="बेडसाइड कैबिनेट",
+        category="storage", sub_category="bedside_cabinet", rooms=_BEDROOM,
+        w=450, h=560, d=420, price=6500, build_price=4200,
+        materials=["wood_engineered"], tags=["storage", "bedside", "cabinet", "bedroom"],
+        roughness=0.65,
+        size_label="compact", material_label="wood",
+    ),
+    _item(  # SimpleCabinet.glb — clean simple storage cabinet
+        sku="HERO-CABINET-SIMPLE-01", asset_url="SimpleCabinet.glb",
+        name_en="Simple Storage Cabinet", name_hi="सादा कैबिनेट",
+        category="storage", sub_category="cabinet_simple", rooms=_LIVING_BEDROOM_STUDY,
+        w=600, h=800, d=360, price=9000, build_price=5800,
+        materials=["wood_engineered"], tags=["storage", "cabinet", "simple"],
+        roughness=0.68, vibes=_MINIMAL,
+        size_label="compact", material_label="wood",
+    ),
+
+    # ── Beds ─────────────────────────────────────────────────────────────
+    _item(  # bed_single.glb — single bed for kids/guest rooms
+        sku="HERO-BEDS-01", asset_url="bed_single.glb",
+        name_en="Single Bed", name_hi="एकल पलंग",
+        category="sleeping", sub_category="bed_single", rooms=_BEDROOM,
+        w=950, h=480, d=1950, price=18000, build_price=11500,
+        materials=["wood_engineered", "fabric"], tags=["bed", "sleeping", "single", "kids"],
+        roughness=0.7,
+        size_label="single", material_label="fabric",
+    ),
+    _item(  # bedDouble.glb — compact double bed
+        sku="HERO-BEDD-01", asset_url="bedDouble.glb",
+        name_en="Double Bed", name_hi="डबल बेड",
+        category="sleeping", sub_category="bed_double", rooms=_BEDROOM,
+        w=1400, h=500, d=2000, price=26000, build_price=16500,
+        materials=["wood_engineered", "fabric"], tags=["bed", "sleeping", "double"],
+        roughness=0.7,
+        size_label="double", material_label="fabric",
+    ),
+
+    # ── Dining compact variant ───────────────────────────────────────────
+    _item(  # dining_4.glb — compact 4-seater for small dining rooms
+        sku="HERO-DTBL4-COMPACT-01", asset_url="dining_4.glb",
+        name_en="Compact 4-Seat Dining Table", name_hi="छोटी डाइनिंग टेबल",
+        category="table", sub_category="dining_table_compact", rooms=_LIVING_DINING,
+        w=1100, h=760, d=750, price=16000, build_price=10000,
+        materials=["wood_teak"], tags=["dining_table", "table", "dining", "compact"],
+        roughness=0.6, front_clearance_mm=800,
+        size_label="compact", material_label="teak",
+    ),
+    _item(  # stoolBar.glb — bar stool for kitchen counter / breakfast bar
+        sku="HERO-STOOL-01", asset_url="stoolBar.glb",
+        name_en="Bar Stool", name_hi="बार स्टूल",
+        category="seating", sub_category="bar_stool", rooms=[RoomType.KITCHEN, RoomType.DINING, RoomType.LIVING],
+        w=380, h=700, d=380, price=3800, build_price=2400,
+        materials=["wood_teak", "metal"], tags=["stool", "seating", "bar", "kitchen"],
+        roughness=0.65,
+        size_label="standard", material_label="wood",
+    ),
+
+    # ── Lighting variants ────────────────────────────────────────────────
+    _item(  # lampRoundFloor.glb — round arc floor lamp
+        sku="HERO-LAMP-ROUND-01", asset_url="lampRoundFloor.glb",
+        name_en="Round Arc Floor Lamp", name_hi="गोल आर्क लैंप",
+        category="lighting", sub_category="lamp_round", rooms=_ALL_ROOMS,
+        w=400, h=1700, d=400, price=5500, build_price=None,
+        materials=["metal", "fabric_shade"], tags=["lighting", "floor_lamp", "round", "arc"],
+        roughness=0.45, vibes=_EARTHY + _COASTAL,
+        size_label="tall", material_label="metal",
+    ),
+    _item(  # lampSquareCeiling.glb — modern ceiling pendant
+        sku="HERO-CEIL-01", asset_url="lampSquareCeiling.glb",
+        name_en="Ceiling Pendant Light", name_hi="सीलिंग लाइट",
+        category="lighting", sub_category="ceiling_light", rooms=_ALL_ROOMS,
+        w=500, h=300, d=500, price=6500, build_price=None,
+        materials=["metal", "glass"], tags=["lighting", "ceiling", "pendant", "modern"],
+        roughness=0.35, vibes=_MINIMAL,
+        size_label="standard", material_label="metal",
+    ),
+    _item(  # lampSquareFloor.glb — square floor lamp, modern
+        sku="HERO-LAMP-SQ-01", asset_url="lampSquareFloor.glb",
+        name_en="Square Floor Lamp", name_hi="चौकोर फ़र्श लैंप",
+        category="lighting", sub_category="lamp_square", rooms=_ALL_ROOMS,
+        w=350, h=1600, d=350, price=4800, build_price=None,
+        materials=["metal"], tags=["lighting", "floor_lamp", "square", "modern"],
+        roughness=0.4, vibes=_MINIMAL,
+        size_label="tall", material_label="metal",
+    ),
+    _item(  # lampWall.glb — wall sconce, decorative
+        sku="HERO-WALL-LAMP-01", asset_url="lampWall.glb",
+        name_en="Wall Sconce", name_hi="दीवार लैंप",
+        category="lighting", sub_category="wall_lamp", rooms=_ALL_ROOMS,
+        w=200, h=350, d=200, price=2800, build_price=None,
+        materials=["metal", "fabric_shade"], tags=["lighting", "wall_lamp", "sconce"],
+        roughness=0.45,
+        size_label="small", material_label="metal",
+    ),
+    _item(  # lampSquareTable.glb — square table lamp
+        sku="HERO-LAMP-SQTBL-01", asset_url="lampSquareTable.glb",
+        name_en="Square Table Lamp", name_hi="चौकोर टेबल लैंप",
+        category="lighting", sub_category="table_lamp_square", rooms=_ALL_ROOMS,
+        w=220, h=450, d=220, price=2500, build_price=None,
+        materials=["metal"], tags=["lighting", "table_lamp", "square"],
+        roughness=0.4, vibes=_MINIMAL,
+        size_label="small", material_label="metal",
+    ),
+
+    # ── Rug variants (big visual quality lever) ──────────────────────────
+    _item(  # rugRectangle.glb — solid rectangle rug variant
+        sku="HERO-RUG-RECT-01", asset_url="rugRectangle.glb",
+        name_en="Rectangle Rug", name_hi="आयताकार कालीन",
+        category="decor", sub_category="rug_rectangle", rooms=_ALL_ROOMS,
+        w=1800, h=15, d=2700, price=7500, build_price=None,
+        materials=["wool"], tags=["rug", "decor", "floor", "rectangle"],
+        roughness=0.95, vibes=_TRADITIONAL,
+        size_label="large", material_label="wool",
+    ),
+    _item(  # rugRound.glb — round rug, light and coastal feel
+        sku="HERO-RUG-ROUND-01", asset_url="rugRound.glb",
+        name_en="Round Rug", name_hi="गोल कालीन",
+        category="decor", sub_category="rug_round", rooms=_ALL_ROOMS,
+        w=1500, h=15, d=1500, price=7000, build_price=None,
+        materials=["cotton"], tags=["rug", "decor", "floor", "round"],
+        roughness=0.95, vibes=_COASTAL + _MINIMAL,
+        size_label="medium", material_label="cotton",
+    ),
+    _item(  # rugRounded.glb — rounded rectangle, softer than pure rect
+        sku="HERO-RUG-SOFT-01", asset_url="rugRounded.glb",
+        name_en="Soft-Edge Rug", name_hi="नरम किनारे वाला कालीन",
+        category="decor", sub_category="rug_rounded", rooms=_ALL_ROOMS,
+        w=1600, h=15, d=2400, price=7800, build_price=None,
+        materials=["wool", "cotton"], tags=["rug", "decor", "floor", "rounded"],
+        roughness=0.95, vibes=_EARTHY + _COASTAL,
+        size_label="large", material_label="wool-cotton",
+    ),
+
+    # ── Kitchen items ────────────────────────────────────────────────────
+    _item(  # counter_straight.glb — straight kitchen counter / base unit
+        sku="HERO-KCNT-01", asset_url="counter_straight.glb",
+        name_en="Kitchen Base Counter", name_hi="किचन काउंटर",
+        category="storage", sub_category="kitchen_counter", rooms=[RoomType.KITCHEN],
+        w=1800, h=900, d=600, price=28000, build_price=18000,
+        materials=["wood_engineered", "granite"], tags=["kitchen", "counter", "base"],
+        roughness=0.5,
+        front_clearance_mm=900,
+        size_label="standard", material_label="granite",
+    ),
+    _item(  # counter_l.glb — L-shaped kitchen counter
+        sku="HERO-KCNTL-01", asset_url="counter_l.glb",
+        name_en="L-Shape Kitchen Counter", name_hi="एल-आकार किचन काउंटर",
+        category="storage", sub_category="kitchen_counter_l", rooms=[RoomType.KITCHEN],
+        w=2400, h=900, d=600, price=42000, build_price=28000,
+        materials=["wood_engineered", "granite"], tags=["kitchen", "counter", "l_shape"],
+        roughness=0.5,
+        front_clearance_mm=900,
+        size_label="large", material_label="granite",
+    ),
+    _item(  # overhead_cabinet.glb — wall-mounted kitchen overhead unit
+        sku="HERO-KOVER-01", asset_url="overhead_cabinet.glb",
+        name_en="Kitchen Overhead Cabinet", name_hi="ओवरहेड कैबिनेट",
+        category="storage", sub_category="kitchen_overhead", rooms=[RoomType.KITCHEN],
+        w=900, h=700, d=350, price=16000, build_price=10000,
+        materials=["wood_engineered", "laminate"], tags=["kitchen", "overhead", "cabinet", "wall"],
+        roughness=0.6,
+        size_label="standard", material_label="laminate",
+    ),
+    _item(  # kitchenFridge.glb — standard 2-door refrigerator
+        sku="HERO-FRIDGE-01", asset_url="kitchenFridge.glb",
+        name_en="Refrigerator", name_hi="रेफ्रिजरेटर",
+        category="storage", sub_category="fridge", rooms=[RoomType.KITCHEN],
+        w=700, h=1800, d=700, price=35000, build_price=None,
+        materials=["metal"], tags=["kitchen", "fridge", "appliance"],
+        roughness=0.3,
+        front_clearance_mm=1000,
+        size_label="standard", material_label="metal",
+    ),
+    _item(  # kitchenStove.glb — 4-burner gas stove/hob
+        sku="HERO-STOVE-01", asset_url="kitchenStove.glb",
+        name_en="Gas Stove", name_hi="गैस चूल्हा",
+        category="table", sub_category="stove", rooms=[RoomType.KITCHEN],
+        w=900, h=900, d=600, price=12000, build_price=None,
+        materials=["metal", "glass"], tags=["kitchen", "stove", "appliance"],
+        roughness=0.35,
+        front_clearance_mm=900,
+        size_label="standard", material_label="metal",
+    ),
+    _item(  # sink.glb — kitchen single-bowl sink unit
+        sku="HERO-SINK-01", asset_url="sink.glb",
+        name_en="Kitchen Sink", name_hi="किचन सिंक",
+        category="table", sub_category="kitchen_sink", rooms=[RoomType.KITCHEN],
+        w=600, h=200, d=600, price=8000, build_price=5000,
+        materials=["stainless_steel"], tags=["kitchen", "sink", "plumbing"],
+        roughness=0.2,
+        size_label="single", material_label="steel",
+    ),
+
+    # ── Study additions ──────────────────────────────────────────────────
+    _item(  # deskCorner.glb — L-shaped corner desk, maximises study space
+        sku="HERO-DESK-CORNER-01", asset_url="deskCorner.glb",
+        name_en="Corner Study Desk", name_hi="कोने की मेज़",
+        category="table", sub_category="desk_corner", rooms=[RoomType.BEDROOM, RoomType.STUDY],
+        w=1500, h=750, d=1200, price=18000, build_price=12000,
+        materials=["wood_engineered"], tags=["desk", "corner", "study", "wfh"],
+        roughness=0.55,
+        front_clearance_mm=1000,
+        size_label="large", material_label="wood",
+    ),
+
+    # ── Decor: additional plants ─────────────────────────────────────────
+    _item(  # plantSmall2.glb — alternate small tabletop plant
+        sku="HERO-PLANT-SMALL-02", asset_url="plantSmall2.glb",
+        name_en="Tabletop Succulent", name_hi="सक्युलेंट",
+        category="decor", sub_category="plant_small", rooms=_ALL_ROOMS,
+        w=190, h=250, d=190, price=700, build_price=None,
+        materials=["ceramic", "foliage"], tags=["plant", "decor", "small", "succulent"],
+        roughness=0.85, vibes=_MINIMAL + _COASTAL,
+        size_label="small", material_label="ceramic",
+    ),
+    _item(  # plantSmall3.glb — alternate small plant (trailing variety)
+        sku="HERO-PLANT-SMALL-03", asset_url="plantSmall3.glb",
+        name_en="Tabletop Trailing Plant", name_hi="छोटा पौधा",
+        category="decor", sub_category="plant_small", rooms=_ALL_ROOMS,
+        w=180, h=280, d=180, price=800, build_price=None,
+        materials=["ceramic", "foliage"], tags=["plant", "decor", "small", "trailing"],
+        roughness=0.85, vibes=_EARTHY + _TRADITIONAL,
+        size_label="small", material_label="ceramic",
     ),
 ]
 

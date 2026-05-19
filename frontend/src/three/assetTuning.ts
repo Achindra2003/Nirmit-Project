@@ -83,7 +83,6 @@ const OVERRIDES: Record<string, Partial<AssetTuning>> = {
   // Wall lamps / mirrors hang on the wall.
   "lampWall.glb": { yNudge: 1.4 },
   "bathroomMirror.glb": { yNudge: 1.2 },
-  "mirror.glb": { yNudge: 1.2 },
   // Ceiling fixtures.
   "lampSquareCeiling.glb": { yNudge: 2.85 },
   // Wardrobes — large GLBs may have off-centre pivots; scaleMul 1 = auto-fit unchanged.
@@ -93,6 +92,33 @@ const OVERRIDES: Record<string, Partial<AssetTuning>> = {
   "WARD-2DS-2CR.glb": { scaleMul: 1.0 },
   // Overhead storage cabinet — slightly raised to clear countertop height.
   "overhead_cabinet.glb": { yNudge: 1.4 },
+  // Newly onboarded GLBs — floor items.
+  "chairCushion.glb": { yNudge: 0.003 },
+  "chairModernCushion.glb": { yNudge: 0.003 },
+  "loungeChairRelax.glb": { yNudge: 0.003 },
+  "benchCushion.glb": { yNudge: 0.003 },
+  "sofa_3seater.glb": { yNudge: 0.003 },
+  "sofa_single.glb": { yNudge: 0.003 },
+  "bookcaseClosedDoors.glb": { yNudge: 0.003 },
+  "bookcaseOpenLow.glb": { yNudge: 0.003 },
+  "cabinetBed.glb": { yNudge: 0.003 },
+  "SimpleCabinet.glb": { yNudge: 0.003 },
+  "bed_single.glb": { yNudge: 0.003 },
+  "bedDouble.glb": { yNudge: 0.003 },
+  "dining_4.glb": { yNudge: 0.003 },
+  "stoolBar.glb": { yNudge: 0.003 },
+  "lampRoundFloor.glb": { yNudge: 0.003 },
+  "lampSquareFloor.glb": { yNudge: 0.003 },
+  "lampSquareTable.glb": { yNudge: 0.003 },
+  "counter_straight.glb": { yNudge: 0.003 },
+  "counter_l.glb": { yNudge: 0.003 },
+  "kitchenFridge.glb": { yNudge: 0.003 },
+  "kitchenStove.glb": { yNudge: 0.003 },
+  "sink.glb": { yNudge: 0.003 },
+  "deskCorner.glb": { yNudge: 0.003 },
+  "pouffe.glb": { yNudge: 0.003 },
+  "plantSmall2.glb": { yNudge: 0.003 },
+  "plantSmall3.glb": { yNudge: 0.003 },
 };
 
 export function assetTuning(assetUrl: string): AssetTuning {

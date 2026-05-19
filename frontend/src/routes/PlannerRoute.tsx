@@ -25,6 +25,7 @@ export function PlannerRoute() {
   const baseVision = visions.find((v) => v.id === selectedVisionId) ?? visions[0];
 
   const [room, setRoom]         = useState<RoomState | null>(baseVision?.room_state ?? null);
+  const [roomHistory, setRoomHistory] = useState<RoomState[]>([]);
   const [budgetHeadline, setBH] = useState(baseVision?.cost.story.headline ?? "");
   const [chat, setChat]         = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [draft, setDraft]       = useState("");
@@ -80,8 +81,10 @@ export function PlannerRoute() {
 
   async function applyOneIntent(intent: Intent, echo?: string) {
     if (!room) return;
+    const before = room;
     try {
       const res = await api.apply({ room_state: room, intents: [intent], available_visions: visions });
+      setRoomHistory((h) => [...h.slice(-19), before]);
       setRoom(res.room_state);
       setBH(res.cost.story.headline);
       if (intent.kind === "remove") setSelectedId(null);
@@ -90,6 +93,26 @@ export function PlannerRoute() {
       setChat((c) => [...c, { role: "assistant", content: `I couldn't do that — ${e instanceof Error ? e.message : String(e)}` }]);
     }
   }
+
+  function undo() {
+    setRoomHistory((h) => {
+      if (h.length === 0) return h;
+      const prev = h[h.length - 1];
+      setRoom(prev);
+      return h.slice(0, -1);
+    });
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }); // eslint-disable-line react-hooks/exhaustive-deps
 
   function itemIntent(kind: IntentKind, label: string) {
     if (!selected) return;
@@ -204,6 +227,26 @@ export function PlannerRoute() {
                 );
               })}
             </div>
+            {/* Undo button — shows when history available */}
+            {roomHistory.length > 0 && (
+              <button
+                onClick={undo}
+                title="Undo last change (Ctrl/Cmd+Z)"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "var(--fm)",
+                  fontSize: 11,
+                  letterSpacing: "0.06em",
+                  color: "rgba(242,235,221,.5)",
+                  padding: "2px 0",
+                  transition: "color .2s",
+                }}
+              >
+                ↩ Undo
+              </button>
+            )}
             {/* Annotative edit toggle */}
             <button
               onClick={() => { setLayoutEditMode(!layoutEditMode); if (layoutEditMode) { setSelectedId(null); setShowCatalogue(false); } }}
@@ -268,8 +311,8 @@ export function PlannerRoute() {
           {viewMode === "3d" ? (
             <RoomScene
               room={room}
-              selectedItemId={layoutEditMode ? selectedId : null}
-              onSelectItem={layoutEditMode ? setSelectedId : () => {}}
+              selectedItemId={selectedId}
+              onSelectItem={setSelectedId}
               onMoveItem={layoutEditMode ? moveItem : undefined}
               moveMode={moveMode}
               view={camView}
@@ -279,8 +322,8 @@ export function PlannerRoute() {
           ) : (
             <Planner2D
               room={room}
-              selectedItemId={layoutEditMode ? selectedId : null}
-              onSelectItem={layoutEditMode ? setSelectedId : () => {}}
+              selectedItemId={selectedId}
+              onSelectItem={setSelectedId}
               onMoveItem={layoutEditMode ? moveItem : undefined}
               onRotateItem={layoutEditMode ? rotateItem : undefined}
             />
@@ -323,7 +366,7 @@ export function PlannerRoute() {
               <button
                 onClick={() => {
                   if (!room) return;
-                  const updated = { ...room, intake: { ...room.intake, room_dimensions: { width_mm: roomW, depth_mm: roomD } } };
+                  const updated = { ...room, intake: { ...room.intake, room_dimensions: { width_mm: roomW, depth_mm: roomD, height_mm: room.intake.room_dimensions.height_mm } } };
                   setRoom(updated);
                   setShowRoomEdit(false);
                 }}
@@ -333,8 +376,8 @@ export function PlannerRoute() {
             </div>
           )}
 
-          {/* Selected-item controls — only in Edit mode */}
-          {layoutEditMode && selected && (
+          {/* Selected-item controls — visible whenever an item is selected */}
+          {selected && (
             <div className="floating-draft-panel" style={{ top: "var(--s-4)", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 8, maxWidth: "calc(100% - 48px)", flexWrap: "wrap" as const, ...(moveMode ? { outline: "1px solid var(--leaf)", outlineOffset: 2 } : {}) }}>
               <div style={{ display: "flex", flexDirection: "column", marginRight: 6 }}>
                 <span style={{ fontFamily: "var(--fd)", fontSize: 14, fontWeight: 500, color: "var(--ink)" }}>{selected.name_en}</span>
@@ -342,6 +385,7 @@ export function PlannerRoute() {
                   {moveMode ? (viewMode === "3d" ? "Drag in the room — orbit is paused" : "Drag in the plan") : `${selected.dimensions.width_mm}×${selected.dimensions.depth_mm} mm · ₹${Math.round(selected.price_inr / 1000)}k`}
                 </span>
               </div>
+              {/* Move/drag controls — only meaningful in edit mode */}
               {viewMode === "3d" && layoutEditMode && (
                 moveMode
                   ? <CBtn onClick={() => setEditMode("browse")} accent>✓ Done</CBtn>
@@ -349,6 +393,7 @@ export function PlannerRoute() {
               )}
               {layoutEditMode && <CBtn onClick={() => rotateItem(selected.id)}>↻ Rotate</CBtn>}
               {layoutEditMode && <CBtn onClick={() => itemIntent("duplicate", "Duplicate")}>⧉ Dup</CBtn>}
+              {/* Intent actions — always available */}
               <CBtn onClick={() => itemIntent("make_bigger", "Make bigger")}>＋</CBtn>
               <CBtn onClick={() => itemIntent("make_smaller", "Make smaller")}>－</CBtn>
               <CBtn onClick={() => itemIntent("change_style", "Style")}>⇄ Style</CBtn>
@@ -362,8 +407,9 @@ export function PlannerRoute() {
           {showCatalogue && (
             <CatalogueDrawer
               roomType={room.intake.room_type}
-              onAdd={(name) => {
-                void applyOneIntent({ kind: "add_item", target_item_id: null, parameters: { item_name: name } });
+              vibe={room.intake.vibe}
+              onAdd={(sku, sub_category) => {
+                void applyOneIntent({ kind: "add", target_item_id: null, parameters: { sku, sub_category } });
               }}
               onClose={() => setShowCatalogue(false)}
             />
@@ -582,40 +628,41 @@ function CBtn({ children, onClick, danger, accent, bold }: { children: React.Rea
 }
 
 /* ── Furniture Catalogue Drawer ── */
-const CATALOGUE_BY_TYPE: Record<string, { name: string; dims: string; price: string }[]> = {
-  living_room: [
-    { name: "3-Seater Sofa", dims: "2200 × 900 mm", price: "₹28k" },
-    { name: "L-Shaped Sofa", dims: "2800 × 1800 mm", price: "₹42k" },
-    { name: "Coffee Table", dims: "1100 × 600 mm", price: "₹8k" },
-    { name: "TV Unit", dims: "1600 × 450 mm", price: "₹14k" },
-    { name: "Bookshelf", dims: "900 × 350 mm", price: "₹7k" },
-    { name: "Armchair", dims: "800 × 800 mm", price: "₹12k" },
-    { name: "Side Table", dims: "500 × 500 mm", price: "₹4k" },
-    { name: "Floor Lamp", dims: "400 × 400 mm", price: "₹3k" },
-    { name: "Pooja Unit", dims: "600 × 400 mm", price: "₹9k" },
-    { name: "Storage Cabinet", dims: "1000 × 450 mm", price: "₹11k" },
-  ],
-  bedroom: [
-    { name: "Queen Bed", dims: "1600 × 2000 mm", price: "₹22k" },
-    { name: "King Bed", dims: "2000 × 2000 mm", price: "₹32k" },
-    { name: "Wardrobe", dims: "1800 × 600 mm", price: "₹25k" },
-    { name: "Bedside Table", dims: "450 × 400 mm", price: "₹4k" },
-    { name: "Dressing Table", dims: "900 × 450 mm", price: "₹9k" },
-    { name: "Study Desk", dims: "1200 × 600 mm", price: "₹10k" },
-    { name: "Chest of Drawers", dims: "800 × 450 mm", price: "₹8k" },
-  ],
-  dining_room: [
-    { name: "6-Seater Dining Table", dims: "1800 × 900 mm", price: "₹18k" },
-    { name: "4-Seater Dining Table", dims: "1200 × 750 mm", price: "₹11k" },
-    { name: "Dining Chair", dims: "450 × 480 mm", price: "₹3k" },
-    { name: "Bar Cabinet", dims: "900 × 400 mm", price: "₹14k" },
-    { name: "Crockery Unit", dims: "1200 × 400 mm", price: "₹18k" },
-  ],
-};
 
-function CatalogueDrawer({ roomType, onAdd, onClose }: { roomType: string; onAdd: (name: string) => void; onClose: () => void }) {
-  const items = CATALOGUE_BY_TYPE[roomType] ?? CATALOGUE_BY_TYPE["living_room"];
+interface CatalogItem {
+  sku: string;
+  name_en: string;
+  sub_category: string;
+  category: string;
+  price_inr: number;
+  dimensions: { width_mm: number; depth_mm: number; height_mm: number };
+}
+
+function CatalogueDrawer({
+  roomType,
+  vibe,
+  onAdd,
+  onClose,
+}: {
+  roomType: string;
+  vibe: string;
+  onAdd: (sku: string, sub_category: string) => void;
+  onClose: () => void;
+}) {
+  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ room_type: roomType, limit: "60" });
+    if (vibe) params.set("vibe", vibe);
+    fetch(`/api/catalog?${params}`)
+      .then((r) => r.json())
+      .then((data) => setItems(data.items ?? []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, [roomType, vibe]);
 
   return (
     <div className="pane-animated-entrance" style={{
@@ -633,32 +680,38 @@ function CatalogueDrawer({ roomType, onAdd, onClose }: { roomType: string; onAdd
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-3)", fontSize: 16, lineHeight: 1 }}>×</button>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-        {items.map((item) => (
-          <div key={item.name} style={{ padding: "10px 16px", borderBottom: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontFamily: "var(--fd)", fontSize: 14, fontWeight: 500, color: "var(--ink)" }}>{item.name}</span>
-            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.06em" }}>{item.dims}</span>
+        {loading ? (
+          <div style={{ padding: "24px 16px", fontFamily: "var(--fm)", fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.08em" }}>Loading…</div>
+        ) : items.length === 0 ? (
+          <div style={{ padding: "24px 16px", fontFamily: "var(--fm)", fontSize: 11, color: "var(--ink-3)" }}>No items found.</div>
+        ) : items.map((item) => (
+          <div key={item.sku} style={{ padding: "10px 16px", borderBottom: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 13, fontWeight: 500, color: "var(--ink)", lineHeight: 1.3 }}>{item.name_en}</span>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.06em" }}>
+              {item.dimensions.width_mm}×{item.dimensions.depth_mm} mm
+            </span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-              <span style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--ink-2)" }}>{item.price}</span>
+              <span style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--ink-2)" }}>₹{Math.round(item.price_inr / 1000)}k</span>
               <button
-                onClick={async () => {
-                  setAdding(item.name);
-                  onAdd(item.name);
+                onClick={() => {
+                  setAdding(item.sku);
+                  onAdd(item.sku, item.sub_category);
                   setTimeout(() => setAdding(null), 1200);
                 }}
-                disabled={adding === item.name}
+                disabled={adding === item.sku}
                 style={{
-                  background: adding === item.name ? "var(--leaf)" : "var(--terra)",
+                  background: adding === item.sku ? "var(--leaf)" : "var(--terra)",
                   border: "none",
                   color: "var(--paper)",
                   fontFamily: "var(--fm)",
                   fontSize: 9,
                   letterSpacing: "0.1em",
                   padding: "4px 10px",
-                  cursor: adding === item.name ? "default" : "pointer",
+                  cursor: adding === item.sku ? "default" : "pointer",
                   transition: "background .3s",
                 }}
               >
-                {adding === item.name ? "ADDED" : "+ ADD"}
+                {adding === item.sku ? "ADDED" : "+ ADD"}
               </button>
             </div>
           </div>

@@ -64,7 +64,18 @@ export function ExportRoute() {
     setDl(true);
     setError(null);
     try {
-      const res = await fetch("/api/export", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ room_state: roomState, format: "pdf", include_hindi_section: true }) });
+      const res = await fetch("/api/export", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          room_state: roomState,
+          format: "pdf",
+          include_hindi_section: true,
+          vision_name: vision.name,
+          vision_tagline: vision.tagline,
+          philosophy: vision.philosophy,
+        }),
+      });
       if (!res.ok) throw new Error(`/export ${res.status}`);
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);

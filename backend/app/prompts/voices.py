@@ -40,16 +40,20 @@ Output: always valid JSON matching this schema (no markdown, no commentary outsi
 
 Intent parameter reference (use the exact keys below):
   make_bigger / make_smaller — target_item_id required; no parameters needed.
-  add        — {"sub_category": "sofa"|"desk"|"wardrobe"|"bookshelf"|"coffee_table"|"mandir_wall"|etc., "sku": "<optional exact sku>"}
+  add        — {"sku": "<exact sku from AVAILABLE CATALOG>"}  (prefer sku over sub_category when you know it)
+               fallback: {"sub_category": "sofa"|"desk"|"wardrobe"|"bookshelf"|"coffee_table"|"mandir_wall"|etc.}
   remove     — target_item_id required; no parameters.
+  move       — target_item_id required; {"x_mm": <0..room_width_mm>, "z_mm": <0..room_depth_mm>}
+  rotate     — target_item_id required; {"delta_deg": 90|180|270}
   recolor_room — {"wall": "#hexcolor", "floor": "#hexcolor", "accent": "#hexcolor", "lighting_kelvin": 2200–6500}
                  For "warmer" use lighting_kelvin 2400–2700 and a warmer wall tint.
                  For "lighter/airier" use lighting_kelvin 4000–5000 and a lighter wall.
-  replace    — {"sub_category": "<sub_category>"}  (picks cheapest matching item)
+  replace    — {"sku": "<exact sku from AVAILABLE CATALOG>"}  preferred; fallback: {"sub_category": "<sub_category>"}
+  change_finish — target_item_id required; {"tint_hex": "#hexcolor", "roughness_hint": 0.0–1.0}
+                  Use for fabric/material changes. roughness 0.1=glossy, 0.6=fabric, 0.9=raw wood.
   free_text  — use only when the user wants to chat without a structural change.
 
-IMPORTANT: You cannot move or rotate furniture. Positions are set by the layout engine.
-If the user asks to move something, respond warmly: acknowledge what they want, explain that the Layout Editor button (in the toolbar) lets them drag furniture themselves, and redirect to what you CAN help with — a different size, removing an item, or a style change.
+You CAN move and rotate furniture using the `move` and `rotate` intents — use them when the user explicitly asks to reposition something. For `move`, specify x_mm and z_mm as the new footprint centre within room bounds. For `rotate`, specify delta_deg (90, 180, or 270). When moving, verify the new position keeps the item at least 400mm from walls and 600mm from other items. The user can also drag items manually using the Layout Editor in the toolbar.
 
 Spatial rules (always validate before suggesting a change):
   · Anchor furniture (sofa, bed, wardrobe) must be at least 400mm from the nearest wall.
@@ -154,10 +158,11 @@ Write the Reasoning JSON. Be specific. Reference at least 2 user-intake details 
 
 def build_collaborator_prompt(
     *,
-    intake: Intake,
-    room: RoomState,
+    intake: "Intake",
+    room: "RoomState",
     history: list[dict[str, str]],
     user_message: str,
+    catalog_snapshot: list | None = None,
 ) -> str:
     """Compose the user-message body for one collaborator turn."""
     items_lines = "\n".join(
@@ -166,13 +171,24 @@ def build_collaborator_prompt(
         for it in room.items
     )
     history_lines = "\n".join(f"  {h['role']}: {h['content']}" for h in history[-8:])
+    catalog_lines = ""
+    if catalog_snapshot:
+        catalog_lines = "\n\nAVAILABLE CATALOG ({} items for {} room)\n{}".format(
+            len(catalog_snapshot),
+            intake.room_type.value,
+            "\n".join(
+                f"  - sku={i.sku} · {i.sub_category} · {i.name_en} · "
+                f"₹{i.price_inr} · {i.dimensions.width_mm}×{i.dimensions.depth_mm}mm"
+                for i in catalog_snapshot
+            ),
+        )
     return f"""ROOM STATE
   Room: {intake.room_type.value} {intake.room_dimensions.width_mm}x{intake.room_dimensions.depth_mm}mm
   Vibe: {intake.vibe.value}, Budget: rupees {intake.budget_inr}, Vastu: {intake.vastu_matters}
   Who lives here: {intake.who_lives_here}
 
 PLACED ITEMS
-{items_lines}
+{items_lines}{catalog_lines}
 
 CONVERSATION SO FAR
 {history_lines or "(this is the first turn)"}

@@ -152,6 +152,7 @@ export function GlbItem({ item, room, accent, selected, draggable, onSelect, onM
           </Suspense>
         </GlbErrorBoundary>
       ) : fallback}
+      {isHot && <SelectionRing w={w} d={d} draggable={draggable} />}
     </group>
   );
 }
@@ -239,19 +240,20 @@ function GlbMesh({
     const size = new THREE.Vector3();
     native.getSize(size);
     if (size.x < 1e-5 || size.y < 1e-5 || size.z < 1e-5) {
-      return { scale: 1, offset: new THREE.Vector3(0, tuning.yNudge, 0) };
+      return { scaleX: 1, scaleY: 1, scaleZ: 1, offset: new THREE.Vector3(0, tuning.yNudge, 0) };
     }
-    const scale = Math.min(Math.max(w, d) / Math.max(size.x, size.z), h / size.y) * tuning.scaleMul;
-    const minY = native.min.y * scale;
-    const cX = (native.min.x + native.max.x) * 0.5 * scale;
-    const cZ = (native.min.z + native.max.z) * 0.5 * scale;
-    return { scale, offset: new THREE.Vector3(-cX, -minY + tuning.yNudge, -cZ) };
+    const scaleX = (w / size.x) * tuning.scaleMul;
+    const scaleY = (h / size.y) * tuning.scaleMul;
+    const scaleZ = (d / size.z) * tuning.scaleMul;
+    const minY = native.min.y * scaleY;
+    const cX = (native.min.x + native.max.x) * 0.5 * scaleX;
+    const cZ = (native.min.z + native.max.z) * 0.5 * scaleZ;
+    return { scaleX, scaleY, scaleZ, offset: new THREE.Vector3(-cX, -minY + tuning.yNudge, -cZ) };
   }, [cloned, assetUrl, w, d, h]);
 
   return (
-    <group scale={fit.scale} position={fit.offset}>
+    <group scale={[fit.scaleX, fit.scaleY, fit.scaleZ]} position={fit.offset}>
       <primitive object={cloned} />
-      {selected && <SelectionRing w={w} d={d} scale={1 / fit.scale} draggable={draggable} />}
     </group>
   );
 }
