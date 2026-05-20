@@ -32,7 +32,12 @@
       "Bash(grep -v \"//[^a-zA-Z]\")",
       "Bash(npx vite *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\achindras\\\\Documents\\\\Capstone Project Research\\\\nirmit-project\" -Recurse -Directory)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(gh repo *)",
+      "PowerShell(gh repo view bayllama/homemaker --json licenseInfo,description,url | ConvertFrom-Json)",
+      "Bash(.venvScriptspython.exe -c ' *)",
+      "Bash(git *)",
+      "Bash(grep -i -E \"\\\\.\\(json|csv|py\\)$\")"
     ]
   }
 }
