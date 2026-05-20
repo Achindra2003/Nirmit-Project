@@ -73,6 +73,9 @@ class Placement:
     rotation_deg: int
     score: float
     zone_id: str | None = None
+    vastu_zone: str | None = None
+    near_wall: str | None = None
+    sight_line_target_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -161,6 +164,21 @@ _OVERLAY_SUBCATEGORIES: frozenset[str] = frozenset({
 
 def _is_overlay(sub_category: str) -> bool:
     return sub_category in _OVERLAY_SUBCATEGORIES
+
+
+# ---------- Wall detection ----------
+
+
+def _detect_near_wall(cx: float, cz: float, eff_w: float, eff_d: float, inp: SolverInput) -> str | None:
+    """Return the wall label (N/S/E/W) the item footprint is closest to, or None if floating."""
+    gaps = {
+        "S": cz - eff_d / 2,
+        "N": inp.depth_mm - (cz + eff_d / 2),
+        "W": cx - eff_w / 2,
+        "E": inp.width_mm - (cx + eff_w / 2),
+    }
+    min_wall = min(gaps, key=lambda k: gaps[k])
+    return min_wall if gaps[min_wall] < 200 else None
 
 
 # ---------- Validity ----------
@@ -360,10 +378,16 @@ def _place_anchor(
     # Sample from the top-5 so equal-quality rooms look different across visions.
     top = candidates[:5]
     if rng is None or len(top) == 1:
-        return top[0]
-    floor_score = top[-1].score
-    weights = [max(p.score - floor_score + 1.0, 0.1) for p in top]
-    return rng.choices(top, weights=weights, k=1)[0]
+        winner = top[0]
+    else:
+        floor_score = top[-1].score
+        weights = [max(p.score - floor_score + 1.0, 0.1) for p in top]
+        winner = rng.choices(top, weights=weights, k=1)[0]
+    # Enrich winner with Vastu zone and wall proximity.
+    eff_w, eff_d = _eff_extent(item.width_mm, item.depth_mm, winner.rotation_deg)
+    vastu_z = point_zone(winner.x_mm, winner.z_mm, width_mm=inp.width_mm, depth_mm=inp.depth_mm, entrance=inp.entrance).value
+    near = _detect_near_wall(winner.x_mm, winner.z_mm, eff_w, eff_d, inp)
+    return Placement(winner.item_id, winner.x_mm, winner.z_mm, winner.rotation_deg, winner.score, winner.zone_id, vastu_z, near)
 
 
 # ---------- Member placement (relative to an anchor) ----------
@@ -518,6 +542,8 @@ def _solve_zones(inp: SolverInput, rng: random.Random | None = None) -> SolverRe
     placements: list[Placement] = []
     failures: list[PlacementFailure] = []
     zone_anchors: dict[str, Placement] = {}
+    # Tracks which anchor item_id sight-lines to which target item_id.
+    sight_targets: dict[str, str] = {}
 
     # Pass 1 — anchors. Place wall-zone anchors first so the seating zone
     # (which needs a wall the TV is also against) lands well.
@@ -550,6 +576,8 @@ def _solve_zones(inp: SolverInput, rng: random.Random | None = None) -> SolverRe
         if new is not old:
             zone_anchors[zone.id] = new
             placements = [pl for pl in placements if pl.item_id != old.item_id] + [new]
+        # Record the sight-line relationship regardless of whether rotation changed.
+        sight_targets[zone_anchors[zone.id].item_id] = target.item_id
 
     # Pass 3 — members, relative to each (possibly rotated) anchor.
     for zone in inp.zones:
@@ -584,6 +612,12 @@ def _solve_zones(inp: SolverInput, rng: random.Random | None = None) -> SolverRe
         placements.append(p)
 
     placements = [_clamp_placement_to_room(p, inp) for p in placements]
+    # Attach sight_line_target_id to anchors that have a sight-line partner.
+    placements = [
+        Placement(p.item_id, p.x_mm, p.z_mm, p.rotation_deg, p.score, p.zone_id, p.vastu_zone, p.near_wall, sight_targets.get(p.item_id))
+        if p.item_id in sight_targets else p
+        for p in placements
+    ]
     return SolverResult(tuple(placements), tuple(failures), sum(pl.score for pl in placements))
 
 
@@ -600,3 +634,56 @@ def _solve_flat(inp: SolverInput, rng: random.Random | None = None) -> SolverRes
         placements.append(p)
     placements = [_clamp_placement_to_room(p, inp) for p in placements]
     return SolverResult(tuple(placements), tuple(failures), sum(pl.score for pl in placements))
+
+
+# ---------- Public validity checker ----------
+
+
+@dataclass(frozen=True)
+class CollisionReport:
+    """Result of validate_placements — lists item IDs that have problems."""
+
+    colliding_ids: tuple[str, ...]
+    out_of_bounds_ids: tuple[str, ...]
+
+
+def validate_placements(
+    placed: list[Placement],
+    items: tuple[SolverItem, ...],
+    inp: SolverInput,
+) -> CollisionReport:
+    """Check a list of already-placed items for collision/walkway/boundary violations.
+
+    Used by the validate endpoint when the user drags furniture manually.
+    Overlay items (rugs, ceiling fans) are exempt from collision checks.
+    """
+    item_map = {s.id: s for s in items}
+    colliding: list[str] = []
+    out_of_bounds: list[str] = []
+
+    for i, p in enumerate(placed):
+        si = item_map.get(p.item_id)
+        if si is None or _is_overlay(si.sub_category):
+            continue
+        eff_w, eff_d = _eff_extent(si.width_mm, si.depth_mm, p.rotation_deg)
+        # Boundary check
+        if (
+            p.x_mm - eff_w / 2 < -1
+            or p.z_mm - eff_d / 2 < -1
+            or p.x_mm + eff_w / 2 > inp.width_mm + 1
+            or p.z_mm + eff_d / 2 > inp.depth_mm + 1
+        ):
+            out_of_bounds.append(p.item_id)
+            continue
+        # Collision + walkway check against all other placed items
+        others = [pl for j, pl in enumerate(placed) if j != i]
+        if not _is_valid(
+            p.x_mm, p.z_mm, eff_w, eff_d, inp, others,
+            ignore_walkway=False, new_item_sub_category=si.sub_category,
+        ):
+            colliding.append(p.item_id)
+
+    return CollisionReport(
+        colliding_ids=tuple(colliding),
+        out_of_bounds_ids=tuple(out_of_bounds),
+    )

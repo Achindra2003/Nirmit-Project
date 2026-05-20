@@ -4,6 +4,7 @@ from app.prompts.voices import (
     RANKER_SYSTEM,
     STYLE_SYSTEM,
     build_collaborator_prompt,
+    build_diff_context,
     build_ranker_prompt,
     build_style_prompt,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "RANKER_SYSTEM",
     "STYLE_SYSTEM",
     "build_collaborator_prompt",
+    "build_diff_context",
     "build_ranker_prompt",
     "build_style_prompt",
 ]

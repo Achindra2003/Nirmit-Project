@@ -9,6 +9,8 @@ The collaborator must, on every response:
 """
 from __future__ import annotations
 
+from __future__ import annotations
+
 from app.schemas.state import Intake, RoomState
 
 # ---------- System prompts ----------
@@ -163,6 +165,47 @@ PALETTE
 Write the Reasoning JSON. Be specific. Reference at least 2 user-intake details and 2 actual placements."""
 
 
+def build_diff_context(*, previous: "RoomState | None", current: "RoomState") -> str:
+    """Return a human-readable diff summary to inject into the collaborator prompt.
+
+    Empty string if there's nothing to diff (first turn or no previous state).
+    """
+    if previous is None:
+        return ""
+    old_by_id = {i.id: i for i in previous.items}
+    new_by_id = {i.id: i for i in current.items}
+    lines: list[str] = []
+
+    for item_id, new_item in new_by_id.items():
+        old_item = old_by_id.get(item_id)
+        if old_item is None:
+            lines.append(f"  + ADDED {new_item.name_en} (id={item_id})")
+            continue
+        dx = abs(new_item.position.x_mm - old_item.position.x_mm)
+        dz = abs(new_item.position.z_mm - old_item.position.z_mm)
+        dr = abs(new_item.position.rotation_deg - old_item.position.rotation_deg) % 360
+        dw = abs(new_item.dimensions.width_mm - old_item.dimensions.width_mm)
+        dd = abs(new_item.dimensions.depth_mm - old_item.dimensions.depth_mm)
+        if dx > 50 or dz > 50:
+            lines.append(
+                f"  ~ MOVED {new_item.name_en}: ({old_item.position.x_mm},{old_item.position.z_mm})mm"
+                f" → ({new_item.position.x_mm},{new_item.position.z_mm})mm"
+            )
+            # Flag if vastu-critical item was moved
+            if old_item.rationale and old_item.rationale.vastu_compliant:
+                lines.append(f"    ⚠ {new_item.name_en} had a Vastu-preferred placement — check new zone")
+        elif dr > 5:
+            lines.append(f"  ~ ROTATED {new_item.name_en} by {dr:.0f}°")
+        elif dw > 50 or dd > 50:
+            lines.append(f"  ~ RESIZED {new_item.name_en}")
+
+    for item_id, old_item in old_by_id.items():
+        if item_id not in new_by_id:
+            lines.append(f"  - REMOVED {old_item.name_en} (id={item_id})")
+
+    return "\nUSER EDITS SINCE LAST TURN\n" + "\n".join(lines) if lines else ""
+
+
 def build_collaborator_prompt(
     *,
     intake: "Intake",
@@ -170,14 +213,38 @@ def build_collaborator_prompt(
     history: list[dict[str, str]],
     user_message: str,
     catalog_snapshot: list | None = None,
+    diff_context: str = "",
 ) -> str:
     """Compose the user-message body for one collaborator turn."""
     items_lines = "\n".join(
         f"  - id={it.id} {it.name_en} ({it.category}) {it.dimensions.width_mm}x{it.dimensions.depth_mm}mm "
         f"at ({it.position.x_mm}, {it.position.z_mm}) rupees {it.price_inr}"
+        + (
+            f" [zone={it.rationale.zone_id} vastu={it.rationale.vastu_zone}"
+            f"{' wall=' + it.rationale.near_wall if it.rationale.near_wall else ''}"
+            f"{' → ' + it.rationale.sight_line_target if it.rationale.sight_line_target else ''}]"
+            if it.rationale else ""
+        )
         for it in room.items
     )
     history_lines = "\n".join(f"  {h['role']}: {h['content']}" for h in history[-8:])
+
+    # Design intent block — what the solver intended and what must not be broken
+    intent_lines = ""
+    di = room.design_intent
+    if di:
+        parts: list[str] = []
+        if di.anchors:
+            pairs = ", ".join(f"{a.item_id} → {a.sight_line_target_id}" for a in di.anchors if a.sight_line_target_id)
+            if pairs:
+                parts.append(f"Sight-line pairs: {pairs}")
+        if di.no_move_items:
+            parts.append(f"Vastu-critical (do not move without reason): {', '.join(di.no_move_items)}")
+        if di.budget_ceiling_inr:
+            parts.append(f"Budget ceiling: ₹{di.budget_ceiling_inr}")
+        if parts:
+            intent_lines = "\nDESIGN INTENT\n" + "\n".join(f"  {p}" for p in parts)
+
     catalog_lines = ""
     if catalog_snapshot:
         catalog_lines = "\n\nAVAILABLE CATALOG ({} items for {} room)\n{}".format(
@@ -195,7 +262,7 @@ def build_collaborator_prompt(
   Who lives here: {intake.who_lives_here}
 
 PLACED ITEMS
-{items_lines}{catalog_lines}
+{items_lines}{intent_lines}{diff_context}{catalog_lines}
 
 CONVERSATION SO FAR
 {history_lines or "(this is the first turn)"}
