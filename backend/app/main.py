@@ -10,7 +10,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import apply, catalog, chat, cost, designs, export, finishing, generate
+from app.api import apply, catalog, chat, cost, designs, export, finishing, generate, validate
 from app.config import settings
 from app.domain.persistence import init_db
 
@@ -56,6 +56,7 @@ app.include_router(export.router, tags=["export"])
 app.include_router(finishing.router, tags=["finishing"])
 app.include_router(designs.router, tags=["designs"])
 app.include_router(catalog.router, tags=["catalog"])
+app.include_router(validate.router, tags=["validate"])
 
 
 @app.on_event("startup")

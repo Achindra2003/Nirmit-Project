@@ -18,6 +18,7 @@ async def chat(req: ChatRequest) -> ChatResponse:
     result = await _graph.ainvoke(
         {
             "room_state": req.room_state,
+            "previous_room_state": getattr(req, "previous_room_state", None),
             "history": req.history,
             "message": req.message,
             "available_visions": req.available_visions,

@@ -34,17 +34,21 @@ from langgraph.graph import END, StateGraph
 from app.domain.catalog import get_catalog
 from app.domain.catalog.selector import SelectedItem, select_items
 from app.domain.costing import build_cost_breakdown
+from app.domain.presets import build_design_intent_from_preset, get_preset, resolve_preset
 from app.domain.solver import SolverInput, SolverItem, composition_for, solve
 from app.domain.solver.solver import DoorOpening
-from app.domain.vastu import apply_rules as vastu_apply_rules
+from app.domain.vastu import VastuZone, apply_rules as vastu_apply_rules, preferred_zone_for_category
 from app.prompts import RANKER_SYSTEM, STYLE_SYSTEM, build_ranker_prompt, build_style_prompt
 from app.schemas.state import (
     CatalogRef,
+    DesignAnchor,
+    DesignIntent,
     Dimensions,
     Direction,
     Intake,
     Opening,
     PlacedItem,
+    PlacementRationale,
     Position,
     Reasoning,
     RoomState,
@@ -210,95 +214,19 @@ def _build_vision(
     philosophy: VisionPhilosophy,
     brief: dict[str, Any],
 ) -> Vision | None:
-    catalog = get_catalog()
-    selected = select_items(intake=intake, philosophy=philosophy, catalog=catalog, design_brief=brief)
-    if not selected:
-        return None
+    # Try preset resolver first (guaranteed-good curated layouts).
+    # Variant 1 is used for the Breath philosophy to give each set a distinct
+    # spatial rhythm; Gathering and Keeper use the primary (variant 0).
+    variant = 1 if philosophy is VisionPhilosophy.BREATH else 0
+    placed_items = resolve_preset(intake, philosophy, variant=variant)
 
-    solver_items = tuple(
-        SolverItem(
-            id=s.item_id,
-            category=s.catalog.category,
-            sub_category=s.catalog.sub_category or s.catalog.category,
-            width_mm=s.catalog.dimensions.width_mm,
-            depth_mm=s.catalog.dimensions.depth_mm,
-            height_mm=s.catalog.dimensions.height_mm,
-            against_wall=s.against_wall,
-            catalog_sku=s.catalog.sku,
-            front_clearance_mm=s.catalog.front_clearance_mm,
-        )
-        for s in selected
-    )
-
-    # Derive a stable seed from intake so the same inputs always produce the same
-    # 3 rooms, but different inputs produce different spatial arrangements.
-    seed_str = (
-        f"{intake.room_dimensions.width_mm}"
-        f"{intake.room_dimensions.depth_mm}"
-        f"{intake.vibe.value}"
-        f"{intake.who_lives_here}"
-    )
-    base_seed = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
-    vision_seed = base_seed + _PHILOSOPHY_IDX[philosophy]
-
-    # Wire the entrance door so the solver keeps furniture clear of it.
-    door_for_solver = DoorOpening(
-        wall=intake.entrance_direction,
-        position_frac=0.5,
-        width_mm=900,
-    )
-
-    zones = composition_for(intake.room_type.value, philosophy.value)
-    res = solve(
-        SolverInput(
-            width_mm=intake.room_dimensions.width_mm,
-            depth_mm=intake.room_dimensions.depth_mm,
-            entrance=intake.entrance_direction,
-            items=solver_items,
-            zones=zones,
-            vastu_enabled=intake.vastu_matters,
-            room_type=intake.room_type.value,
-            walkway_min_mm=600,
-            doors=(door_for_solver,),
-        ),
-        seed=vision_seed,
-    )
-
-    by_id = {s.item_id: s for s in selected}
-    placed_items: list[PlacedItem] = []
-    for p in res.placements:
-        s = by_id[p.item_id]
-        placed_items.append(
-            PlacedItem(
-                id=p.item_id,
-                catalog=CatalogRef(
-                    sku=s.catalog.sku,
-                    asset_url=s.catalog.asset_url,
-                    tint_hex=s.catalog.tint_hex,
-                    roughness_hint=s.catalog.roughness_hint,
-                    size_label=s.catalog.size_label,
-                    material_label=s.catalog.material_label,
-                    finish_label=s.catalog.finish_label,
-                    placement_type=s.catalog.placement_type,
-                ),
-                name_en=s.catalog.name_en,
-                name_hi=s.catalog.name_hi,
-                category=s.catalog.category,
-                dimensions=Dimensions(
-                    width_mm=s.catalog.dimensions.width_mm,
-                    depth_mm=s.catalog.dimensions.depth_mm,
-                    height_mm=s.catalog.dimensions.height_mm,
-                ),
-                position=Position(x_mm=p.x_mm, z_mm=p.z_mm, rotation_deg=float(p.rotation_deg)),
-                facing=_facing_for_category(s.catalog.sub_category or s.catalog.category, intake.entrance_direction),
-                is_buy=_is_buy_default(s.catalog.category),
-                price_inr=s.catalog.price_inr,
-                build_price_inr=s.catalog.build_price_inr,
-            )
-        )
-
+    if placed_items is None:
+        # No preset for this room type / philosophy — fall back to the solver.
+        placed_items = _build_vision_solver(intake, philosophy, brief)
     if not placed_items:
         return None
+
+    layout = get_preset(intake.room_type.value, philosophy.value, variant)
 
     # Default openings — one door on entrance wall, one window on opposite wall.
     window_wall = _OPPOSITE_DIR.get(intake.entrance_direction, Direction.N)
@@ -317,6 +245,12 @@ def _build_vision(
     except (TypeError, ValueError):
         lighting_kelvin = 3200
 
+    # Build DesignIntent using the preset layout when available, solver-derived otherwise.
+    if layout is not None:
+        design_intent = build_design_intent_from_preset(layout, placed_items, intake)
+    else:
+        design_intent = _build_design_intent_from_items(intake, placed_items)
+
     room = RoomState(
         id=f"room_{uuid.uuid4().hex[:8]}",
         philosophy=philosophy.value,
@@ -327,6 +261,7 @@ def _build_vision(
         wall_finish=wall_finish,
         lighting_kelvin=lighting_kelvin,
         openings=default_openings,
+        design_intent=design_intent,
     )
     cost = build_cost_breakdown(room)
 
@@ -558,6 +493,173 @@ def _facing_for_category(category: str, entrance: Direction) -> Direction | None
     if category == "mandir":
         return Direction.E
     return None
+
+
+def _is_vastu_compliant(
+    category: str, vastu_zone_value: str | None, room_type: str, vastu_enabled: bool
+) -> bool:
+    if not vastu_enabled or not vastu_zone_value:
+        return False
+    pref = preferred_zone_for_category(category=category, room_type=room_type, vastu_enabled=True)
+    if not pref:
+        return False
+    try:
+        return VastuZone(vastu_zone_value) in pref
+    except ValueError:
+        return False
+
+
+def _build_design_intent(
+    intake: "Intake",
+    placed_items: "list[PlacedItem]",
+    solver_placements: "tuple",
+) -> DesignIntent:
+    placement_map = {p.item_id: p for p in solver_placements}
+    anchors: list[DesignAnchor] = []
+    vastu_critical: list[str] = []
+    no_move: list[str] = []
+
+    for item in placed_items:
+        p = placement_map.get(item.id)
+        if p and p.sight_line_target_id:
+            anchors.append(DesignAnchor(item_id=item.id, sight_line_target_id=p.sight_line_target_id))
+        if item.rationale and item.rationale.vastu_compliant:
+            vastu_critical.append(item.id)
+            if item.category == "mandir":
+                no_move.append(item.id)
+
+    return DesignIntent(
+        anchors=anchors,
+        no_move_items=no_move,
+        vastu_critical_ids=vastu_critical,
+        budget_ceiling_inr=intake.budget_inr,
+    )
+
+
+def _build_vision_solver(
+    intake: Intake,
+    philosophy: VisionPhilosophy,
+    brief: dict[str, Any],
+) -> list[PlacedItem] | None:
+    """Original solver-based placement path — used when no preset exists for
+    this room_type + philosophy combination."""
+    catalog = get_catalog()
+    selected = select_items(
+        intake=intake,
+        philosophy=philosophy,
+        catalog=catalog,
+        design_brief=brief,
+    )
+    if not selected:
+        return None
+
+    solver_items = tuple(
+        SolverItem(
+            id=s.item_id,
+            category=s.catalog.category,
+            sub_category=s.catalog.sub_category or s.catalog.category,
+            width_mm=s.catalog.dimensions.width_mm,
+            depth_mm=s.catalog.dimensions.depth_mm,
+            height_mm=s.catalog.dimensions.height_mm,
+            against_wall=s.against_wall,
+            catalog_sku=s.catalog.sku,
+            front_clearance_mm=getattr(s.catalog, "front_clearance_mm", 600),
+        )
+        for s in selected
+    )
+
+    zones = composition_for(intake.room_type.value, philosophy.value)
+    door = DoorOpening(wall=intake.entrance_direction, position_frac=0.5, width_mm=900)
+    res = solve(
+        SolverInput(
+            width_mm=intake.room_dimensions.width_mm,
+            depth_mm=intake.room_dimensions.depth_mm,
+            entrance=intake.entrance_direction,
+            items=solver_items,
+            zones=zones,
+            doors=(door,),
+            vastu_enabled=intake.vastu_matters,
+            room_type=intake.room_type.value,
+        )
+    )
+    if not res.placements:
+        return None
+
+    placement_map = {p.item_id: p for p in res.placements}
+    sel_map = {s.item_id: s for s in selected}
+    placed: list[PlacedItem] = []
+
+    for p in res.placements:
+        sel = sel_map.get(p.item_id)
+        if sel is None:
+            continue
+        ci = sel.catalog
+        vastu_compliant = _is_vastu_compliant(
+            ci.category, p.vastu_zone, intake.room_type.value, intake.vastu_matters
+        )
+        placed.append(PlacedItem(
+            id=p.item_id,
+            catalog=CatalogRef(
+                sku=ci.sku,
+                asset_url=ci.asset_url,
+                tint_hex=ci.tint_hex,
+                roughness_hint=ci.roughness_hint,
+                size_label=ci.size_label,
+                material_label=ci.material_label,
+                finish_label=None,
+                placement_type=ci.placement_type,
+            ),
+            name_en=ci.name_en,
+            name_hi=ci.name_hi,
+            category=ci.category,
+            dimensions=Dimensions(
+                width_mm=ci.dimensions.width_mm,
+                depth_mm=ci.dimensions.depth_mm,
+                height_mm=ci.dimensions.height_mm,
+            ),
+            position=Position(x_mm=p.x_mm, z_mm=p.z_mm, rotation_deg=float(p.rotation_deg)),
+            facing=_facing_for_category(ci.sub_category or ci.category, intake.entrance_direction),
+            is_buy=_is_buy_default(ci.category),
+            price_inr=ci.price_inr,
+            build_price_inr=ci.build_price_inr,
+            rationale=PlacementRationale(
+                zone_id=p.zone_id,
+                vastu_zone=p.vastu_zone,
+                near_wall=p.near_wall,
+                sight_line_target=p.sight_line_target_id,
+                score=p.score,
+                vastu_compliant=vastu_compliant,
+            ),
+        ))
+
+    return placed or None
+
+
+def _build_design_intent_from_items(
+    intake: Intake,
+    placed_items: list[PlacedItem],
+) -> DesignIntent:
+    """Build DesignIntent from PlacedItem rationale fields — used when the
+    solver fallback runs (no preset available for this room/philosophy)."""
+    anchors: list[DesignAnchor] = []
+    vastu_critical: list[str] = []
+    no_move: list[str] = []
+
+    for item in placed_items:
+        r = item.rationale
+        if r and r.sight_line_target:
+            anchors.append(DesignAnchor(item_id=item.id, sight_line_target_id=r.sight_line_target))
+        if r and r.vastu_compliant:
+            vastu_critical.append(item.id)
+            if item.category == "mandir":
+                no_move.append(item.id)
+
+    return DesignIntent(
+        anchors=anchors,
+        no_move_items=no_move,
+        vastu_critical_ids=vastu_critical,
+        budget_ceiling_inr=intake.budget_inr,
+    )
 
 
 def _is_buy_default(category: str) -> bool:

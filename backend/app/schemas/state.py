@@ -91,6 +91,34 @@ class Opening(StrictModel):
     sill_mm: int = Field(default=0, ge=0, description="Floor-to-bottom of opening (0 for doors, ~900 for windows)")
 
 
+class PlacementRationale(StrictModel):
+    """Why the solver placed this item here — preserved to give the collaborator design memory."""
+
+    zone_id: str | None = None
+    vastu_zone: str | None = None
+    near_wall: str | None = Field(default=None, description="N/S/E/W — wall the item footprint is closest to")
+    sight_line_target: str | None = Field(default=None, description="item_id this item's front faces")
+    score: float = 0.0
+    vastu_compliant: bool = False
+
+
+class DesignAnchor(StrictModel):
+    item_id: str
+    sight_line_target_id: str | None = None
+
+
+class DesignIntent(StrictModel):
+    """Machine-readable spatial contract — what the solver decided for this room."""
+
+    anchors: list[DesignAnchor] = Field(default_factory=list)
+    no_move_items: list[str] = Field(
+        default_factory=list,
+        description="Item IDs that are Vastu-critical and should not be moved without designer review",
+    )
+    vastu_critical_ids: list[str] = Field(default_factory=list)
+    budget_ceiling_inr: int = 0
+
+
 class CatalogRef(StrictModel):
     """A reference to an item in the catalog. Resolved by the catalog service."""
 
@@ -129,6 +157,10 @@ class PlacedItem(StrictModel):
     build_price_inr: int | None = Field(
         default=None,
         description="Carpenter-built equivalent price, if a build path exists",
+    )
+    rationale: PlacementRationale | None = Field(
+        default=None,
+        description="Solver's reasoning for this placement — zone, Vastu zone, wall, sight-line target",
     )
 
 
@@ -209,6 +241,10 @@ class RoomState(StrictModel):
     openings: list[Opening] = Field(
         default_factory=list,
         description="Door and window openings in the room walls. Drives 3D gap rendering and solver clearance.",
+    )
+    design_intent: DesignIntent | None = Field(
+        default=None,
+        description="Machine-readable spatial contract — preserved so the collaborator knows what was designed and why",
     )
 
 
@@ -346,6 +382,33 @@ class ChatResponse(StrictModel):
     )
 
 
+# ---------- Validate ----------
+
+
+class ViolationKind(str, Enum):
+    COLLISION = "collision"
+    WALKWAY = "walkway"
+    ROOM_BOUNDARY = "room_boundary"
+    VASTU = "vastu"
+
+
+class Violation(StrictModel):
+    item_id: str
+    item_name: str
+    kind: ViolationKind
+    description: str
+    severity: Literal["error", "warning"]
+
+
+class ValidateRequest(StrictModel):
+    room_state: RoomState
+
+
+class ValidateResponse(StrictModel):
+    violations: list[Violation] = Field(default_factory=list)
+    is_valid: bool = True
+
+
 # ---------- Apply ----------
 
 
@@ -402,6 +465,10 @@ ChatRequest.model_fields["available_visions"] = ChatRequest.model_fields.get(
 
 class ChatRequestWithVisions(ChatRequest):
     available_visions: list[Vision] = Field(default_factory=list)
+    previous_room_state: RoomState | None = Field(
+        default=None,
+        description="The room state before the most recent user edit — used for diff-aware collaborator context",
+    )
 
 
 # Re-export under the original name so downstream typing stays stable.

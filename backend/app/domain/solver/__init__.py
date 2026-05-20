@@ -13,6 +13,7 @@ room. Items are placed largest-first; the wall-anchored items (sofa, bed,
 wardrobe, mandir, tv_unit) get a wall-priority pass before center items.
 """
 from app.domain.solver.solver import (
+    CollisionReport,
     DoorOpening,
     Placement,
     PlacementFailure,
@@ -20,6 +21,7 @@ from app.domain.solver.solver import (
     SolverItem,
     SolverResult,
     solve,
+    validate_placements,
 )
 from app.domain.solver.zones import (
     RelativePlacement,
@@ -28,6 +30,7 @@ from app.domain.solver.zones import (
 )
 
 __all__ = [
+    "CollisionReport",
     "DoorOpening",
     "Placement",
     "PlacementFailure",
@@ -38,4 +41,5 @@ __all__ = [
     "ZoneTemplate",
     "composition_for",
     "solve",
+    "validate_placements",
 ]

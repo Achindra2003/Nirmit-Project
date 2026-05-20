@@ -34,7 +34,7 @@ from app.domain.catalog.model import CatalogQuery
 from app.domain.costing import build_cost_breakdown
 from app.domain.intent import IntentExecutionError, apply_intents
 from app.llm import get_llm
-from app.prompts import COLLABORATOR_SYSTEM, build_collaborator_prompt
+from app.prompts import COLLABORATOR_SYSTEM, build_collaborator_prompt, build_diff_context
 from app.schemas.state import (
     ChatResponse,
     Intent,
@@ -49,6 +49,7 @@ _JSON_BLOCK = re.compile(r"\{[\s\S]*\}", re.MULTILINE)
 
 class CollabState(TypedDict, total=False):
     room_state: RoomState
+    previous_room_state: RoomState | None
     history: list[dict[str, str]]
     message: str
     available_visions: list
@@ -65,6 +66,10 @@ def _generate(state: CollabState) -> CollabState:
     intake = state["room_state"].intake
     catalog = get_catalog()
     catalog_items = catalog.query(CatalogQuery(room=intake.room_type, limit=30))
+    diff_context = build_diff_context(
+        previous=state.get("previous_room_state"),
+        current=state["room_state"],
+    )
     msgs = [
         SystemMessage(content=COLLABORATOR_SYSTEM),
         HumanMessage(
@@ -74,6 +79,7 @@ def _generate(state: CollabState) -> CollabState:
                 history=state.get("history", []),
                 user_message=state["message"],
                 catalog_snapshot=catalog_items,
+                diff_context=diff_context,
             )
         ),
     ]
