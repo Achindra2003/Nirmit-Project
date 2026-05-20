@@ -40,8 +40,8 @@ interface PropSpec extends PropPlacement {
 
 function deriveProps(room: RoomState): PropSpec[] {
   const out: PropSpec[] = [];
-  const sofa = room.items.find((i) => i.category === "seating");
-  const coffee = room.items.find((i) => i.category === "dining");
+  const sofa = room.items.find((i) => i.category === "seating" && /sofa|diwan/i.test(i.name_en));
+  const coffee = room.items.find((i) => i.category === "table" && /coffee/i.test(i.name_en));
   const bookshelf = room.items.find((i) => i.category === "storage" && /shelf|book/i.test(i.name_en));
   const mandir = room.items.find((i) => i.category === "mandir");
   const tv = room.items.find((i) => i.category === "tv_unit" || /tv unit/i.test(i.name_en));

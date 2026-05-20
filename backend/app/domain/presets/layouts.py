@@ -134,12 +134,15 @@ BEDROOM_GATHERING_0 = PresetLayout(
         F("bed_queen",  x_frac=0.50, z_frac=0.20, rotation_deg=0),
         F("wardrobe",   x_frac=0.13, z_frac=0.82, rotation_deg=90),
         F("wardrobe",   x_frac=0.87, z_frac=0.82, rotation_deg=270),
-        F("side_table", x_frac=0.30, z_frac=0.20, rotation_deg=0),
-        F("side_table", x_frac=0.70, z_frac=0.20, rotation_deg=0),
-        F("chest",      x_frac=0.87, z_frac=0.40, rotation_deg=270, optional=True),
-        F("rug",        x_frac=0.50, z_frac=0.52, rotation_deg=0,   optional=True),
-        F("plant",      x_frac=0.12, z_frac=0.16, rotation_deg=0,   optional=True),
-        F("lamp",       x_frac=0.14, z_frac=0.40, rotation_deg=0,   optional=True),
+        # Bedside tables flanking the bed, at the head end (south).
+        # x_frac=0.16/0.84 keeps them outside the queen bed's 1623mm width
+        # even in tight 3.5m rooms; z_frac=0.09 aligns with the bed head.
+        F("side_table", x_frac=0.16, z_frac=0.09, rotation_deg=0),
+        F("side_table", x_frac=0.84, z_frac=0.09, rotation_deg=0),
+        F("chest",      x_frac=0.87, z_frac=0.45, rotation_deg=270, optional=True),
+        F("rug",        x_frac=0.50, z_frac=0.62, rotation_deg=0,   optional=True),
+        F("plant",      x_frac=0.10, z_frac=0.50, rotation_deg=0,   optional=True),
+        F("lamp",       x_frac=0.50, z_frac=0.85, rotation_deg=0,   optional=True),
     ),
 )
 
@@ -151,11 +154,14 @@ BEDROOM_GATHERING_1 = PresetLayout(
         F("bed_queen",  x_frac=0.20, z_frac=0.50, rotation_deg=90),
         F("wardrobe",   x_frac=0.82, z_frac=0.82, rotation_deg=270),
         F("wardrobe",   x_frac=0.82, z_frac=0.20, rotation_deg=270),
-        F("side_table", x_frac=0.22, z_frac=0.30, rotation_deg=0),
-        F("side_table", x_frac=0.22, z_frac=0.70, rotation_deg=0),
+        # Bedside tables flanking the bed (north and south of bed body), at
+        # the head end (west). x_frac=0.09 sits against the west wall, z_frac
+        # 0.16/0.84 keeps them outside the queen bed's 1623mm length.
+        F("side_table", x_frac=0.09, z_frac=0.16, rotation_deg=0),
+        F("side_table", x_frac=0.09, z_frac=0.84, rotation_deg=0),
         F("chest",      x_frac=0.50, z_frac=0.88, rotation_deg=180, optional=True),
-        F("rug",        x_frac=0.58, z_frac=0.50, rotation_deg=0,   optional=True),
-        F("plant",      x_frac=0.88, z_frac=0.50, rotation_deg=0,   optional=True),
+        F("rug",        x_frac=0.60, z_frac=0.50, rotation_deg=0,   optional=True),
+        F("plant",      x_frac=0.50, z_frac=0.10, rotation_deg=0,   optional=True),
     ),
 )
 
@@ -166,9 +172,9 @@ BEDROOM_BREATH_0 = PresetLayout(
     items=(
         F("bed_queen",  x_frac=0.50, z_frac=0.20, rotation_deg=0),
         F("wardrobe",   x_frac=0.12, z_frac=0.82, rotation_deg=90),
-        F("side_table", x_frac=0.30, z_frac=0.20, rotation_deg=0),
-        F("side_table", x_frac=0.70, z_frac=0.20, rotation_deg=0),
-        F("rug",        x_frac=0.50, z_frac=0.54, rotation_deg=0,   optional=True),
+        F("side_table", x_frac=0.16, z_frac=0.09, rotation_deg=0),
+        F("side_table", x_frac=0.84, z_frac=0.09, rotation_deg=0),
+        F("rug",        x_frac=0.50, z_frac=0.62, rotation_deg=0,   optional=True),
         F("plant",      x_frac=0.88, z_frac=0.86, rotation_deg=0,   optional=True),
     ),
 )
@@ -180,9 +186,9 @@ BEDROOM_BREATH_1 = PresetLayout(
     items=(
         F("bed_queen",  x_frac=0.20, z_frac=0.50, rotation_deg=90),
         F("wardrobe",   x_frac=0.82, z_frac=0.84, rotation_deg=270),
-        F("side_table", x_frac=0.22, z_frac=0.34, rotation_deg=0),
-        F("side_table", x_frac=0.22, z_frac=0.66, rotation_deg=0),
-        F("rug",        x_frac=0.62, z_frac=0.50, rotation_deg=0,   optional=True),
+        F("side_table", x_frac=0.09, z_frac=0.16, rotation_deg=0),
+        F("side_table", x_frac=0.09, z_frac=0.84, rotation_deg=0),
+        F("rug",        x_frac=0.65, z_frac=0.50, rotation_deg=0,   optional=True),
         F("plant",      x_frac=0.88, z_frac=0.16, rotation_deg=0,   optional=True),
     ),
 )
@@ -196,11 +202,11 @@ BEDROOM_KEEPER_0 = PresetLayout(
         F("wardrobe",   x_frac=0.13, z_frac=0.82, rotation_deg=90),
         F("wardrobe",   x_frac=0.87, z_frac=0.82, rotation_deg=270),
         F("wardrobe",   x_frac=0.50, z_frac=0.88, rotation_deg=180),
-        F("desk",       x_frac=0.13, z_frac=0.36, rotation_deg=90),
-        F("desk_chair", x_frac=0.32, z_frac=0.36, rotation_deg=270),
-        F("side_table", x_frac=0.30, z_frac=0.20, rotation_deg=0),
-        F("side_table", x_frac=0.70, z_frac=0.20, rotation_deg=0),
-        F("rug",        x_frac=0.50, z_frac=0.52, rotation_deg=0,   optional=True),
+        F("desk",       x_frac=0.13, z_frac=0.45, rotation_deg=90),
+        F("desk_chair", x_frac=0.32, z_frac=0.45, rotation_deg=270),
+        F("side_table", x_frac=0.16, z_frac=0.09, rotation_deg=0),
+        F("side_table", x_frac=0.84, z_frac=0.09, rotation_deg=0),
+        F("rug",        x_frac=0.55, z_frac=0.55, rotation_deg=0,   optional=True),
     ),
 )
 
@@ -212,12 +218,12 @@ BEDROOM_KEEPER_1 = PresetLayout(
         F("bed_queen",  x_frac=0.20, z_frac=0.50, rotation_deg=90),
         F("wardrobe",   x_frac=0.87, z_frac=0.28, rotation_deg=270),
         F("wardrobe",   x_frac=0.87, z_frac=0.70, rotation_deg=270),
-        F("desk",       x_frac=0.82, z_frac=0.87, rotation_deg=270),
-        F("desk_chair", x_frac=0.62, z_frac=0.87, rotation_deg=90),
-        F("side_table", x_frac=0.22, z_frac=0.34, rotation_deg=0),
-        F("side_table", x_frac=0.22, z_frac=0.66, rotation_deg=0),
-        F("bookshelf",  x_frac=0.12, z_frac=0.84, rotation_deg=90, optional=True),
-        F("rug",        x_frac=0.50, z_frac=0.50, rotation_deg=0,  optional=True),
+        F("desk",       x_frac=0.55, z_frac=0.87, rotation_deg=180),
+        F("desk_chair", x_frac=0.55, z_frac=0.70, rotation_deg=0),
+        F("side_table", x_frac=0.09, z_frac=0.16, rotation_deg=0),
+        F("side_table", x_frac=0.09, z_frac=0.84, rotation_deg=0),
+        F("bookshelf",  x_frac=0.50, z_frac=0.12, rotation_deg=0,  optional=True),
+        F("rug",        x_frac=0.55, z_frac=0.50, rotation_deg=0,  optional=True),
     ),
 )
 

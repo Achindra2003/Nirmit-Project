@@ -37,7 +37,12 @@ from app.schemas.state import (
     VisionPhilosophy,
 )
 
-_WALL_INSET_MM = 80   # minimum gap between item edge and room wall
+_WALL_INSET_MM = 125       # wall mesh in the renderer is 120mm thick; this puts items flush with the interior surface (+5mm to avoid z-fighting)
+_NEAR_WALL_ROT_MM = 450    # rotation-implied snap threshold (an item whose back faces a wall snaps within this distance)
+_NEAR_WALL_PERP_MM = 200   # perpendicular-axis snap threshold (tighter, for corner placements only)
+_WALL_FACING_BY_ROT = {    # rotation -> wall the item's back is against (back = opposite of front)
+    0: "S", 90: "W", 180: "N", 270: "E",
+}
 
 
 def resolve_preset(
@@ -119,6 +124,16 @@ def _resolve_layout(
         eff_w, eff_d = _eff_extent(catalog_item.dimensions.width_mm, catalog_item.dimensions.depth_mm, fi.rotation_deg)
         cx = _clamp(fi.x_frac * room_w, eff_w / 2 + _WALL_INSET_MM, room_w - eff_w / 2 - _WALL_INSET_MM)
         cz = _clamp(fi.z_frac * room_d, eff_d / 2 + _WALL_INSET_MM, room_d - eff_d / 2 - _WALL_INSET_MM)
+
+        # Wall-mounted items (mandir_wall, mirror, sconce): rotation tells us which
+        # wall they're hung on — snap the perpendicular axis so they're flush.
+        if catalog_item.placement_type == "wall":
+            cx, cz = _snap_wall_mounted(cx, cz, eff_w, eff_d, fi.rotation_deg, room_w, room_d)
+        else:
+            # Floor items: snap to the wall the rotation implies (sofa back, TV
+            # back, bookshelf back), AND snap the perpendicular axis if also
+            # close (so a bookshelf in a corner sits tightly in that corner).
+            cx, cz = _snap_near_wall(cx, cz, eff_w, eff_d, fi.rotation_deg, room_w, room_d)
 
         # Build PlacementRationale
         vastu_zone = point_zone(
@@ -234,6 +249,78 @@ def _clamp(v: float, lo: float, hi: float) -> float:
     if hi < lo:
         return (lo + hi) / 2
     return max(lo, min(v, hi))
+
+
+def _snap_wall_mounted(
+    cx: float, cz: float, eff_w: float, eff_d: float, rot_deg: int, room_w: int, room_d: int
+) -> tuple[float, float]:
+    """Pin a wall-mounted item flush against the wall its back faces.
+
+    Rotation convention: 0°=front faces +z, so back is at -z (south wall).
+    """
+    wall = _WALL_FACING_BY_ROT.get(rot_deg % 360)
+    if wall == "S":
+        return cx, eff_d / 2 + _WALL_INSET_MM
+    if wall == "N":
+        return cx, room_d - eff_d / 2 - _WALL_INSET_MM
+    if wall == "W":
+        return eff_w / 2 + _WALL_INSET_MM, cz
+    if wall == "E":
+        return room_w - eff_w / 2 - _WALL_INSET_MM, cz
+    return cx, cz
+
+
+def _snap_near_wall(
+    cx: float, cz: float, eff_w: float, eff_d: float, rot_deg: int, room_w: int, room_d: int
+) -> tuple[float, float]:
+    """Snap floor items toward the walls implied by their position and rotation.
+
+    Strategy: rotation-implied wall takes priority — a sofa at rotation 90° has
+    its back facing west, so we snap it flush to the west wall (not, say, the
+    north wall it happens to be near because the preset put it in a corner).
+
+    After that, snap the perpendicular axis too if it's close to a wall — so a
+    bookshelf rotated 90° at fractional position (0.13, 0.84) ends up tight in
+    the NW corner instead of just touching the west wall.
+    """
+    rot = rot_deg % 360
+    back_wall = _WALL_FACING_BY_ROT.get(rot)
+
+    # Priority 1: snap along the rotation-implied axis (generous threshold —
+    # sofas, bookshelves, TVs commit to a wall even if the preset fraction
+    # leaves a bigger gap).
+    if back_wall == "S":
+        if cz - eff_d / 2 < _NEAR_WALL_ROT_MM:
+            cz = eff_d / 2 + _WALL_INSET_MM
+    elif back_wall == "N":
+        if room_d - (cz + eff_d / 2) < _NEAR_WALL_ROT_MM:
+            cz = room_d - eff_d / 2 - _WALL_INSET_MM
+    elif back_wall == "W":
+        if cx - eff_w / 2 < _NEAR_WALL_ROT_MM:
+            cx = eff_w / 2 + _WALL_INSET_MM
+    elif back_wall == "E":
+        if room_w - (cx + eff_w / 2) < _NEAR_WALL_ROT_MM:
+            cx = room_w - eff_w / 2 - _WALL_INSET_MM
+
+    # Priority 2: snap the OTHER axis only if the item is *very* close to a wall
+    # (corner placements — bookshelf wedged into NW, plant in a corner). Tight
+    # threshold so accent pieces like lounge chairs keep their breathing room.
+    if back_wall in (None, "S", "N"):  # x axis is free
+        gap_w = cx - eff_w / 2
+        gap_e = room_w - (cx + eff_w / 2)
+        if gap_w < _NEAR_WALL_PERP_MM and gap_w <= gap_e:
+            cx = eff_w / 2 + _WALL_INSET_MM
+        elif gap_e < _NEAR_WALL_PERP_MM and gap_e < gap_w:
+            cx = room_w - eff_w / 2 - _WALL_INSET_MM
+    if back_wall in (None, "W", "E"):  # z axis is free
+        gap_s = cz - eff_d / 2
+        gap_n = room_d - (cz + eff_d / 2)
+        if gap_s < _NEAR_WALL_PERP_MM and gap_s <= gap_n:
+            cz = eff_d / 2 + _WALL_INSET_MM
+        elif gap_n < _NEAR_WALL_PERP_MM and gap_n < gap_s:
+            cz = room_d - eff_d / 2 - _WALL_INSET_MM
+
+    return cx, cz
 
 
 def _detect_near_wall(cx: float, cz: float, eff_w: float, eff_d: float, room_w: int, room_d: int) -> str | None:
