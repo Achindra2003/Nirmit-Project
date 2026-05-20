@@ -38,6 +38,14 @@ const OVERRIDES: Record<string, Partial<AssetTuning>> = {
   "bathroomMirror.glb":    { yNudge: 1.20 },
   // kitchen overhead cabinet bottom at countertop height ~900 mm + gap ~50 mm
   "overhead_cabinet.glb":  { yNudge: 0.95 },
+
+  // ── Rugs: tiny lift to prevent z-fighting with the floor plane ─────────
+  "rug.glb":               { yNudge: 0.004 },
+  "rugRectangle.glb":      { yNudge: 0.004 },
+  "rugRound.glb":          { yNudge: 0.004 },
+  "rugRounded.glb":        { yNudge: 0.004 },
+  "rugSquare.glb":         { yNudge: 0.004 },
+  "rugDoormat.glb":        { yNudge: 0.004 },
 };
 
 export function assetTuning(assetUrl: string): AssetTuning {

@@ -48,8 +48,12 @@ class CatalogRepository:
                 continue
             if q.max_depth_mm is not None and item.dimensions.depth_mm > q.max_depth_mm:
                 continue
-            if q.tags_any and not (set(q.tags_any) & set(item.tags)):
-                continue
+            if q.tags_any:
+                searchable = set(item.tags)
+                if item.sub_category:
+                    searchable.add(item.sub_category)
+                if not (set(q.tags_any) & searchable):
+                    continue
             out.append(item)
             if len(out) >= q.limit:
                 break
