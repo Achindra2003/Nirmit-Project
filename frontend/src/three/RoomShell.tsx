@@ -49,7 +49,15 @@ export function RoomShell({ room, wallRefs }: Props) {
   const floorMat = useMemo(() => makeFloorMaterial(flooring, palette.floor ?? "#B89B7A"), [flooring, palette.floor]);
   const wallMatBack = useMemo(() => makeWallMaterial(wallColor, wallFinish), [wallColor, wallFinish]);
   const wallMatSide = useMemo(() => makeWallMaterial(lighten(wallColor, 0.06), wallFinish), [wallColor, wallFinish]);
-  const ceilMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#F8F4ED", roughness: 1, metalness: 0 }), []);
+  const ceilMat = useMemo(
+    () => new THREE.MeshStandardMaterial({
+      map: makeWallTexture("#F8F4ED", "matte"),
+      color: "#ffffff",
+      roughness: 0.92,
+      metalness: 0,
+    }),
+    [],
+  );
   const baseMat = useMemo(() => new THREE.MeshStandardMaterial({ color: lighten(accent, 0.12), roughness: 0.55 }), [accent]);
   const glassMat = useMemo(
     () => new THREE.MeshStandardMaterial({ color: "#dcecf6", roughness: 0.04, metalness: 0.1, transparent: true, opacity: 0.28 }),
@@ -184,12 +192,66 @@ function WindowOnWall({ wall, w, d, glass, frame }: { wall: Direction; w: number
 // ---------- Materials ----------
 
 function makeWallMaterial(color: string, finish: string): THREE.MeshStandardMaterial {
-  const roughness = finish.toLowerCase().includes("limewash") ? 0.95 : finish.toLowerCase().includes("matte") ? 0.92 : 0.88;
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0, transparent: true, opacity: 1 });
+  // Slightly lower roughness so the env map contributes subtle warmth — fully
+  // matte walls (0.95) read flat under HDRI lighting. Plaster-tone canvas
+  // texture gives the surface depth without committing to a specific finish.
+  const f = finish.toLowerCase();
+  const roughness = f.includes("limewash") ? 0.88 : f.includes("matte") ? 0.84 : 0.78;
+  const map = makeWallTexture(color, f);
+  return new THREE.MeshStandardMaterial({
+    map,
+    color: "#ffffff",
+    roughness,
+    metalness: 0,
+    transparent: true,
+    opacity: 1,
+  });
+}
+
+function makeWallTexture(color: string, finish: string): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 512;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, c.width, c.height);
+  // Subtle plaster mottling: thousands of low-opacity dots in tones either side
+  // of the base. Sells "painted wall, not flat colour" without needing an image.
+  const dot = finish.includes("texture") ? 1.6 : 1.0;
+  for (let i = 0; i < 12000; i++) {
+    const a = Math.random() * 0.05;
+    const dark = Math.random() > 0.5;
+    ctx.fillStyle = dark ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${a})`;
+    ctx.fillRect(Math.random() * c.width, Math.random() * c.height, dot, dot);
+  }
+  // Long faint vertical streaks — limewash / brush-pattern memory.
+  if (finish.includes("limewash") || finish.includes("texture")) {
+    for (let i = 0; i < 60; i++) {
+      ctx.strokeStyle = `rgba(0,0,0,${0.015 + Math.random() * 0.02})`;
+      ctx.lineWidth = 0.4 + Math.random();
+      const x = Math.random() * c.width;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.bezierCurveTo(x + (Math.random() - 0.5) * 8, c.height * 0.4, x + (Math.random() - 0.5) * 8, c.height * 0.7, x, c.height);
+      ctx.stroke();
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(1.6, 1.0);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
 function makeFloorMaterial(flooring: string, baseColor: string): THREE.Material {
-  return new THREE.MeshStandardMaterial({ map: makeFloorTexture(flooring, baseColor), roughness: 0.72, metalness: 0.04 });
+  const f = flooring.toLowerCase();
+  const map = makeFloorTexture(flooring, baseColor);
+  // Slight specular pop on wood / stone, but never enough to look like glass.
+  // Wood: roughness 0.62 (catches a bit of HDRI), stone/marble 0.55, tile 0.5.
+  const isStoneish = f.includes("kota") || f.includes("stone") || f.includes("marble");
+  const isTile = f.includes("tile") || f.includes("vitrified") || f.includes("athangudi") || f.includes("terrazzo");
+  const roughness = isTile ? 0.5 : isStoneish ? 0.55 : 0.62;
+  const metalness = isTile ? 0.06 : 0.03;
+  return new THREE.MeshStandardMaterial({ map, roughness, metalness, envMapIntensity: 0.6 });
 }
 
 function makeFloorTexture(flooring: string, baseColor: string): THREE.CanvasTexture {

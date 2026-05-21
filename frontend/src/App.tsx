@@ -7,6 +7,7 @@ import { RevealRoute } from "@/routes/RevealRoute";
 import { PlannerRoute } from "@/routes/PlannerRoute";
 import { StyleRoute } from "@/routes/StyleRoute";
 import { ExportRoute } from "@/routes/ExportRoute";
+import { ThreeDFrontRoute } from "@/routes/ThreeDFrontRoute";
 
 const ROUTE_MAP = {
   home:       <HomeRoute />,
@@ -20,6 +21,12 @@ const ROUTE_MAP = {
 
 export function App() {
   const stage = useAppStore((s) => s.stage);
+
+  // Dev escape hatch: ?dev=3dfront renders the raw 3D-FRONT viewer outside the
+  // normal stage flow. Not part of the user experience.
+  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("dev") === "3dfront") {
+    return <ThreeDFrontRoute />;
+  }
 
   return (
     <AnimatePresence mode="wait">

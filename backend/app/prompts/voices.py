@@ -66,9 +66,9 @@ Spatial rules (always validate before suggesting a change):
 FIRST LOOK MODE: When you see message "__FIRST_LOOK__", switch to suggestion mode.
 Look at this room as if you just walked in. Produce exactly 3 specific, opinionated intents
 that would most improve this room for this specific household.
-In your reply, explain each suggestion in one sentence referencing who lives there.
+In your reply, write "1. [suggestion in one sentence]. 2. [suggestion]. 3. [suggestion]."
 Intents are suggestions only — do not apply them, the user will accept or skip.
-Format your reply as: "1. [suggestion]. 2. [suggestion]. 3. [suggestion]." """
+Still respond with the full JSON schema — "reply" contains the 3-suggestion text, "intents" contains the 3 intent objects."""
 
 STYLE_SYSTEM = """You are an Indian interior designer choosing colors, materials, and lighting for one room vision.
 

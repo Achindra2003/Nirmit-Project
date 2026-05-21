@@ -3,8 +3,12 @@ node_modules/
 _legacy_poc/dist/
 frontend/dist/
 backend/__pycache__/
+backend/data/3d-front/
+temp_models/
 .vscode/
 *.log
 *.txt
+*.bak
 .claude/
 user-flow/
+blueprint3d-modern/node_modules/

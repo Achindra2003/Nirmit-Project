@@ -41,6 +41,12 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
   const wPx = wMm * scale;
   const dPx = dMm * scale;
   const wallPx = Math.max(5, 115 * scale);
+  // Pull the 3D scene's palette so the 2D plan reads as the same room — the
+  // floor fill picks up the vibe's flooring tone, accents match the trim colour.
+  const palette = room.palette;
+  const floorTone = palette.floor ?? "#e8dec9";
+  const accentTone = palette.accent ?? "#7a5c3a";
+  const wallFill = darkenHex(accentTone, 0.32);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<{ id: string; offMm: { x: number; z: number }; curMm: { x: number; z: number } } | null>(null);
@@ -107,18 +113,27 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
     >
       <defs>
         <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(90,70,45,0.35)" strokeWidth="1" />
+          <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(40,30,20,0.18)" strokeWidth="1" />
         </pattern>
+        <linearGradient id="floorWash" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={lightenHex(floorTone, 0.74)} />
+          <stop offset="100%" stopColor={lightenHex(floorTone, 0.5)} />
+        </linearGradient>
+        <filter id="itemShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1.2" stdDeviation="1.4" floodColor="#000" floodOpacity="0.18" />
+        </filter>
       </defs>
 
       {/* Parchment minor + major grid */}
       {gridLines(ox, oy, wMm, dMm, scale)}
 
-      {/* Room walls (thick, hatched) */}
-      <rect x={ox} y={oy} width={wPx} height={dPx} fill="#f8f4eb" />
-      <rect x={ox - wallPx / 2} y={oy - wallPx / 2} width={wPx + wallPx} height={dPx + wallPx} fill="none" stroke="url(#hatch)" strokeWidth={wallPx} />
-      <rect x={ox - wallPx / 2} y={oy - wallPx / 2} width={wPx + wallPx} height={dPx + wallPx} fill="none" stroke="#2a2218" strokeWidth={1.6} />
-      <rect x={ox} y={oy} width={wPx} height={dPx} fill="none" stroke="#7a5c3a" strokeWidth={0.6} />
+      {/* Floor wash — matches the 3D scene's flooring vibe */}
+      <rect x={ox} y={oy} width={wPx} height={dPx} fill="url(#floorWash)" />
+      {/* Architectural wall band: solid colour underlayer + hatched overlay + inner outline */}
+      <rect x={ox - wallPx / 2} y={oy - wallPx / 2} width={wPx + wallPx} height={dPx + wallPx} fill="none" stroke={wallFill} strokeWidth={wallPx} />
+      <rect x={ox - wallPx / 2} y={oy - wallPx / 2} width={wPx + wallPx} height={dPx + wallPx} fill="none" stroke="url(#hatch)" strokeWidth={wallPx} opacity={0.85} />
+      <rect x={ox - wallPx / 2} y={oy - wallPx / 2} width={wPx + wallPx} height={dPx + wallPx} fill="none" stroke="#1a1410" strokeWidth={1.4} />
+      <rect x={ox} y={oy} width={wPx} height={dPx} fill="none" stroke={darkenHex(accentTone, 0.1)} strokeWidth={0.7} opacity={0.5} />
 
       {/* Door swing arc + opening */}
       <DoorMark entrance={room.intake.entrance_direction} ox={ox} oy={oy} wPx={wPx} dPx={dPx} />
@@ -137,6 +152,7 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
             ox={ox}
             oy={oy}
             scale={scale}
+            accentTone={accentTone}
             selected={selectedItemId === item.id}
             dragging={isDragging}
             canDrag={layoutEditMode}
@@ -174,6 +190,7 @@ function ItemRect({
   ox,
   oy,
   scale,
+  accentTone,
   selected,
   dragging,
   canDrag,
@@ -185,6 +202,7 @@ function ItemRect({
   ox: number;
   oy: number;
   scale: number;
+  accentTone: string;
   selected: boolean;
   dragging: boolean;
   canDrag: boolean;
@@ -197,7 +215,11 @@ function ItemRect({
   const cy = oy + cMm.z * scale;
   const rot = item.position.rotation_deg;
   const fill = item.catalog.tint_hex ?? categoryFill(item.category);
+  // Stroke picks up the scene's accent so all items share the room's trim
+  // language — keeps the 2D and 3D feeling cohesive.
+  const stroke = selected ? "#D4A574" : darkenHex(accentTone, 0.18);
   const transform = `translate(${cx} ${cy}) rotate(${rot})`;
+  const labelSize = Math.min(11, Math.max(8, w / 9));
   return (
     <g>
       {selected && (
@@ -215,13 +237,51 @@ function ItemRect({
           pointerEvents="none"
         />
       )}
-      <g transform={transform} onPointerDown={onPointerDown} onDoubleClick={onDoubleClick} style={{ cursor: dragging ? "grabbing" : canDrag ? "grab" : "pointer" }}>
-        <rect x={-w / 2} y={-d / 2} width={w} height={d} rx={3} fill={fill} fillOpacity={dragging ? 0.5 : 0.88} stroke={selected ? "#D4A574" : "#5C4632"} strokeWidth={selected ? 2 : 1.1} />
+      <g
+        transform={transform}
+        onPointerDown={onPointerDown}
+        onDoubleClick={onDoubleClick}
+        style={{ cursor: dragging ? "grabbing" : canDrag ? "grab" : "pointer" }}
+        filter="url(#itemShadow)"
+      >
+        <rect
+          x={-w / 2}
+          y={-d / 2}
+          width={w}
+          height={d}
+          rx={Math.min(5, w / 18)}
+          fill={fill}
+          fillOpacity={dragging ? 0.55 : 0.94}
+          stroke={stroke}
+          strokeWidth={selected ? 2 : 1.1}
+        />
+        {/* Inner highlight band — gives the rect a subtle 3D edge so it doesn't read flat */}
+        <rect
+          x={-w / 2 + 1.5}
+          y={-d / 2 + 1.5}
+          width={Math.max(0, w - 3)}
+          height={Math.max(0, d - 3)}
+          rx={Math.min(4, w / 22)}
+          fill="none"
+          stroke="rgba(255,255,255,0.18)"
+          strokeWidth={0.8}
+          pointerEvents="none"
+        />
         <DraftIcon category={item.category} w={w} d={d} />
-        {/* Front-edge tick (facing direction = local +z = bottom of the rect before rotation) */}
-        <line x1={-w * 0.32} y1={d / 2 - 3} x2={w * 0.32} y2={d / 2 - 3} stroke="rgba(255,255,255,0.9)" strokeWidth={1.6} />
+        {/* Front-edge tick */}
+        <line x1={-w * 0.32} y1={d / 2 - 3} x2={w * 0.32} y2={d / 2 - 3} stroke="rgba(255,255,255,0.92)" strokeWidth={1.8} strokeLinecap="round" />
         {w > 26 && d > 24 && (
-          <text x={0} y={4} fontSize={Math.min(11, Math.max(8, w / 9))} fill="rgba(255,255,255,0.95)" fontFamily="ui-monospace, monospace" textAnchor="middle" pointerEvents="none">
+          <text
+            x={0}
+            y={4}
+            fontSize={labelSize}
+            fill="rgba(255,255,255,0.96)"
+            fontFamily="'Inter', ui-sans-serif, system-ui, sans-serif"
+            fontWeight={500}
+            textAnchor="middle"
+            pointerEvents="none"
+            style={{ letterSpacing: "0.02em" }}
+          >
             {short(item.name_en, 16)}
           </text>
         )}
@@ -389,6 +449,29 @@ function snapCentre(cx: number, cz: number, item: PlacedItem, roomW: number, roo
   x = Math.max(halfW, Math.min(x, roomW - halfW));
   z = Math.max(halfD, Math.min(z, roomD - halfD));
   return { x: Math.round(x), z: Math.round(z) };
+}
+function lightenHex(hex: string, amt: number): string {
+  const { r, g, b } = parseHex(hex);
+  return rgbToHex(
+    Math.min(255, r + (255 - r) * amt),
+    Math.min(255, g + (255 - g) * amt),
+    Math.min(255, b + (255 - b) * amt),
+  );
+}
+function darkenHex(hex: string, amt: number): string {
+  const { r, g, b } = parseHex(hex);
+  const f = Math.max(0, 1 - amt);
+  return rgbToHex(r * f, g * f, b * f);
+}
+function parseHex(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace("#", "");
+  const v = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(v, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+function rgbToHex(r: number, g: number, b: number): string {
+  const t = (n: number) => Math.round(n).toString(16).padStart(2, "0");
+  return `#${t(r)}${t(g)}${t(b)}`;
 }
 function oppositeWall(d: Direction): Direction {
   switch (d) {

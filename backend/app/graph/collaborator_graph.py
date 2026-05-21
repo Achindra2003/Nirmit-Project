@@ -84,27 +84,34 @@ def _generate(state: CollabState) -> CollabState:
         ),
     ]
     try:
-        llm = get_llm(temperature=0.55)
+        llm = get_llm(temperature=0.55, json_mode=True)
         raw = llm.invoke(msgs)
         text = raw.content if hasattr(raw, "content") else str(raw)
         if not isinstance(text, str):
             text = str(text)
-    except Exception:
-        log.warning("LLM unavailable in collaborator; falling back to deterministic stub", exc_info=True)
-        text = json.dumps(_deterministic_fallback(state))
+    except Exception as exc:
+        log.error(
+            "LLM call failed in collaborator (%s: %s) — falling back to stub",
+            type(exc).__name__, exc,
+            exc_info=True,
+        )
+        text = json.dumps(_deterministic_fallback(state, error=exc))
     return {**state, "raw_llm_text": text}
 
 
 def _parse(state: CollabState) -> CollabState:
     text = state.get("raw_llm_text", "")
-    m = _JSON_BLOCK.search(text)
+    log.debug("collaborator raw LLM text: %s", text[:500])
     parsed: dict[str, Any]
+    m = _JSON_BLOCK.search(text)
     if not m:
+        log.error("collaborator: no JSON block in LLM response — raw: %r", text[:300])
         parsed = _deterministic_fallback(state)
     else:
         try:
             parsed = json.loads(m.group(0))
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as exc:
+            log.error("collaborator: JSON decode failed (%s) — raw: %r", exc, text[:300])
             parsed = _deterministic_fallback(state)
     return {**state, "parsed": parsed}
 
@@ -185,15 +192,18 @@ def _coerce_intent(raw: dict[str, Any]) -> Intent:
     return Intent(kind=IntentKind(kind), target_item_id=target, parameters=cleaned)
 
 
-def _deterministic_fallback(state: CollabState) -> dict[str, Any]:
-    """Used when the LLM is unavailable or returns garbage. Honest, opinionated,
-    explicitly says the brain isn't fully wired. Better than echo / silence."""
+def _deterministic_fallback(state: CollabState, *, error: Exception | None = None) -> dict[str, Any]:
+    """Used when the LLM is unavailable or returns garbage."""
     msg = state.get("message", "")
-    return {
-        "reply": (
-            "I'd love to make a real call on that, but my brain isn't wired into the LLM right now — "
-            f"so I can hear '{msg}' but I can't act on it yet. Set GROQ_API_KEY and I'll have a take."
-        ),
-        "intents": [],
-        "cost_delta_inr": 0,
-    }
+    if error is not None:
+        reason = f"{type(error).__name__}: {error}"
+        reply = (
+            f"I hit a snag trying to respond — the AI backend returned an error ({reason}). "
+            f"Check the server logs for details. Your request was: '{msg}'."
+        )
+    else:
+        reply = (
+            "I couldn't parse the AI response for your request. "
+            f"The backend logs will show what the model returned. Your request was: '{msg}'."
+        )
+    return {"reply": reply, "intents": [], "cost_delta_inr": 0}

@@ -15,9 +15,9 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from app.config import settings
 
 
-@lru_cache(maxsize=8)
-def get_llm(*, model: str | None = None, temperature: float = 0.4) -> BaseChatModel:
-    """Return a configured chat model. Cached per (provider, model, temperature)."""
+@lru_cache(maxsize=16)
+def get_llm(*, model: str | None = None, temperature: float = 0.4, json_mode: bool = False) -> BaseChatModel:
+    """Return a configured chat model. Cached per (provider, model, temperature, json_mode)."""
     provider = settings.LLM_PROVIDER
     chosen_model = model or settings.LLM_MODEL
 
@@ -29,10 +29,14 @@ def get_llm(*, model: str | None = None, temperature: float = 0.4) -> BaseChatMo
                 "LLM_PROVIDER=groq but GROQ_API_KEY is not set. "
                 "Copy backend/.env.example to backend/.env and fill it in."
             )
+        extra: dict = {}
+        if json_mode:
+            extra["model_kwargs"] = {"response_format": {"type": "json_object"}}
         return ChatGroq(
             model=chosen_model,
             temperature=temperature,
             api_key=settings.GROQ_API_KEY,
+            **extra,
         )
 
     if provider == "anthropic":
