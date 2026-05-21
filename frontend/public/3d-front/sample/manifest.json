@@ -1,0 +1,16 @@
+﻿{
+    "files":  [
+                  "Cabinet_Shelf_Desk_06791438-cfa8-4e29-95cc-4ff8107e3456_4.glb",
+                  "Cabinet_Shelf_Desk_1b177d51-d465-49c3-8580-9b2c81e24f95_5.glb",
+                  "Cabinet_Shelf_Desk_8271423a-cb03-4186-a475-1817bd9af3fc_3.glb",
+                  "ceil.glb",
+                  "floor.glb",
+                  "Lighting_5c7191b4-297f-41bf-a280-0bf54a42fc2c_1.glb",
+                  "Lighting_9e5db868-929e-498d-adc4-a4df01d40d23_6.glb",
+                  "others.glb",
+                  "Sofa_07d28f5b-d9e3-43c7-a782-d6a7f8ce4221_2.glb",
+                  "wall.glb"
+              ],
+    "room_id":  "e33e2a61-2891-4dc3-b332-cabc9b08d38a/LivingRoom-2549477",
+    "source":  "huanngzh/3D-Front (cc-by-nc-4.0) — prototyping only"
+}

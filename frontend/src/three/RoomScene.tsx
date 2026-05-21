@@ -15,7 +15,7 @@
  */
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, OrbitControls } from "@react-three/drei";
+import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import type { Direction, RoomState } from "@/api/types";
 import { GlbItem } from "./GlbItem";
@@ -81,6 +81,11 @@ export function RoomScene({
         entrance={room.intake.entrance_direction}
         warmthK={warmthK}
       />
+
+      {/* HDRI env map — PBR materials in 3D-FRONT meshes need this for proper
+          diffuse / specular response. `background={false}` keeps our painted
+          walls visible; the env only feeds material reflections. */}
+      <Environment preset="apartment" background={false} environmentIntensity={0.85} />
 
       <RoomShell room={room} wallRefs={wallRefs} />
       <WallFader wallRefs={wallRefs} roomW={w} roomD={d} />

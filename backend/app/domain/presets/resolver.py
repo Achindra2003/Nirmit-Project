@@ -20,8 +20,9 @@ import uuid
 
 from app.domain.catalog import CatalogQuery, get_catalog
 from app.domain.catalog.repository import CatalogRepository
+from app.domain.presets import engine as bp_engine
 from app.domain.presets.layouts import ALL_PRESETS, get_preset
-from app.domain.presets.model import FractionalItem, PresetLayout
+from app.domain.presets.model import AnchoredItem, PresetLayout
 from app.domain.vastu import VastuZone, preferred_zone_for_category
 from app.domain.vastu.rules import point_zone
 from app.schemas.state import (
@@ -31,6 +32,7 @@ from app.schemas.state import (
     Dimensions,
     Direction,
     Intake,
+    Opening,
     PlacedItem,
     PlacementRationale,
     Position,
@@ -57,6 +59,153 @@ def resolve_preset(
         return None
     catalog = get_catalog()
     return _resolve_layout(layout, intake, catalog)
+
+
+def resolve_preset_via_engine(
+    intake: Intake,
+    philosophy: VisionPhilosophy,
+    variant: int = 0,
+) -> tuple[list[PlacedItem], list[Opening]] | None:
+    """Engine-driven preset resolution.
+
+    Same contract as resolve_preset() but the placement math is delegated to
+    blueprint3d-modern (see [[project-blueprint3d-integration]]). The
+    AnchoredItem layout is the *intent spec*; the engine validates room
+    containment, snaps items flush to walls when the spec puts them close, and
+    detects overlaps. Vastu zone tagging and sight-line target wiring stay in
+    Python because they're labeling decisions, not math.
+
+    Returns (items, openings) — openings come from the engine so doors/windows
+    are positioned against the actual wall geometry instead of being hardcoded
+    in the caller.
+    """
+    layout = get_preset(intake.room_type.value, philosophy.value, variant)
+    if layout is None:
+        return None
+    catalog = get_catalog()
+
+    # Use intake dims when reasonable; otherwise fall back to room-type defaults
+    # so e.g. a 2.7m-wide "study" doesn't get rendered as a 5m hall.
+    room_w = intake.room_dimensions.width_mm
+    room_d = intake.room_dimensions.depth_mm
+
+    # Build AnchoredItemSpec list, picking catalog items first so we can pass
+    # real dimensions to the engine.
+    budget_per_item = intake.budget_inr // max(len(layout.items), 1)
+    spec_items: list[dict] = []
+    spec_to_catalog: list = []  # parallel list of catalog items for re-attach
+    spec_to_anchored: list[AnchoredItem] = []
+
+    for fi in layout.items:
+        catalog_item = _pick_catalog_item(fi, intake, catalog, budget_per_item)
+        if catalog_item is None:
+            continue
+        spec_items.append({
+            "sub_category": fi.sub_category,
+            "anchor_x": fi.anchor_x,
+            "offset_x_mm": fi.offset_x_mm,
+            "anchor_z": fi.anchor_z,
+            "offset_z_mm": fi.offset_z_mm,
+            "rotation_deg": fi.rotation_deg,
+            "width_mm": catalog_item.dimensions.width_mm,
+            "depth_mm": catalog_item.dimensions.depth_mm,
+            # passthrough lets us match engine output back to the catalog SKU
+            # without re-running _pick_catalog_item.
+            "passthrough": {"sku": catalog_item.sku},
+        })
+        spec_to_catalog.append(catalog_item)
+        spec_to_anchored.append(fi)
+
+    scene = bp_engine.place_scene(
+        preset_id=layout.id,
+        room_w_mm=room_w,
+        room_d_mm=room_d,
+        entrance=intake.entrance_direction.value,
+        items=spec_items,
+    )
+
+    # Sub-category → item id map for sight-line target resolution. Built as we
+    # go so later items can reference earlier ones, matching the old resolver.
+    sub_to_placed_id: dict[str, str] = {}
+    placed: list[PlacedItem] = []
+
+    for placed_spec, catalog_item, fi in zip(scene.items, spec_to_catalog, spec_to_anchored):
+        cx = float(placed_spec.x_mm)
+        cz = float(placed_spec.z_mm)
+        eff_w, eff_d = _eff_extent(
+            catalog_item.dimensions.width_mm, catalog_item.dimensions.depth_mm, fi.rotation_deg
+        )
+
+        vastu_zone = point_zone(
+            int(cx), int(cz),
+            width_mm=room_w, depth_mm=room_d,
+            entrance=intake.entrance_direction,
+        )
+        pref_zones = preferred_zone_for_category(
+            category=catalog_item.category,
+            room_type=intake.room_type.value,
+            vastu_enabled=intake.vastu_matters,
+        )
+        vastu_compliant = bool(pref_zones) and vastu_zone in pref_zones
+        near_wall = _detect_near_wall(cx, cz, eff_w, eff_d, room_w, room_d)
+
+        sight_line_target = (
+            sub_to_placed_id.get(fi.sight_line_target_sub or "")
+            if fi.sight_line_target_sub
+            else None
+        )
+
+        item_id = f"{fi.sub_category}-{uuid.uuid4().hex[:6]}"
+        sub_to_placed_id[fi.sub_category] = item_id
+
+        placed.append(PlacedItem(
+            id=item_id,
+            catalog=CatalogRef(
+                sku=catalog_item.sku,
+                asset_url=catalog_item.asset_url,
+                tint_hex=catalog_item.tint_hex,
+                roughness_hint=catalog_item.roughness_hint,
+                size_label=catalog_item.size_label,
+                material_label=catalog_item.material_label,
+                finish_label=None,
+                placement_type=catalog_item.placement_type,
+            ),
+            name_en=catalog_item.name_en,
+            name_hi=catalog_item.name_hi,
+            category=catalog_item.category,
+            dimensions=Dimensions(
+                width_mm=catalog_item.dimensions.width_mm,
+                depth_mm=catalog_item.dimensions.depth_mm,
+                height_mm=catalog_item.dimensions.height_mm,
+            ),
+            position=Position(x_mm=int(round(cx)), z_mm=int(round(cz)), rotation_deg=float(fi.rotation_deg)),
+            facing=_facing_for_category(catalog_item.sub_category or catalog_item.category, intake.entrance_direction),
+            is_buy=catalog_item.category not in {"storage", "tv_unit", "mandir"},
+            price_inr=catalog_item.price_inr,
+            build_price_inr=catalog_item.build_price_inr,
+            rationale=PlacementRationale(
+                zone_id=None,
+                vastu_zone=vastu_zone.value,
+                near_wall=near_wall,
+                sight_line_target=sight_line_target,
+                score=0.0,
+                vastu_compliant=vastu_compliant,
+            ),
+        ))
+
+    openings = [
+        Opening(
+            wall=Direction(o.wall),
+            center_frac=o.center_frac,
+            width_mm=o.width_mm,
+            height_mm=o.height_mm,
+            kind=o.kind,
+            sill_mm=o.sill_mm,
+        )
+        for o in scene.openings
+    ]
+
+    return placed, openings
 
 
 def build_design_intent_from_preset(
@@ -120,10 +269,19 @@ def _resolve_layout(
                 pass
             continue
 
-        # Scale fractional position to mm, clamped so the footprint stays inside.
+        # Convert anchor + offset to absolute mm, clamped so the footprint stays inside.
         eff_w, eff_d = _eff_extent(catalog_item.dimensions.width_mm, catalog_item.dimensions.depth_mm, fi.rotation_deg)
-        cx = _clamp(fi.x_frac * room_w, eff_w / 2 + _WALL_INSET_MM, room_w - eff_w / 2 - _WALL_INSET_MM)
-        cz = _clamp(fi.z_frac * room_d, eff_d / 2 + _WALL_INSET_MM, room_d - eff_d / 2 - _WALL_INSET_MM)
+        
+        def _anchor_mm(anchor: str, offset: int, length: int) -> float:
+            if anchor in ("W", "S"): return offset
+            if anchor in ("E", "N"): return length + offset
+            return length / 2 + offset
+            
+        cx = _anchor_mm(fi.anchor_x, fi.offset_x_mm, room_w)
+        cz = _anchor_mm(fi.anchor_z, fi.offset_z_mm, room_d)
+        
+        cx = _clamp(cx, eff_w / 2 + _WALL_INSET_MM, room_w - eff_w / 2 - _WALL_INSET_MM)
+        cz = _clamp(cz, eff_d / 2 + _WALL_INSET_MM, room_d - eff_d / 2 - _WALL_INSET_MM)
 
         # Wall-mounted items (mandir_wall, mirror, sconce): rotation tells us which
         # wall they're hung on — snap the perpendicular axis so they're flush.
@@ -194,43 +352,54 @@ def _resolve_layout(
 
 
 def _pick_catalog_item(
-    fi: FractionalItem,
+    fi: AnchoredItem,
     intake: Intake,
     catalog: CatalogRepository,
     budget_hint: int,
 ):
-    """Find the best catalog item for this FractionalItem.
+    """Pick the best catalog item for this anchored slot.
 
-    Priority: vibe-matching within budget → vibe-matching any price →
-    any vibe within budget → any vibe. Returns None only if sub_category
-    is not in the catalog at all.
+    Strategy (in order of preference):
+      1. Exact sub_category match in the same room and vibe.
+      2. Exact sub_category match, any vibe.
+      3. Tag match (covers near-variants — e.g. preset asks for "bookshelf"
+         and the catalog has "bookshelf_closed").
+    Within each tier we rank by vibe affinity first, then price proximity to
+    the per-item budget hint — NOT the median, which produced visually random
+    picks across a catalog where many SKUs share the same mesh.
     """
     sub = fi.sub_category
 
-    def _query(room=None, vibe=None, max_price=None):
-        return catalog.query(CatalogQuery(
-            room=room,
-            vibe=vibe,
-            max_price_inr=max_price,
-            tags_any=[sub],
-            limit=20,
-        ))
+    def _rank(items: list) -> list:
+        # Lower score = better. Penalise being far from budget_hint, but cap
+        # the penalty so a great vibe match isn't lost to price drift.
+        def score(i):
+            vibe_bonus = 0 if intake.vibe in i.vibes else 1
+            room_bonus = 0 if intake.room_type in i.rooms else 1
+            # Logarithmic price distance so a 2× swing matters but a 10× one
+            # doesn't dominate.
+            price_drift = abs(i.price_inr - budget_hint) / max(budget_hint, 1)
+            price_score = min(price_drift, 3.0)
+            return (vibe_bonus, room_bonus, price_score)
+        return sorted(items, key=score)
 
-    for items in [
-        _query(room=intake.room_type, vibe=intake.vibe, max_price=budget_hint * 3),
-        _query(room=intake.room_type, vibe=intake.vibe),
-        _query(room=intake.room_type, max_price=budget_hint * 3),
-        _query(room=intake.room_type),
-        _query(vibe=intake.vibe),
-        _query(),
-    ]:
-        if items:
-            # Among candidates prefer the one whose dimensions best fit the
-            # item's expected role — take the median-sized option to avoid
-            # extremes.
-            items.sort(key=lambda i: i.price_inr)
-            mid = len(items) // 2
-            return items[mid]
+    # Tier 1 — exact sub_category match (sub_category is set in CatalogQuery.tags_any
+    # because repository.py adds it to the searchable set).
+    exact = [i for i in catalog.query(CatalogQuery(tags_any=[sub], limit=50))
+             if i.sub_category == sub]
+    if exact:
+        return _rank(exact)[0]
+
+    # Tier 2 — tag/sub fuzzy match in same room.
+    fuzzy = catalog.query(CatalogQuery(room=intake.room_type, tags_any=[sub], limit=50))
+    if fuzzy:
+        return _rank(fuzzy)[0]
+
+    # Tier 3 — any room, any vibe — best-effort fallback.
+    fallback = catalog.query(CatalogQuery(tags_any=[sub], limit=50))
+    if fallback:
+        return _rank(fallback)[0]
+
     return None
 
 

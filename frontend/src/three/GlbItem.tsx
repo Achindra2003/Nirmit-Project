@@ -183,11 +183,25 @@ function applyMat(mat: THREE.MeshStandardMaterial, tint: string | null, roughnes
     mat.userData._origColor = mat.color.clone();
   }
   const orig = mat.userData._origColor as THREE.Color;
-  mat.color.copy(orig);
-  if (tint) {
-    // Blend 28% toward the catalog tint — keeps multi-material variety.
-    mat.color.lerp(new THREE.Color(tint), 0.28);
+
+  // 3D-FRONT GLBs ship baseColorFactor ≈ (0.59, 0.59, 0.59) AND a baseColorTexture.
+  // THREE multiplies factor × texture, so the texture comes in at ~59% brightness
+  // before any of our tinting. When a textured material is present, ignore the
+  // dark factor and start from white — the texture already encodes the colour.
+  const hasMap = !!mat.map;
+  if (hasMap) {
+    mat.color.setRGB(1, 1, 1);
+    // Apply tint very subtly so we don't muddy real PBR colour. 8% blend keeps
+    // catalog variety visible without overpowering the source material.
+    if (tint) mat.color.lerp(new THREE.Color(tint), 0.08);
+  } else {
+    mat.color.copy(orig);
+    if (tint) {
+      // Untextured material: tint is the only colour signal, so blend stronger.
+      mat.color.lerp(new THREE.Color(tint), 0.28);
+    }
   }
+
   if (roughness != null) mat.roughness = Math.max(0, Math.min(1, roughness));
   if (selected) {
     mat.emissive.set(draggable ? "#3a2a10" : "#241a0a");
@@ -321,17 +335,15 @@ function categoryColor(category: string, accent: string): string {
   }
 }
 
-// Preload the 12 new living-room GLBs so the first render doesn't stall.
-useGLTF.preload("/models/sofa_3seat.glb");
-useGLTF.preload("/models/sofa_l.glb");
-useGLTF.preload("/models/tv_unit.glb");
-useGLTF.preload("/models/coffee_table.glb");
-useGLTF.preload("/models/lounge_chair.glb");
-useGLTF.preload("/models/ottoman.glb");
-useGLTF.preload("/models/bookshelf.glb");
-useGLTF.preload("/models/lamp_floor.glb");
-useGLTF.preload("/models/rug.glb");
-useGLTF.preload("/models/chair.glb");
-useGLTF.preload("/models/fan.glb");
-useGLTF.preload("/models/plant.glb");
-useGLTF.preload("/models/pooja_wall.glb");
+// Preload the hero living-room GLBs (3D-FRONT, cc-by-nc-4.0 prototype assets)
+// so the first render doesn't stall.
+useGLTF.preload("/models/3df/3df_sofa_main.glb");
+useGLTF.preload("/models/3df/3df_sofa_l.glb");
+useGLTF.preload("/models/3df/3df_tv_unit.glb");
+useGLTF.preload("/models/3df/3df_coffee_table.glb");
+useGLTF.preload("/models/3df/3df_lounge_chair.glb");
+useGLTF.preload("/models/3df/3df_ottoman.glb");
+useGLTF.preload("/models/3df/3df_bookshelf.glb");
+useGLTF.preload("/models/3df/3df_lamp.glb");
+useGLTF.preload("/models/3df/3df_chair_dining.glb");
+useGLTF.preload("/models/3df/3df_cabinet.glb");

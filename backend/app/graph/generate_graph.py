@@ -34,7 +34,12 @@ from langgraph.graph import END, StateGraph
 from app.domain.catalog import get_catalog
 from app.domain.catalog.selector import SelectedItem, select_items
 from app.domain.costing import build_cost_breakdown
-from app.domain.presets import build_design_intent_from_preset, get_preset, resolve_preset
+from app.domain.presets import (
+    build_design_intent_from_preset,
+    get_preset,
+    resolve_preset,
+    resolve_preset_via_engine,
+)
 from app.domain.solver import SolverInput, SolverItem, composition_for, solve
 from app.domain.solver.solver import DoorOpening
 from app.domain.vastu import VastuZone, apply_rules as vastu_apply_rules, preferred_zone_for_category
@@ -214,26 +219,29 @@ def _build_vision(
     philosophy: VisionPhilosophy,
     brief: dict[str, Any],
 ) -> Vision | None:
-    # Try preset resolver first (guaranteed-good curated layouts).
+    # Try engine-driven preset resolver first (blueprint3d-modern, headless —
+    # see [[project-blueprint3d-integration]]). Returns both items AND the
+    # engine-emitted openings (door+window) so they ride against the real wall
+    # geometry instead of being hardcoded here.
     # Variant 1 is used for the Breath philosophy to give each set a distinct
     # spatial rhythm; Gathering and Keeper use the primary (variant 0).
     variant = 1 if philosophy is VisionPhilosophy.BREATH else 0
-    placed_items = resolve_preset(intake, philosophy, variant=variant)
-
-    if placed_items is None:
-        # No preset for this room type / philosophy — fall back to the solver.
+    engine_result = resolve_preset_via_engine(intake, philosophy, variant=variant)
+    if engine_result is not None:
+        placed_items, default_openings = engine_result
+    else:
+        # No preset for this room type / philosophy — fall back to the solver
+        # and synthesize default openings the old way.
         placed_items = _build_vision_solver(intake, philosophy, brief)
+        window_wall = _OPPOSITE_DIR.get(intake.entrance_direction, Direction.N)
+        default_openings = [
+            Opening(wall=intake.entrance_direction, center_frac=0.5, width_mm=900, height_mm=2100, kind="door", sill_mm=0),
+            Opening(wall=window_wall, center_frac=0.5, width_mm=1500, height_mm=1200, kind="window", sill_mm=900),
+        ]
     if not placed_items:
         return None
 
     layout = get_preset(intake.room_type.value, philosophy.value, variant)
-
-    # Default openings — one door on entrance wall, one window on opposite wall.
-    window_wall = _OPPOSITE_DIR.get(intake.entrance_direction, Direction.N)
-    default_openings = [
-        Opening(wall=intake.entrance_direction, center_frac=0.5, width_mm=900, height_mm=2100, kind="door", sill_mm=0),
-        Opening(wall=window_wall, center_frac=0.5, width_mm=1500, height_mm=1200, kind="window", sill_mm=900),
-    ]
 
     # LLM-driven style: palette, flooring, wall finish, lighting per vision.
     style = _llm_style(intake, philosophy)
