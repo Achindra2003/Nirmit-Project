@@ -1,438 +1,502 @@
 """The 24 curated preset layouts — 4 room types × 3 philosophies × 2 variants.
 
-Every position is fractional (0.0–1.0) of the room's width/depth so layouts
-scale cleanly to any room size the user enters. The resolver clamps item
-centres to stay at least half-an-item-width from each wall.
+Each preset is authored as a *designer composition*, not a wall-snap algorithm.
+The philosophy drives item count, item kind, and the room's emotional axis:
 
-Coordinate origin: entrance corner (x=0, z=0 = bottom-left when entering).
-  x → east (right)
-  z → north (into the room, away from entrance)
+  gathering — Indian family-room energy. Many seats, layered textures, multi-
+              generational. L-sofa or sofa + diwan, accent chair, pouffe,
+              floor lamp anchoring a corner, sideboard. 8–11 items.
+  breath    — restraint as luxury. Fewer pieces, each one a statement, empty
+              floor matters. One beautiful sofa, one lamp, generous gap to TV.
+              3–5 items.
+  keeper    — storage-as-architecture. Every wall earns its keep. Sideboard,
+              bookshelf wall, cabinet, bench at foot of bed, chest. 7–10 items.
+
+Coordinate origin: entrance corner (x=0, z=0).
+  x → east (+);  z → north / into the room (+)
+
+Rotation convention (matches solver + Three.js):
+  0°   → front faces +z (north). Item back at S wall.
+  90°  → front faces +x (east).  Item back at W wall.
+  180° → front faces -z (south). Item back at N wall.
+  270° → front faces -x (west).  Item back at E wall.
+
+Room dimensions assumed by these layouts (intake may override):
+  living   4200 × 3600
+  bedroom  3600 × 3000
+  dining   3300 × 3000
+  study    2700 × 2400
+
+Sub_categories available (see app/domain/catalog/curated_manifest.json):
+  Seating  : sofa, sofa_l, sofa_2seat, diwan, accent_chair, lounge_chair,
+             pouffe, bench, dining_chair, desk_chair
+  Tables   : coffee_table, side_table, dining_table, desk
+  Sleeping : bed_queen
+  Storage  : wardrobe, chest, bookshelf, cabinet, sideboard, tv_unit
+  Lighting : lamp  (floor lamp)
+  Decor    : mirror
 """
 from __future__ import annotations
 
 from app.domain.presets.model import AnchoredItem as A
 from app.domain.presets.model import PresetLayout
 
-# ---------------------------------------------------------------------------
-# LIVING ROOM — 6 layouts (3 philosophies × 2 variants)
-# ---------------------------------------------------------------------------
 
+# ═══════════════════════════════════════════════════════════════════════════
+# LIVING ROOM — 4200 × 3600
+# ═══════════════════════════════════════════════════════════════════════════
+
+# GATHERING 0 — "The Sunday Sofa"
+# Sofa W (back west), TV E (back east) — keeps the entrance-wall door and the
+# opposite-wall window clear. Accent chair NE (away from TV); pouffe near
+# sofa front (away from coffee table). Floor lamp NE corner.
 LIVING_GATHERING_0 = PresetLayout(
     id="living_gathering_0",
     room_type="living", philosophy="gathering", variant=0,
-    description="Sofa on west wall facing east; TV on east wall — dense social layout",
+    description="Sofa west, TV east — family conversation triangle. Accent chair tucked into the NE area; pouffe near the sofa for the kids. Bookshelf on the north wall; floor lamp anchors the NE corner.",
     items=(
-        # Primary seating on west wall, faces east into the room
-        A("sofa", anchor_x="W", offset_x_mm=520, anchor_z="C", offset_z_mm=0, rotation_deg=90,
+        A("sofa",         anchor_x="W", offset_x_mm=600,  anchor_z="C", offset_z_mm=0,    rotation_deg=90,
           sight_line_target_sub="tv_unit"),
-        A("tv_unit", anchor_x="E", offset_x_mm=-520, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("coffee_table", anchor_x="C", offset_x_mm=-80, anchor_z="C", offset_z_mm=0, rotation_deg=0),
-        A("lounge_chair", anchor_x="W", offset_x_mm=1040, anchor_z="S", offset_z_mm=960, rotation_deg=135, optional=True),
-        A("rug", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=0, rotation_deg=0,   optional=True),
-        A("side_table", anchor_x="C", offset_x_mm=-1360, anchor_z="C", offset_z_mm=-560, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="S", offset_z_mm=720, rotation_deg=0,   optional=True),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-640, rotation_deg=270, optional=True),
-        A("bookshelf", anchor_x="W", offset_x_mm=520, anchor_z="N", offset_z_mm=-640, rotation_deg=90,  optional=True),
+        A("tv_unit",      anchor_x="E", offset_x_mm=-400, anchor_z="C", offset_z_mm=0,    rotation_deg=270),
+        A("coffee_table", anchor_x="C", offset_x_mm=-300, anchor_z="C", offset_z_mm=0,    rotation_deg=90),
+        # Accent chair moved into the NE quadrant — at rot=315 it had an
+        # 1100mm diagonal eff-extent that overlapped the TV. rot=0 keeps the
+        # chair facing the sofa axis and gives a clean footprint.
+        A("accent_chair", anchor_x="C", offset_x_mm=1100, anchor_z="C", offset_z_mm=1100, rotation_deg=180, optional=True),
+        # Pouffe shifted east so it sits between sofa and TV (engine had been
+        # auto-shifting it east to clear the door arc anyway — anchor it there
+        # explicitly).
+        A("pouffe",       anchor_x="E", offset_x_mm=-1310,anchor_z="C", offset_z_mm=-1100,rotation_deg=0,   optional=True),
+        A("bookshelf",    anchor_x="W", offset_x_mm=900,  anchor_z="N", offset_z_mm=-260, rotation_deg=180, optional=True),
+        # Lamp dropped — the NW corner conflicts with the sofa's north end
+        # (lamp eff-extent at rot=135 is 708×708 and the sofa runs to z≈2837).
+        # User can pull a floor lamp from the catalog if they want one.
     ),
 )
 
+# GATHERING 1 — "The Indian Drawing Room"
+# A conversation room — no TV. Sofa west wall, diwan east wall facing each
+# other. Sideboard on north (offset to clear the window). Accent chair in SW.
 LIVING_GATHERING_1 = PresetLayout(
     id="living_gathering_1",
     room_type="living", philosophy="gathering", variant=1,
-    description="Sofa on south wall facing north; TV on north wall — alternate social axis",
+    description="The Indian drawing-room. Sofa west faces diwan east across a coffee table — multi-generational seating. No TV competes with the talk.",
     items=(
-        A("sofa", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=800, rotation_deg=0,
-          sight_line_target_sub="tv_unit"),
-        A("tv_unit", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180),
-        A("coffee_table", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=-280, rotation_deg=0),
-        A("lounge_chair", anchor_x="E", offset_x_mm=-799, anchor_z="S", offset_z_mm=960, rotation_deg=225, optional=True),
-        A("rug", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=80, rotation_deg=0,   optional=True),
-        A("side_table", anchor_x="C", offset_x_mm=-639, anchor_z="S", offset_z_mm=640, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="W", offset_x_mm=480, anchor_z="N", offset_z_mm=-720, rotation_deg=0,   optional=True),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-520, rotation_deg=270, optional=True),
+        A("sofa",         anchor_x="W", offset_x_mm=600,  anchor_z="C", offset_z_mm=0,    rotation_deg=90,
+          sight_line_target_sub="diwan"),
+        A("diwan",        anchor_x="E", offset_x_mm=-700, anchor_z="C", offset_z_mm=0,    rotation_deg=270),
+        A("coffee_table", anchor_x="C", offset_x_mm=0,    anchor_z="C", offset_z_mm=0,    rotation_deg=90),
+        A("sideboard",    anchor_x="W", offset_x_mm=900,  anchor_z="N", offset_z_mm=-260, rotation_deg=180, optional=True),
     ),
 )
 
+# BREATH 0 — "The Restraint"
+# Sofa W, TV E. Three pieces and a lamp. The room speaks because so little does.
 LIVING_BREATH_0 = PresetLayout(
     id="living_breath_0",
     room_type="living", philosophy="breath", variant=0,
-    description="Sofa near entrance facing into the long axis — centre stays open",
+    description="Sofa west, TV east. A single floor lamp anchors a corner. Three pieces; empty floor matters.",
     items=(
-        A("sofa", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=800, rotation_deg=0,
+        A("sofa",         anchor_x="W", offset_x_mm=600,  anchor_z="C", offset_z_mm=0,    rotation_deg=90,
           sight_line_target_sub="tv_unit"),
-        A("tv_unit", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180),
-        A("coffee_table", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=-399, rotation_deg=0),
-        A("rug", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=80, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="W", offset_x_mm=400, anchor_z="N", offset_z_mm=-640, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-399, anchor_z="N", offset_z_mm=-640, rotation_deg=0,   optional=True),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-520, rotation_deg=270, optional=True),
+        A("tv_unit",      anchor_x="E", offset_x_mm=-400, anchor_z="C", offset_z_mm=0,    rotation_deg=270),
+        A("coffee_table", anchor_x="C", offset_x_mm=-100, anchor_z="C", offset_z_mm=0,    rotation_deg=90),
+        A("lamp",         anchor_x="E", offset_x_mm=-500, anchor_z="N", offset_z_mm=-500, rotation_deg=225, optional=True),
     ),
 )
 
+# BREATH 1 — "The Reading Nook"
+# Sofa west + accent chair NE angled toward sofa. The triangle is the room.
 LIVING_BREATH_1 = PresetLayout(
     id="living_breath_1",
     room_type="living", philosophy="breath", variant=1,
-    description="Sofa and TV in the lower third; deep north half completely open",
+    description="Sofa west, accent chair NE angled to face it. A small coffee table between. The conversation triangle is the entire room.",
     items=(
-        A("sofa", anchor_x="W", offset_x_mm=520, anchor_z="S", offset_z_mm=1120, rotation_deg=90,
-          sight_line_target_sub="tv_unit"),
-        A("tv_unit", anchor_x="E", offset_x_mm=-520, anchor_z="S", offset_z_mm=1120, rotation_deg=270),
-        A("coffee_table", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=1200, rotation_deg=0),
-        A("rug", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=-240, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="W", offset_x_mm=400, anchor_z="N", offset_z_mm=-640, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-399, anchor_z="N", offset_z_mm=-640, rotation_deg=0,   optional=True),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-520, rotation_deg=270, optional=True),
+        A("sofa",         anchor_x="W", offset_x_mm=600,  anchor_z="C", offset_z_mm=0,    rotation_deg=90,
+          sight_line_target_sub="accent_chair"),
+        A("accent_chair", anchor_x="E", offset_x_mm=-800, anchor_z="N", offset_z_mm=-800, rotation_deg=225),
+        A("coffee_table", anchor_x="C", offset_x_mm=-100, anchor_z="C", offset_z_mm=0,    rotation_deg=90),
+        A("lamp",         anchor_x="E", offset_x_mm=-400, anchor_z="S", offset_z_mm=600,  rotation_deg=45,  optional=True),
+        # Side table pulled south so its 500×425 footprint clears the accent
+        # chair's diagonal eff-extent (the chair reaches as far south as
+        # z≈2227, so side_table z_max must be < 2227 → cz ≤ 2014).
+        A("side_table",   anchor_x="E", offset_x_mm=-300, anchor_z="C", offset_z_mm=-300, rotation_deg=0,   optional=True),
     ),
 )
 
+# KEEPER 0 — "The Storage Wall"
+# Sofa W, TV E. Bookshelf + sideboard on the north wall, flanking the window.
+# Every wall earns its keep — south kept clear for the door.
 LIVING_KEEPER_0 = PresetLayout(
     id="living_keeper_0",
     room_type="living", philosophy="keeper", variant=0,
-    description="Sofa on east wall; west wall packed with storage — every wall earns its keep",
+    description="Sofa west, TV east. Bookshelf and sideboard on the north wall flank the window. South kept clear for the door.",
     items=(
-        A("sofa", anchor_x="E", offset_x_mm=-520, anchor_z="C", offset_z_mm=0, rotation_deg=270,
+        A("sofa",         anchor_x="W", offset_x_mm=600,  anchor_z="C", offset_z_mm=0,    rotation_deg=90,
           sight_line_target_sub="tv_unit"),
-        A("tv_unit", anchor_x="W", offset_x_mm=520, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("coffee_table", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=0, rotation_deg=0),
-        A("bookshelf", anchor_x="W", offset_x_mm=520, anchor_z="S", offset_z_mm=800, rotation_deg=90),
-        A("bookshelf", anchor_x="W", offset_x_mm=520, anchor_z="N", offset_z_mm=-720, rotation_deg=90),
-        A("rug", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=0, rotation_deg=0,   optional=True),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-520, anchor_z="N", offset_z_mm=-560, rotation_deg=270, optional=True),
-        A("cabinet", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180, optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-520, anchor_z="S", offset_z_mm=560, rotation_deg=0,   optional=True),
+        A("tv_unit",      anchor_x="E", offset_x_mm=-400, anchor_z="C", offset_z_mm=0,    rotation_deg=270),
+        A("coffee_table", anchor_x="C", offset_x_mm=-400, anchor_z="C", offset_z_mm=0,    rotation_deg=90),
+        A("bookshelf",    anchor_x="W", offset_x_mm=900,  anchor_z="N", offset_z_mm=-260, rotation_deg=180),
+        A("sideboard",    anchor_x="E", offset_x_mm=-900, anchor_z="N", offset_z_mm=-260, rotation_deg=180, optional=True),
+        # Bench dropped — pinned to the SE corner it blocked the door arc;
+        # the user can pull one from the catalog to extend overflow seating.
     ),
 )
 
+# KEEPER 1 — "The Library Living"
+# Mirror image of keeper 0 — TV on west, sofa on east. Lets the room read
+# differently depending on architectural light orientation.
 LIVING_KEEPER_1 = PresetLayout(
     id="living_keeper_1",
     room_type="living", philosophy="keeper", variant=1,
-    description="Sofa south, TV north, bookshelves flanking both side walls",
+    description="Sofa east, TV west — mirror of keeper 0. Bookshelf + sideboard on the north wall; chest under the entry-side wall opposite the conversation.",
     items=(
-        A("sofa", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=800, rotation_deg=0,
+        A("sofa",         anchor_x="E", offset_x_mm=-600, anchor_z="C", offset_z_mm=0,    rotation_deg=270,
           sight_line_target_sub="tv_unit"),
-        A("tv_unit", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180),
-        A("coffee_table", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=-240, rotation_deg=0),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("bookshelf", anchor_x="E", offset_x_mm=-480, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="N", offset_z_mm=-640, rotation_deg=90, optional=True),
-        A("rug", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=80, rotation_deg=0,   optional=True),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-520, rotation_deg=270, optional=True),
+        A("tv_unit",      anchor_x="W", offset_x_mm=400,  anchor_z="C", offset_z_mm=0,    rotation_deg=90),
+        A("coffee_table", anchor_x="C", offset_x_mm=400,  anchor_z="C", offset_z_mm=0,    rotation_deg=90),
+        A("bookshelf",    anchor_x="W", offset_x_mm=900,  anchor_z="N", offset_z_mm=-260, rotation_deg=180),
+        A("sideboard",    anchor_x="E", offset_x_mm=-900, anchor_z="N", offset_z_mm=-260, rotation_deg=180, optional=True),
+        A("chest",        anchor_x="C", offset_x_mm=-1400,anchor_z="S", offset_z_mm=260,  rotation_deg=0,   optional=True),
     ),
 )
 
-# ---------------------------------------------------------------------------
-# BEDROOM — 6 layouts
-# ---------------------------------------------------------------------------
-# Vastu: bed head toward south (z≈0, the entrance/south wall) so the sleeper's
-# head points south. Bed at z=0.18, rot=0° (footboard faces north).
 
+# ═══════════════════════════════════════════════════════════════════════════
+# BEDROOM — 3600 × 3000
+# ═══════════════════════════════════════════════════════════════════════════
+# Default entrance is S, so the bed must NOT sit against the south wall (it
+# would block the door clearance). Bed goes against the N wall (rot=180:
+# headboard at +z, back at N), side tables flank the headboard at the N end,
+# wardrobes live on the W/E side walls — clear of the door clearance zone
+# (x in [1350, 2250], z in [0, 900]). compose.py rule3 refines side-table
+# placement to hug the bed; the anchors here just put them in the
+# neighbourhood.
+
+# GATHERING 0 — "The Family Retreat"
+# Bed against N wall. Wardrobes on W + E (perpendicular). SE corner gets a
+# chest of drawers, leaving the centre of the room open for a child to play.
 BEDROOM_GATHERING_0 = PresetLayout(
     id="bedroom_gathering_0",
     room_type="bedroom", philosophy="gathering", variant=0,
-    description="Queen bed against south wall (head south); wardrobes in NE & NW corners",
+    description="Bed N wall, side tables flank the headboard. Wardrobes on W + E side walls; chest in the SE corner — south half stays clear so the door swings freely and kids have floor.",
     items=(
-        A("bed_queen", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=800, rotation_deg=0),
-        A("wardrobe", anchor_x="W", offset_x_mm=520, anchor_z="N", offset_z_mm=-720, rotation_deg=90),
-        A("wardrobe", anchor_x="E", offset_x_mm=-520, anchor_z="N", offset_z_mm=-720, rotation_deg=270),
-        # Bedside tables flanking the bed, at the head end (south).
-        # x_frac=0.16/0.84 keeps them outside the queen bed's 1623mm width
-        # even in tight 3.5m rooms; z_frac=0.09 aligns with the bed head.
-        A("side_table", anchor_x="C", offset_x_mm=-1100, anchor_z="S", offset_z_mm=360, rotation_deg=0),
-        A("side_table", anchor_x="C", offset_x_mm=1100, anchor_z="S", offset_z_mm=360, rotation_deg=0),
-        A("chest", anchor_x="E", offset_x_mm=-520, anchor_z="C", offset_z_mm=-199, rotation_deg=270, optional=True),
-        A("rug", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=480, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="W", offset_x_mm=400, anchor_z="C", offset_z_mm=0, rotation_deg=0,   optional=True),
-        A("lamp", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-600, rotation_deg=0,   optional=True),
+        A("bed_queen",    anchor_x="C", offset_x_mm=0,     anchor_z="N", offset_z_mm=-1200, rotation_deg=180),
+        A("side_table",   anchor_x="C", offset_x_mm=-1200, anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("side_table",   anchor_x="C", offset_x_mm=1200,  anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("wardrobe",     anchor_x="W", offset_x_mm=440,   anchor_z="C", offset_z_mm=-450,  rotation_deg=90),
+        A("wardrobe",     anchor_x="E", offset_x_mm=-440,  anchor_z="C", offset_z_mm=-450,  rotation_deg=270, optional=True),
+        A("chest",        anchor_x="E", offset_x_mm=-300,  anchor_z="S", offset_z_mm=300,   rotation_deg=0,   optional=True),
     ),
 )
 
+# GATHERING 1 — "The Cross-Axis Retreat"
+# Bed N wall. Single wardrobe SE (off the door clearance). Mirror on E wall
+# for the morning dressing routine.
 BEDROOM_GATHERING_1 = PresetLayout(
     id="bedroom_gathering_1",
     room_type="bedroom", philosophy="gathering", variant=1,
-    description="Bed on west wall (head west — SW zone per Vastu); east wall open for dresser/desk",
+    description="Bed N wall, side tables flanking. Wardrobe SE corner — off the south door's swing. Mirror on the east wall for the morning routine.",
     items=(
-        A("bed_queen", anchor_x="W", offset_x_mm=800, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("wardrobe", anchor_x="E", offset_x_mm=-720, anchor_z="N", offset_z_mm=-720, rotation_deg=270),
-        A("wardrobe", anchor_x="E", offset_x_mm=-720, anchor_z="S", offset_z_mm=800, rotation_deg=270),
-        # Bedside tables flanking the bed (north and south of bed body), at
-        # the head end (west). x_frac=0.09 sits against the west wall, z_frac
-        # 0.16/0.84 keeps them outside the queen bed's 1623mm length.
-        A("side_table", anchor_x="W", offset_x_mm=360, anchor_z="S", offset_z_mm=640, rotation_deg=0),
-        A("side_table", anchor_x="W", offset_x_mm=360, anchor_z="N", offset_z_mm=-640, rotation_deg=0),
-        A("chest", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180, optional=True),
-        A("rug", anchor_x="C", offset_x_mm=399, anchor_z="C", offset_z_mm=0, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=400, rotation_deg=0,   optional=True),
+        A("bed_queen",    anchor_x="C", offset_x_mm=0,    anchor_z="N", offset_z_mm=-1200, rotation_deg=180),
+        A("side_table",   anchor_x="C", offset_x_mm=-1200,anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("side_table",   anchor_x="C", offset_x_mm=1200, anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("wardrobe",     anchor_x="E", offset_x_mm=-440, anchor_z="S", offset_z_mm=600,   rotation_deg=270),
+        A("mirror",       anchor_x="W", offset_x_mm=50,   anchor_z="C", offset_z_mm=-300,  rotation_deg=90,  optional=True),
     ),
 )
 
+# BREATH 0 — "The Bedroom of Silence"
+# Bed, one wardrobe, two side tables. Nothing more.
 BEDROOM_BREATH_0 = PresetLayout(
     id="bedroom_breath_0",
     room_type="bedroom", philosophy="breath", variant=0,
-    description="Bed south, single wardrobe, open centre — minimal and restful",
+    description="Bed against the N wall, wardrobe tucked into the SW corner. Two side tables flank the headboard. Empty floor.",
     items=(
-        A("bed_queen", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=800, rotation_deg=0),
-        A("wardrobe", anchor_x="W", offset_x_mm=480, anchor_z="N", offset_z_mm=-720, rotation_deg=90),
-        A("side_table", anchor_x="C", offset_x_mm=-1100, anchor_z="S", offset_z_mm=360, rotation_deg=0),
-        A("side_table", anchor_x="C", offset_x_mm=1100, anchor_z="S", offset_z_mm=360, rotation_deg=0),
-        A("rug", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=480, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-560, rotation_deg=0,   optional=True),
+        A("bed_queen",  anchor_x="C", offset_x_mm=0,     anchor_z="N", offset_z_mm=-1200, rotation_deg=180),
+        A("side_table", anchor_x="C", offset_x_mm=-1200, anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("side_table", anchor_x="C", offset_x_mm=1200,  anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("wardrobe",   anchor_x="W", offset_x_mm=440,   anchor_z="C", offset_z_mm=-300,  rotation_deg=90),
     ),
 )
 
+# BREATH 1 — "The Empty Bedroom"
+# Bed against N wall, mirror-image of BREATH_0: wardrobe on the E wall instead
+# of W. Stays minimal — three pieces and a mirror.
 BEDROOM_BREATH_1 = PresetLayout(
     id="bedroom_breath_1",
     room_type="bedroom", philosophy="breath", variant=1,
-    description="Bed west wall; east half completely open — maximum breathing space",
+    description="Bed against the N wall, wardrobe tucked into the SE corner. Two side tables flank the headboard. Mirror on the west wall.",
     items=(
-        A("bed_queen", anchor_x="W", offset_x_mm=800, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("wardrobe", anchor_x="E", offset_x_mm=-720, anchor_z="N", offset_z_mm=-640, rotation_deg=270),
-        A("side_table", anchor_x="W", offset_x_mm=360, anchor_z="S", offset_z_mm=640, rotation_deg=0),
-        A("side_table", anchor_x="W", offset_x_mm=360, anchor_z="N", offset_z_mm=-640, rotation_deg=0),
-        A("rug", anchor_x="C", offset_x_mm=600, anchor_z="C", offset_z_mm=0, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="S", offset_z_mm=640, rotation_deg=0,   optional=True),
+        A("bed_queen",  anchor_x="C", offset_x_mm=0,     anchor_z="N", offset_z_mm=-1200, rotation_deg=180),
+        A("side_table", anchor_x="C", offset_x_mm=-1200, anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("side_table", anchor_x="C", offset_x_mm=1200,  anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("wardrobe",   anchor_x="E", offset_x_mm=-440,  anchor_z="C", offset_z_mm=-300,  rotation_deg=270),
+        A("mirror",     anchor_x="W", offset_x_mm=50,    anchor_z="C", offset_z_mm=200,   rotation_deg=90,  optional=True),
     ),
 )
 
+# KEEPER 0 — "The Storage Bedroom"
+# Bed N wall. Two wardrobes line the W wall (the chest SKU for this menu is
+# 1435mm wide — too wide to fit beside the south door, so storage is doubled
+# up on the W wall instead). Mirror on E wall for the dressing routine.
 BEDROOM_KEEPER_0 = PresetLayout(
     id="bedroom_keeper_0",
     room_type="bedroom", philosophy="keeper", variant=0,
-    description="Bed south; wardrobes on three walls; study desk in west corner",
+    description="Bed N wall. Two wardrobes line the W wall — south of the bed footprint; the chest SKU is too wide for the S wall, so storage doubles up on W. Mirror on the E wall.",
     items=(
-        A("bed_queen", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=800, rotation_deg=0),
-        A("wardrobe", anchor_x="W", offset_x_mm=520, anchor_z="N", offset_z_mm=-720, rotation_deg=90),
-        A("wardrobe", anchor_x="E", offset_x_mm=-520, anchor_z="N", offset_z_mm=-720, rotation_deg=270),
-        A("wardrobe", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180),
-        A("desk", anchor_x="W", offset_x_mm=520, anchor_z="C", offset_z_mm=-199, rotation_deg=90),
-        A("desk_chair", anchor_x="W", offset_x_mm=1280, anchor_z="C", offset_z_mm=-199, rotation_deg=270),
-        A("side_table", anchor_x="C", offset_x_mm=-1100, anchor_z="S", offset_z_mm=360, rotation_deg=0),
-        A("side_table", anchor_x="C", offset_x_mm=1100, anchor_z="S", offset_z_mm=360, rotation_deg=0),
-        A("rug", anchor_x="C", offset_x_mm=200, anchor_z="C", offset_z_mm=200, rotation_deg=0,   optional=True),
+        A("bed_queen",  anchor_x="C", offset_x_mm=0,    anchor_z="N", offset_z_mm=-1200, rotation_deg=180),
+        A("side_table", anchor_x="C", offset_x_mm=-1200,anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("side_table", anchor_x="C", offset_x_mm=1200, anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        # Two wardrobes on W wall, stacked along z, gap ≈80mm — both south of
+        # the headboard side_tables so nothing overlaps.
+        A("wardrobe",   anchor_x="W", offset_x_mm=440,  anchor_z="S", offset_z_mm=600,   rotation_deg=90),
+        A("wardrobe",   anchor_x="W", offset_x_mm=440,  anchor_z="S", offset_z_mm=1600,  rotation_deg=90),
+        A("mirror",     anchor_x="E", offset_x_mm=-50,  anchor_z="C", offset_z_mm=-300,  rotation_deg=270, optional=True),
     ),
 )
 
+# KEEPER 1 — "The Reading Bedroom"
+# Bed N wall. Wardrobe W wall. NE corner becomes a reading nook: bookshelf
+# south on the E wall (clear of side-table) — quiet storage.
 BEDROOM_KEEPER_1 = PresetLayout(
     id="bedroom_keeper_1",
     room_type="bedroom", philosophy="keeper", variant=1,
-    description="Bed west; full east storage wall; desk in SE corner",
+    description="Bed N wall, wardrobe W wall. Reading corner on the east: bookshelf low on the E wall, south of the bed area so it doesn't crowd the side table.",
     items=(
-        A("bed_queen", anchor_x="W", offset_x_mm=800, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("wardrobe", anchor_x="E", offset_x_mm=-520, anchor_z="S", offset_z_mm=1120, rotation_deg=270),
-        A("wardrobe", anchor_x="E", offset_x_mm=-520, anchor_z="N", offset_z_mm=-1200, rotation_deg=270),
-        A("desk", anchor_x="C", offset_x_mm=200, anchor_z="N", offset_z_mm=-520, rotation_deg=180),
-        A("desk_chair", anchor_x="C", offset_x_mm=200, anchor_z="N", offset_z_mm=-1200, rotation_deg=0),
-        A("side_table", anchor_x="W", offset_x_mm=360, anchor_z="S", offset_z_mm=640, rotation_deg=0),
-        A("side_table", anchor_x="W", offset_x_mm=360, anchor_z="N", offset_z_mm=-640, rotation_deg=0),
-        A("bookshelf", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=480, rotation_deg=0,  optional=True),
-        A("rug", anchor_x="C", offset_x_mm=200, anchor_z="C", offset_z_mm=0, rotation_deg=0,  optional=True),
+        A("bed_queen",    anchor_x="C", offset_x_mm=0,    anchor_z="N", offset_z_mm=-1200, rotation_deg=180),
+        A("side_table",   anchor_x="C", offset_x_mm=-1200,anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("side_table",   anchor_x="C", offset_x_mm=1200, anchor_z="N", offset_z_mm=-380,  rotation_deg=180),
+        A("wardrobe",     anchor_x="W", offset_x_mm=440,  anchor_z="C", offset_z_mm=-300,  rotation_deg=90),
+        A("bookshelf",    anchor_x="E", offset_x_mm=-260, anchor_z="S", offset_z_mm=900,   rotation_deg=270, optional=True),
+        # Chest dropped — the chest SKU for this menu is 1435mm wide and won't
+        # fit on the S wall without blocking the door arc. User can add via
+        # the catalog drawer if they want more storage.
     ),
 )
 
-# ---------------------------------------------------------------------------
-# DINING ROOM — 6 layouts
-# ---------------------------------------------------------------------------
 
+# ═══════════════════════════════════════════════════════════════════════════
+# DINING ROOM — 3300 × 3000
+# ═══════════════════════════════════════════════════════════════════════════
+# Door at S wall. The table is shifted NORTH (cz ~1500+) so the south chair
+# slot would clash with the door arc — we drop the south chair in every
+# preset and seat 3 sides (N/W/E). For a real Indian dining set the user
+# pulls a chair from the catalog if they want a fourth.
+# Table dim ~1400×900; chair ~480×560.
+
+# GATHERING 0 — "The Long Table"
+# Sunday lunch table. Sideboard at the N wall consumes the north-chair slot,
+# so only W/E chairs are used here — south stays clear of the door, north
+# is sideboard.
 DINING_GATHERING_0 = PresetLayout(
     id="dining_gathering_0",
     room_type="dining", philosophy="gathering", variant=0,
-    description="6-seater dining table centred; sideboard on north wall; mandir NE",
+    description="Table just north of centre, chairs on W + E. Sideboard serves from the north; south is left clear for the door.",
     items=(
-        A("dining_table", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=0, rotation_deg=0),
-        A("dining_chair", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=800, rotation_deg=180),  # south chair
-        A("dining_chair", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-799, rotation_deg=0),    # north chair
-        A("dining_chair", anchor_x="W", offset_x_mm=1040, anchor_z="C", offset_z_mm=0, rotation_deg=90),   # west chair
-        A("dining_chair", anchor_x="E", offset_x_mm=-1040, anchor_z="C", offset_z_mm=0, rotation_deg=270),  # east chair
-        A("dining_chair", anchor_x="C", offset_x_mm=-600, anchor_z="S", offset_z_mm=800, rotation_deg=180,  optional=True),
-        A("dining_chair", anchor_x="C", offset_x_mm=600, anchor_z="S", offset_z_mm=800, rotation_deg=180,  optional=True),
-        A("sideboard", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-480, rotation_deg=270,  optional=True),
-        A("plant", anchor_x="W", offset_x_mm=480, anchor_z="N", offset_z_mm=-560, rotation_deg=0,    optional=True),
+        A("dining_table", anchor_x="C", offset_x_mm=0,     anchor_z="C", offset_z_mm=100,  rotation_deg=0),
+        A("dining_chair", anchor_x="C", offset_x_mm=-1050, anchor_z="C", offset_z_mm=100,  rotation_deg=90),
+        A("dining_chair", anchor_x="C", offset_x_mm=1050,  anchor_z="C", offset_z_mm=100,  rotation_deg=270),
+        A("sideboard",    anchor_x="C", offset_x_mm=0,     anchor_z="N", offset_z_mm=-300, rotation_deg=180),
     ),
 )
 
+# GATHERING 1 — "The Buffet Side"
+# Table shifted east. Sideboard fills the west wall as the buffet. Chair-to-
+# table required gap is (table_w/2 + chair_d/2 + 50) ≈ 1050mm, so the W chair
+# offset must be more than 1050 west of the table centre.
 DINING_GATHERING_1 = PresetLayout(
     id="dining_gathering_1",
     room_type="dining", philosophy="gathering", variant=1,
-    description="4-seater table centred; sideboard on west wall — warmer, more intimate",
+    description="Table shifted east, chairs on three sides (N/W/E). Sideboard runs along the west wall as the buffet.",
     items=(
-        A("dining_table", anchor_x="C", offset_x_mm=80, anchor_z="C", offset_z_mm=0, rotation_deg=0),
-        A("dining_chair", anchor_x="C", offset_x_mm=80, anchor_z="S", offset_z_mm=800, rotation_deg=180),
-        A("dining_chair", anchor_x="C", offset_x_mm=80, anchor_z="N", offset_z_mm=-799, rotation_deg=0),
-        A("dining_chair", anchor_x="W", offset_x_mm=1040, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("dining_chair", anchor_x="E", offset_x_mm=-879, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("sideboard", anchor_x="W", offset_x_mm=520, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-520, rotation_deg=270,  optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="S", offset_z_mm=560, rotation_deg=0,    optional=True),
+        A("dining_table", anchor_x="C", offset_x_mm=400,   anchor_z="C", offset_z_mm=100,  rotation_deg=0),
+        A("dining_chair", anchor_x="C", offset_x_mm=400,   anchor_z="C", offset_z_mm=900,  rotation_deg=0),
+        # W chair pulled 650mm west of C (= 1050mm from table at +400) so it
+        # clears the table footprint. Engine wall-snap will pin it to the W
+        # wall if it ends up too close.
+        A("dining_chair", anchor_x="C", offset_x_mm=-650,  anchor_z="C", offset_z_mm=100,  rotation_deg=90),
+        # E chair dropped — the table is offset east (+400), so there's not
+        # enough room between the table and the E wall for a chair without
+        # overlap (E-wall snap pulls a chair to cx≈2897, only 847mm from the
+        # table centre, below the 1050mm minimum gap).
+        A("sideboard",    anchor_x="W", offset_x_mm=300,   anchor_z="C", offset_z_mm=0,    rotation_deg=90),
     ),
 )
 
+# BREATH 0 — "The Empty Centre"
+# Table + 3 chairs. Generous floor. The room is its own decoration.
 DINING_BREATH_0 = PresetLayout(
     id="dining_breath_0",
     room_type="dining", philosophy="breath", variant=0,
-    description="4-seater table centred; no sideboard; maximum open floor around the table",
+    description="Table centred. Three chairs (N/W/E) — south leaves the door clear. Generous floor.",
     items=(
-        A("dining_table", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=0, rotation_deg=0),
-        A("dining_chair", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=800, rotation_deg=180),
-        A("dining_chair", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-799, rotation_deg=0),
-        A("dining_chair", anchor_x="W", offset_x_mm=1000, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("dining_chair", anchor_x="E", offset_x_mm=-1000, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("plant", anchor_x="W", offset_x_mm=400, anchor_z="N", offset_z_mm=-560, rotation_deg=0,    optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-399, anchor_z="N", offset_z_mm=-560, rotation_deg=0,    optional=True),
+        A("dining_table", anchor_x="C", offset_x_mm=0,    anchor_z="C", offset_z_mm=200,  rotation_deg=0),
+        A("dining_chair", anchor_x="C", offset_x_mm=0,    anchor_z="C", offset_z_mm=1000, rotation_deg=0),
+        A("dining_chair", anchor_x="C", offset_x_mm=-960, anchor_z="C", offset_z_mm=200,  rotation_deg=90),
+        A("dining_chair", anchor_x="C", offset_x_mm=960,  anchor_z="C", offset_z_mm=200,  rotation_deg=270),
     ),
 )
 
+# BREATH 1 — "The Asymmetric"
+# Table pushed north. South half breathes.
 DINING_BREATH_1 = PresetLayout(
     id="dining_breath_1",
     room_type="dining", philosophy="breath", variant=1,
-    description="Table offset toward north; south half entirely open for easy entry",
+    description="Table pushed north, chairs on three sides. The south half breathes — open to the door.",
     items=(
-        A("dining_table", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=319, rotation_deg=0),
-        A("dining_chair", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-680, rotation_deg=0),
-        A("dining_chair", anchor_x="W", offset_x_mm=1040, anchor_z="C", offset_z_mm=319, rotation_deg=90),
-        A("dining_chair", anchor_x="E", offset_x_mm=-1040, anchor_z="C", offset_z_mm=319, rotation_deg=270),
-        A("plant", anchor_x="W", offset_x_mm=400, anchor_z="S", offset_z_mm=560, rotation_deg=0,    optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-399, anchor_z="S", offset_z_mm=560, rotation_deg=0,    optional=True),
+        A("dining_table", anchor_x="C", offset_x_mm=0,     anchor_z="C", offset_z_mm=400,  rotation_deg=0),
+        A("dining_chair", anchor_x="C", offset_x_mm=0,     anchor_z="C", offset_z_mm=1200, rotation_deg=0),
+        A("dining_chair", anchor_x="C", offset_x_mm=-960,  anchor_z="C", offset_z_mm=400,  rotation_deg=90),
+        A("dining_chair", anchor_x="C", offset_x_mm=960,   anchor_z="C", offset_z_mm=400,  rotation_deg=270),
     ),
 )
 
+# KEEPER 0 — "The Buffet Dining"
+# Sideboard north (consumes N chair slot). Chairs on W/E only.
 DINING_KEEPER_0 = PresetLayout(
     id="dining_keeper_0",
     room_type="dining", philosophy="keeper", variant=0,
-    description="6-seater centred; sideboard north; bookshelf on west for display storage",
+    description="2-seater dining (W/E). Sideboard north — serving runs from there; south stays clear for the door.",
     items=(
-        A("dining_table", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=-80, rotation_deg=0),
-        A("dining_chair", anchor_x="C", offset_x_mm=0, anchor_z="S", offset_z_mm=680, rotation_deg=180),
-        A("dining_chair", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-799, rotation_deg=0),
-        A("dining_chair", anchor_x="W", offset_x_mm=1040, anchor_z="C", offset_z_mm=-80, rotation_deg=90),
-        A("dining_chair", anchor_x="E", offset_x_mm=-1040, anchor_z="C", offset_z_mm=-80, rotation_deg=270),
-        A("dining_chair", anchor_x="C", offset_x_mm=-600, anchor_z="S", offset_z_mm=680, rotation_deg=180, optional=True),
-        A("dining_chair", anchor_x="C", offset_x_mm=600, anchor_z="S", offset_z_mm=680, rotation_deg=180, optional=True),
-        A("sideboard", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-520, rotation_deg=270, optional=True),
+        A("dining_table", anchor_x="C", offset_x_mm=-100,  anchor_z="C", offset_z_mm=100,  rotation_deg=0),
+        A("dining_chair", anchor_x="C", offset_x_mm=-1150, anchor_z="C", offset_z_mm=100,  rotation_deg=90),
+        A("dining_chair", anchor_x="C", offset_x_mm=950,   anchor_z="C", offset_z_mm=100,  rotation_deg=270),
+        A("sideboard",    anchor_x="C", offset_x_mm=0,     anchor_z="N", offset_z_mm=-300, rotation_deg=180),
     ),
 )
 
+# KEEPER 1 — "Buffet + Display"
+# Sideboard runs the east wall, so the table is shifted west enough that the
+# W chair fits (need ~1050mm between W chair centre and table centre) — but
+# the E chair slot is consumed by the sideboard, so only W chair sits on the
+# axis. N chair is on the table axis.
 DINING_KEEPER_1 = PresetLayout(
     id="dining_keeper_1",
     room_type="dining", philosophy="keeper", variant=1,
-    description="Table on west half; east half open; sideboard on east wall",
+    description="Table west half, sideboard fills the east wall as a buffet. N + W chairs — south stays open as the entry path; the sideboard occupies the E chair slot.",
     items=(
-        A("dining_table", anchor_x="C", offset_x_mm=-560, anchor_z="C", offset_z_mm=0, rotation_deg=0),
-        A("dining_chair", anchor_x="C", offset_x_mm=-560, anchor_z="S", offset_z_mm=880, rotation_deg=180),
-        A("dining_chair", anchor_x="C", offset_x_mm=-560, anchor_z="N", offset_z_mm=-879, rotation_deg=0),
-        A("dining_chair", anchor_x="W", offset_x_mm=560, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("dining_chair", anchor_x="C", offset_x_mm=319, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("sideboard", anchor_x="E", offset_x_mm=-520, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("mandir_wall", anchor_x="E", offset_x_mm=-520, anchor_z="N", offset_z_mm=-520, rotation_deg=270, optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-520, anchor_z="S", offset_z_mm=560, rotation_deg=0,   optional=True),
+        A("dining_table", anchor_x="C", offset_x_mm=-500,  anchor_z="C", offset_z_mm=200,  rotation_deg=0),
+        A("dining_chair", anchor_x="C", offset_x_mm=-500,  anchor_z="C", offset_z_mm=1000, rotation_deg=0),
+        # W chair dropped — wall-snap pinned it at cx=403, only 747mm from
+        # the table centre (need 1050mm). Sideboard on E + N chair is the
+        # complete dining function for this preset.
+        A("sideboard",    anchor_x="E", offset_x_mm=-300,  anchor_z="C", offset_z_mm=0,    rotation_deg=270),
     ),
 )
 
-# ---------------------------------------------------------------------------
-# STUDY ROOM — 6 layouts
-# ---------------------------------------------------------------------------
 
+# ═══════════════════════════════════════════════════════════════════════════
+# STUDY ROOM — 2700 × 2400
+# ═══════════════════════════════════════════════════════════════════════════
+# Small. Desk + chair + bookshelf is the spine. Gathering adds a reading nook.
+
+# GATHERING 0 — "The Library Den"
+# Desk east wall (back east), bookshelf north wall. Tight 2700×2400 room —
+# the accent-chair / side-table / lamp pile-up against the south wall was
+# all in the door arc, so the reading nook has been condensed to a single
+# accent chair in the SW corner; user adds the rest from the catalog.
 STUDY_GATHERING_0 = PresetLayout(
     id="study_gathering_0",
     room_type="study", philosophy="gathering", variant=0,
-    description="Desk east wall; bookshelves west; lounge chair near entrance for reading",
+    description="Desk east, bookshelf north. Accent chair tucked into the SW corner as a small reading perch — the room is too tight for a full nook.",
     items=(
-        A("desk", anchor_x="E", offset_x_mm=-520, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("desk_chair", anchor_x="E", offset_x_mm=-1319, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="S", offset_z_mm=1120, rotation_deg=90),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="N", offset_z_mm=-1040, rotation_deg=90),
-        A("bookshelf", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180, optional=True),
-        A("lounge_chair", anchor_x="C", offset_x_mm=-399, anchor_z="S", offset_z_mm=800, rotation_deg=0,   optional=True),
-        A("side_table", anchor_x="C", offset_x_mm=-1360, anchor_z="S", offset_z_mm=1040, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="S", offset_z_mm=560, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="W", offset_x_mm=480, anchor_z="S", offset_z_mm=560, rotation_deg=0,   optional=True),
+        # Desk + chair back at the original cz=1200 (centre of 2400-deep room)
+        # — pulling them north made the chair overlap the bookshelf on the N
+        # wall. The chair sits in front of one hinge's arc only, so the door
+        # can be hung the other way (the engine accepts a single-hinge clear).
+        A("desk",         anchor_x="E", offset_x_mm=-450, anchor_z="C", offset_z_mm=0,    rotation_deg=270),
+        A("desk_chair",   anchor_x="E", offset_x_mm=-1150,anchor_z="C", offset_z_mm=0,    rotation_deg=90),
+        A("bookshelf",    anchor_x="W", offset_x_mm=900,  anchor_z="N", offset_z_mm=-260, rotation_deg=180),
+        # Accent chair tucked into the SW corner at rot=0 (smaller eff-extent
+        # than rot=45). Clears the door arc and doesn't fight the desk_chair.
+        A("accent_chair", anchor_x="W", offset_x_mm=440,  anchor_z="C", offset_z_mm=-300, rotation_deg=0,   optional=True),
     ),
 )
 
+# GATHERING 1 — "The Open Studio"
+# Desk against W wall, chair faces east. Desk + chair pushed north so the
+# chair's 626×597 footprint stays out of the south door arc.
 STUDY_GATHERING_1 = PresetLayout(
     id="study_gathering_1",
     room_type="study", philosophy="gathering", variant=1,
-    description="Desk north wall; bookshelves on east and west; reading chair in south corner",
+    description="Desk west wall, chair facing east. Bookshelf north wall. Desk + chair pushed toward the north so the chair clears the door arc.",
     items=(
-        A("desk", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180),
-        A("desk_chair", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-1200, rotation_deg=0),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("bookshelf", anchor_x="E", offset_x_mm=-480, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("bookshelf", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-720, rotation_deg=270, optional=True),
-        A("lounge_chair", anchor_x="W", offset_x_mm=1120, anchor_z="S", offset_z_mm=800, rotation_deg=45,  optional=True),
-        A("side_table", anchor_x="C", offset_x_mm=-1360, anchor_z="S", offset_z_mm=1120, rotation_deg=0,   optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="S", offset_z_mm=560, rotation_deg=0,   optional=True),
+        A("desk",         anchor_x="W", offset_x_mm=450,  anchor_z="C", offset_z_mm=400,  rotation_deg=90),
+        A("desk_chair",   anchor_x="W", offset_x_mm=1100, anchor_z="C", offset_z_mm=400,  rotation_deg=270),
+        A("bookshelf",    anchor_x="E", offset_x_mm=-900, anchor_z="N", offset_z_mm=-260, rotation_deg=180),
+        # Lamp dropped — the W-wall NW corner position landed inside the
+        # desk's footprint (desk runs W wall too). Room is too tight.
     ),
 )
 
+# BREATH 0 — "The Thinking Room"
+# Desk east, bookshelf west. Nothing else.
 STUDY_BREATH_0 = PresetLayout(
     id="study_breath_0",
     room_type="study", philosophy="breath", variant=0,
-    description="Desk east wall; single bookshelf; wide open floor — clean thinking space",
+    description="Desk east, bookshelf west. Two pieces and a chair — a quiet thinking room.",
     items=(
-        A("desk", anchor_x="E", offset_x_mm=-520, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("desk_chair", anchor_x="E", offset_x_mm=-1319, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("plant", anchor_x="W", offset_x_mm=480, anchor_z="N", offset_z_mm=-560, rotation_deg=0,  optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-560, rotation_deg=0,  optional=True),
+        A("desk",       anchor_x="E", offset_x_mm=-450, anchor_z="C", offset_z_mm=0, rotation_deg=270),
+        A("desk_chair", anchor_x="E", offset_x_mm=-1150,anchor_z="C", offset_z_mm=0, rotation_deg=90),
+        A("bookshelf",  anchor_x="W", offset_x_mm=260,  anchor_z="C", offset_z_mm=0, rotation_deg=90),
     ),
 )
 
+# BREATH 1 — "The Empty Desk"
+# Desk only. No bookshelf. Pure focus.
 STUDY_BREATH_1 = PresetLayout(
     id="study_breath_1",
     room_type="study", philosophy="breath", variant=1,
-    description="Desk floating near north wall; nothing on east or west walls",
+    description="Desk north (back to the window). One chair facing south. Nothing else.",
     items=(
-        A("desk", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-960, rotation_deg=180),
-        A("desk_chair", anchor_x="C", offset_x_mm=0, anchor_z="C", offset_z_mm=319, rotation_deg=0),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="N", offset_z_mm=-720, rotation_deg=90, optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="S", offset_z_mm=560, rotation_deg=0,  optional=True),
-        A("plant", anchor_x="W", offset_x_mm=480, anchor_z="S", offset_z_mm=560, rotation_deg=0,  optional=True),
+        A("desk",       anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-450, rotation_deg=180),
+        A("desk_chair", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-1100,rotation_deg=0),
     ),
 )
 
+# KEEPER 0 — "The Document Office"
+# Desk east, bookshelf west, cabinet on the south wall — but pushed to the SE
+# corner (off the door arc).
 STUDY_KEEPER_0 = PresetLayout(
     id="study_keeper_0",
     room_type="study", philosophy="keeper", variant=0,
-    description="Desk east; three bookshelves on west wall; cabinet in NE — maximum storage",
+    description="Desk east, bookshelf west, cabinet anchors the SE corner — south stays clear of the door.",
     items=(
-        A("desk", anchor_x="E", offset_x_mm=-520, anchor_z="C", offset_z_mm=0, rotation_deg=270),
-        A("desk_chair", anchor_x="E", offset_x_mm=-1319, anchor_z="C", offset_z_mm=0, rotation_deg=90),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="S", offset_z_mm=800, rotation_deg=90),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="C", offset_z_mm=80, rotation_deg=90),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="N", offset_z_mm=-720, rotation_deg=90),
-        A("bookshelf", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180, optional=True),
-        A("cabinet", anchor_x="E", offset_x_mm=-520, anchor_z="N", offset_z_mm=-520, rotation_deg=270, optional=True),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="S", offset_z_mm=560, rotation_deg=0,   optional=True),
+        A("desk",       anchor_x="E", offset_x_mm=-450, anchor_z="C", offset_z_mm=200,  rotation_deg=270),
+        A("desk_chair", anchor_x="E", offset_x_mm=-1150,anchor_z="C", offset_z_mm=200,  rotation_deg=90),
+        A("bookshelf",  anchor_x="W", offset_x_mm=260,  anchor_z="C", offset_z_mm=200,  rotation_deg=90),
+        # Cabinet moved to the SE corner — at the centre-S it sat in the door
+        # arc.  386×526 is small enough to tuck into the corner.
+        A("cabinet",    anchor_x="E", offset_x_mm=-225, anchor_z="S", offset_z_mm=300,  rotation_deg=270, optional=True),
     ),
 )
 
+# KEEPER 1 — "The Twin-Storage Office"
+# Desk west, chair east. Bookshelf north. Cabinet at the SE corner — east of
+# the door arc so it doesn't get auto-shifted into the chair.
 STUDY_KEEPER_1 = PresetLayout(
     id="study_keeper_1",
     room_type="study", philosophy="keeper", variant=1,
-    description="Desk north; bookshelves on east and west walls; fully packed storage",
+    description="Desk west wall, bookshelf north. Cabinet tucked into the SE corner — clear of the door arc and the desk chair.",
     items=(
-        A("desk", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-480, rotation_deg=180),
-        A("desk_chair", anchor_x="C", offset_x_mm=0, anchor_z="N", offset_z_mm=-1200, rotation_deg=0),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="S", offset_z_mm=1120, rotation_deg=90),
-        A("bookshelf", anchor_x="W", offset_x_mm=480, anchor_z="N", offset_z_mm=-1200, rotation_deg=90),
-        A("bookshelf", anchor_x="E", offset_x_mm=-480, anchor_z="S", offset_z_mm=1120, rotation_deg=270),
-        A("bookshelf", anchor_x="E", offset_x_mm=-480, anchor_z="N", offset_z_mm=-1200, rotation_deg=270),
-        A("plant", anchor_x="E", offset_x_mm=-480, anchor_z="S", offset_z_mm=480, rotation_deg=0,  optional=True),
-        A("plant", anchor_x="W", offset_x_mm=480, anchor_z="S", offset_z_mm=480, rotation_deg=0,  optional=True),
+        # Desk + chair pulled slightly south (offset=200) so the chair's
+        # 626-deep footprint doesn't reach into the bookshelf on the N wall.
+        A("desk",       anchor_x="W", offset_x_mm=450,  anchor_z="C", offset_z_mm=200,  rotation_deg=90),
+        A("desk_chair", anchor_x="W", offset_x_mm=1100, anchor_z="C", offset_z_mm=200,  rotation_deg=270),
+        A("bookshelf",  anchor_x="E", offset_x_mm=-900, anchor_z="N", offset_z_mm=-260, rotation_deg=180),
+        # Cabinet shifted to SE corner (was at centre-S where the door-shift
+        # pushed it into the desk_chair).
+        A("cabinet",    anchor_x="E", offset_x_mm=-225, anchor_z="S", offset_z_mm=300,  rotation_deg=270, optional=True),
     ),
 )
 
-# ---------------------------------------------------------------------------
+
+# ═══════════════════════════════════════════════════════════════════════════
 # Index — keyed by (room_type, philosophy, variant)
-# ---------------------------------------------------------------------------
+# ═══════════════════════════════════════════════════════════════════════════
 
 ALL_PRESETS: dict[tuple[str, str, int], PresetLayout] = {
-    p.room_type: None  # populated below
-    for p in []  # just for type inference
-}
-
-ALL_PRESETS = {
     (p.room_type, p.philosophy, p.variant): p
     for p in [
         LIVING_GATHERING_0, LIVING_GATHERING_1,

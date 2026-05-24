@@ -70,16 +70,11 @@ interface SceneResponse {
   warnings: string[]
 }
 
-// ── Door/window data (Stage 1 folded in) ────────────────────────────────────
+// ── Door data ───────────────────────────────────────────────────────────────
 const DOOR = { width_mm: 900, height_mm: 2050, sill_mm: 0 } as const
-const WINDOW = { width_mm: 1500, height_mm: 1200, sill_mm: 900 } as const
-
-// "Entrance" tells us which wall the door lives on. We always put a window on
-// the wall opposite to maximize daylight/sightline — overridable per preset later.
-const OPPOSITE: Record<Direction, Direction> = {
-  N: 'S', S: 'N', E: 'W', W: 'E',
-  NE: 'SW', SW: 'NE', NW: 'SE', SE: 'NW',
-}
+// Window opening removed (2026-05-23): the renderer no longer draws a window;
+// keeping it in the engine just reserved a phantom clearance zone that pushed
+// items around for no visible benefit.
 
 function cardinalize(d: Direction): 'N' | 'S' | 'E' | 'W' {
   // For openings v1, collapse diagonals to nearest cardinal.
@@ -150,11 +145,105 @@ const BACK_WALL_BY_ROT: Record<number, 'S' | 'W' | 'N' | 'E'> = {
   0: 'S', 90: 'W', 180: 'N', 270: 'E',
 }
 
+// Clearance depth (mm) extending INTO the room from each opening. An item
+// whose footprint intersects this rectangle is treated as blocking the door
+// (or sitting in front of a window). 900mm = door arc radius. We previously
+// used 1100mm (arc + 200mm buffer) but in a 3000mm-deep bedroom that's
+// uneconomical: bed_depth 1970 + door_clearance 1100 + 2×125 wall_inset = 3320
+// which doesn't fit. 900mm matches the actual door swing; the entry walking
+// space is anything beyond the foot of the bed.
+const OPENING_CLEARANCE_MM = 900
+
+function openingClearanceRect(
+  o: Opening,
+  roomWmm: number,
+  roomDmm: number,
+): { x1: number; x2: number; z1: number; z2: number } {
+  const half = o.width_mm / 2
+  if (o.wall === 'S') {
+    const cx = roomWmm * o.center_frac
+    return { x1: cx - half, x2: cx + half, z1: 0, z2: OPENING_CLEARANCE_MM }
+  }
+  if (o.wall === 'N') {
+    const cx = roomWmm * o.center_frac
+    return { x1: cx - half, x2: cx + half, z1: roomDmm - OPENING_CLEARANCE_MM, z2: roomDmm }
+  }
+  if (o.wall === 'W') {
+    const cz = roomDmm * o.center_frac
+    return { x1: 0, x2: OPENING_CLEARANCE_MM, z1: cz - half, z2: cz + half }
+  }
+  // E
+  const cz = roomDmm * o.center_frac
+  return { x1: roomWmm - OPENING_CLEARANCE_MM, x2: roomWmm, z1: cz - half, z2: cz + half }
+}
+
+function rectsIntersect(
+  a: { x1: number; x2: number; z1: number; z2: number },
+  b: { x1: number; x2: number; z1: number; z2: number },
+): boolean {
+  return a.x1 < b.x2 && a.x2 > b.x1 && a.z1 < b.z2 && a.z2 > b.z1
+}
+
+/** True if the item AABB blocks the door's swing arc.
+ *  The door can be hung from either side of the opening. We only flag the
+ *  item if BOTH hinge orientations are blocked — if one side is clear, the
+ *  carpenter just hangs the door that way. */
+function aabbBlocksDoorArc(
+  aabb: { x1: number; x2: number; z1: number; z2: number },
+  o: Opening,
+  roomWmm: number,
+  roomDmm: number,
+): boolean {
+  const r = OPENING_CLEARANCE_MM
+  const r2 = r * r
+
+  // For a hinge at (hx, hz) sweeping into the room, the swept quarter-disc
+  // is bounded by axis-aligned half-planes ("quadrant") plus the radius.
+  // Returns true if any AABB point is inside the swept quadrant AND within r.
+  function blocked(hx: number, hz: number, qx: 1 | -1, qz: 1 | -1): boolean {
+    // Restrict the AABB to the quadrant (qx is +1 → x >= hx; -1 → x <= hx; etc).
+    const x1q = qx > 0 ? Math.max(aabb.x1, hx) : aabb.x1
+    const x2q = qx > 0 ? aabb.x2 : Math.min(aabb.x2, hx)
+    const z1q = qz > 0 ? Math.max(aabb.z1, hz) : aabb.z1
+    const z2q = qz > 0 ? aabb.z2 : Math.min(aabb.z2, hz)
+    if (x2q <= x1q || z2q <= z1q) return false  // no part of AABB in this quadrant
+    const px = Math.max(x1q, Math.min(hx, x2q))
+    const pz = Math.max(z1q, Math.min(hz, z2q))
+    const dx = px - hx
+    const dz = pz - hz
+    return dx * dx + dz * dz < r2
+  }
+
+  if (o.wall === 'S') {
+    const xLow  = roomWmm * o.center_frac - o.width_mm / 2
+    const xHigh = roomWmm * o.center_frac + o.width_mm / 2
+    return blocked(xLow,  0, +1, +1) && blocked(xHigh, 0, -1, +1)
+  }
+  if (o.wall === 'N') {
+    const xLow  = roomWmm * o.center_frac - o.width_mm / 2
+    const xHigh = roomWmm * o.center_frac + o.width_mm / 2
+    return blocked(xLow,  roomDmm, +1, -1) && blocked(xHigh, roomDmm, -1, -1)
+  }
+  if (o.wall === 'W') {
+    const zLow  = roomDmm * o.center_frac - o.width_mm / 2
+    const zHigh = roomDmm * o.center_frac + o.width_mm / 2
+    return blocked(0, zLow,  +1, +1) && blocked(0, zHigh, +1, -1)
+  }
+  const zLow  = roomDmm * o.center_frac - o.width_mm / 2
+  const zHigh = roomDmm * o.center_frac + o.width_mm / 2
+  return blocked(roomWmm, zLow,  -1, +1) && blocked(roomWmm, zHigh, -1, -1)
+}
+
+function itemAabb(cx: number, cz: number, effW: number, effD: number) {
+  return { x1: cx - effW / 2, x2: cx + effW / 2, z1: cz - effD / 2, z2: cz + effD / 2 }
+}
+
 function placeItems(
   items: AnchoredItemSpec[],
   walls: { S: Wall; E: Wall; N: Wall; W: Wall },
   roomWmm: number,
   roomDmm: number,
+  openings: Opening[],
 ): { placed: ScenePlacedItem[]; warnings: string[] } {
   const warnings: string[] = []
   const placed: ScenePlacedItem[] = []
@@ -182,25 +271,15 @@ function placeItems(
 
     const [effW, effD] = effExtent(it.width_mm, it.depth_mm, it.rotation_deg)
 
-    // (2) Rotation-implied wall snap. Look up the back wall from rotation, then
-    // measure distance to it via the engine's Wall object (point-line distance).
-    // If within NEAR_WALL_ROT_MM, snap flush.
+    // (2) Rotation-implied wall snap. Use EDGE distance, not centre distance —
+    // a 1970mm-deep bed's centre is always ~985mm from the wall it's against,
+    // so a centre-distance threshold of 450mm would never fire for beds/sofas.
+    // The old resolver got this right; mirror it.
     const backSide = BACK_WALL_BY_ROT[((it.rotation_deg % 360) + 360) % 360]
-    if (backSide) {
-      const seg = wallSegs.find((s) => s.side === backSide)
-      if (seg) {
-        const distToBack = Utils.pointDistanceFromLine(
-          cx, cz, seg.start[0], seg.start[1], seg.end[0], seg.end[1],
-        )
-        if (distToBack < NEAR_WALL_ROT_MM) {
-          // Pin perpendicular axis flush to that wall, keep parallel axis where the anchor put it.
-          if (backSide === 'S') cz = effD / 2 + WALL_INSET_MM
-          else if (backSide === 'N') cz = roomDmm - effD / 2 - WALL_INSET_MM
-          else if (backSide === 'W') cx = effW / 2 + WALL_INSET_MM
-          else if (backSide === 'E') cx = roomWmm - effW / 2 - WALL_INSET_MM
-        }
-      }
-    }
+    if (backSide === 'S' && cz - effD / 2 < NEAR_WALL_ROT_MM) cz = effD / 2 + WALL_INSET_MM
+    else if (backSide === 'N' && roomDmm - (cz + effD / 2) < NEAR_WALL_ROT_MM) cz = roomDmm - effD / 2 - WALL_INSET_MM
+    else if (backSide === 'W' && cx - effW / 2 < NEAR_WALL_ROT_MM) cx = effW / 2 + WALL_INSET_MM
+    else if (backSide === 'E' && roomWmm - (cx + effW / 2) < NEAR_WALL_ROT_MM) cx = roomWmm - effW / 2 - WALL_INSET_MM
 
     // (3) Perpendicular tight-corner snap. After the back wall is set, the OTHER
     // axis is "free". If the item is also close to a wall on that axis (within
@@ -219,6 +298,44 @@ function placeItems(
       const gapN = roomDmm - (cz + effD / 2)
       if (gapS < NEAR_WALL_PERP_MM && gapS <= gapN) cz = effD / 2 + WALL_INSET_MM
       else if (gapN < NEAR_WALL_PERP_MM && gapN < gapS) cz = roomDmm - effD / 2 - WALL_INSET_MM
+    }
+
+    // (3.5) Opening-clearance check. Door swing is a quarter-disc, so we use
+    // aabbBlocksDoorArc rather than a bounding rectangle — items at the
+    // corners of the clearance box are usually outside the actual swing arc
+    // and shouldn't be flagged.
+    for (const o of openings) {
+      const zone = openingClearanceRect(o, roomWmm, roomDmm)
+      if (!aabbBlocksDoorArc(itemAabb(cx, cz, effW, effD), o, roomWmm, roomDmm)) continue
+
+      // Determine the parallel axis (perpendicular to the opening's wall).
+      // For S/N walls the parallel axis is x; for E/W it's z.
+      const parallelIsX = o.wall === 'S' || o.wall === 'N'
+      const minShift = parallelIsX ? (effW / 2 + (zone.x2 - zone.x1) / 2 + WALL_INSET_MM)
+                                   : (effD / 2 + (zone.z2 - zone.z1) / 2 + WALL_INSET_MM)
+      const zoneCentre = parallelIsX ? (zone.x1 + zone.x2) / 2 : (zone.z1 + zone.z2) / 2
+
+      // Try both directions; pick the one that clears the room AABB and the opening.
+      const trial = (sign: 1 | -1) => {
+        const nx = parallelIsX ? zoneCentre + sign * minShift : cx
+        const nz = parallelIsX ? cz : zoneCentre + sign * minShift
+        const aabb = itemAabb(nx, nz, effW, effD)
+        if (aabb.x1 < 0 || aabb.x2 > roomWmm || aabb.z1 < 0 || aabb.z2 > roomDmm) return null
+        if (rectsIntersect(aabb, zone)) return null
+        return { x: nx, z: nz }
+      }
+      const shifted = trial(1) ?? trial(-1)
+      if (shifted) {
+        warnings.push(
+          `${it.sub_category}: shifted to clear ${o.kind} on ${o.wall} (${Math.round(cx)},${Math.round(cz)}) -> (${Math.round(shifted.x)},${Math.round(shifted.z)})`,
+        )
+        cx = shifted.x
+        cz = shifted.z
+      } else {
+        warnings.push(
+          `${it.sub_category}: blocks ${o.kind} on ${o.wall} at (${Math.round(cx)},${Math.round(cz)}) and won't fit on either side; manual tune needed`,
+        )
+      }
     }
 
     // (4) Containment — clamp to room AABB if outside.
@@ -255,7 +372,11 @@ function placeItems(
     })
   }
 
-  return { placed, warnings }
+  // (6) Post-placement overlap resolution: shift later-placed overlapping items
+  // along their parallel-to-wall axis to clear conflicts.
+  const resolved = resolveOverlaps(placed, roomWmm, roomDmm)
+  warnings.push(...resolved.warnings)
+  return { placed: resolved.items, warnings }
 }
 
 function anchorMm(anchor: 'W' | 'E' | 'C' | 'S' | 'N', offset: number, length: number): number {
@@ -308,6 +429,58 @@ function aabbOverlap(
   return ax1 < bx2 && ax2 > bx1 && az1 < bz2 && az2 > bz1
 }
 
+/** Post-placement pass: for each item that overlaps an earlier-placed item,
+ *  try shifting it ±100mm..±600mm along its parallel-to-wall axis until clear.
+ *  Other items are never moved. If no shift works within budget, warn and accept. */
+function resolveOverlaps(
+  items: ScenePlacedItem[],
+  roomWmm: number,
+  roomDmm: number,
+): { items: ScenePlacedItem[]; warnings: string[] } {
+  const MAX_SHIFT_MM = 600
+  const STEP_MM = 100
+  const warnings: string[] = []
+  const result = items.map((it) => ({ ...it }))
+
+  for (let i = 1; i < result.length; i++) {
+    const cur = result[i]
+    const [curW, curD] = effExtent(cur.width_mm, cur.depth_mm, cur.rotation_deg)
+
+    const hasOverlap = result.slice(0, i).some((prev) => aabbOverlap(cur.x_mm, cur.z_mm, curW, curD, prev))
+    if (!hasOverlap) continue
+
+    // Parallel axis = axis that runs ALONG the wall this item is snapped to.
+    // Back wall S/N → item runs along x. Back wall W/E → item runs along z.
+    const backSide = BACK_WALL_BY_ROT[((cur.rotation_deg % 360) + 360) % 360]
+    const shiftX = backSide === 'S' || backSide === 'N'
+
+    let resolved = false
+    outer: for (let shift = STEP_MM; shift <= MAX_SHIFT_MM; shift += STEP_MM) {
+      for (const sign of [1, -1] as const) {
+        const nx = shiftX ? cur.x_mm + sign * shift : cur.x_mm
+        const nz = shiftX ? cur.z_mm : cur.z_mm + sign * shift
+        if (nx - curW / 2 < WALL_INSET_MM || nx + curW / 2 > roomWmm - WALL_INSET_MM) continue
+        if (nz - curD / 2 < WALL_INSET_MM || nz + curD / 2 > roomDmm - WALL_INSET_MM) continue
+        const clear = !result.slice(0, i).some((prev) => aabbOverlap(nx, nz, curW, curD, prev))
+        if (clear) {
+          warnings.push(
+            `overlap-resolve: ${cur.sub_category} shifted ${shiftX ? 'x' : 'z'} by ${sign * shift}mm from (${cur.x_mm},${cur.z_mm}) → (${nx},${nz})`,
+          )
+          result[i] = { ...cur, x_mm: Math.round(nx), z_mm: Math.round(nz) }
+          resolved = true
+          break outer
+        }
+      }
+    }
+    if (!resolved) {
+      warnings.push(
+        `overlap-resolve: ${cur.sub_category} at (${cur.x_mm},${cur.z_mm}) could not clear within ${MAX_SHIFT_MM}mm — preset tuning needed`,
+      )
+    }
+  }
+  return { items: result, warnings }
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = []
@@ -343,12 +516,10 @@ async function main() {
     length_mm: Math.round(wallLengthMm(walls[side])),
   }))
 
-  // Doors + windows
+  // Door only — no window opening (see note above).
   const doorWall = cardinalize(req.entrance)
-  const windowWall = OPPOSITE[doorWall] as 'N' | 'S' | 'E' | 'W'
   const openings: Opening[] = [
     { wall: doorWall, center_frac: 0.5, ...DOOR, kind: 'door' },
-    { wall: windowWall, center_frac: 0.5, ...WINDOW, kind: 'window' },
   ]
 
   const { placed, warnings } = placeItems(
@@ -356,6 +527,7 @@ async function main() {
     wallsForPlacement,
     req.room_w_mm,
     req.room_d_mm,
+    openings,
   )
 
   const response: SceneResponse = {

@@ -427,6 +427,7 @@ export function PlannerRoute() {
             <CatalogueDrawer
               roomType={room.intake.room_type}
               vibe={room.intake.vibe}
+              philosophy={baseVision.philosophy}
               onAdd={(sku, sub_category) => {
                 void applyOneIntent({ kind: "add", target_item_id: null, parameters: { sku, sub_category } });
               }}
@@ -675,11 +676,13 @@ interface CatalogItem {
 function CatalogueDrawer({
   roomType,
   vibe,
+  philosophy,
   onAdd,
   onClose,
 }: {
   roomType: string;
   vibe: string;
+  philosophy: string;
   onAdd: (sku: string, sub_category: string) => void;
   onClose: () => void;
 }) {
@@ -691,12 +694,15 @@ function CatalogueDrawer({
     setLoading(true);
     const params = new URLSearchParams({ room_type: roomType, limit: "60" });
     if (vibe) params.set("vibe", vibe);
+    // philosophy selects the curated menu for this room character; the backend
+    // falls back to the global hero catalog if it's missing.
+    if (philosophy) params.set("philosophy", philosophy);
     fetch(`/api/catalog?${params}`)
       .then((r) => r.json())
       .then((data) => setItems(data.items ?? []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, [roomType, vibe]);
+  }, [roomType, vibe, philosophy]);
 
   return (
     <div className="pane-animated-entrance" style={{

@@ -10,6 +10,7 @@ from __future__ import annotations
 import uuid
 
 from app.domain.catalog import CatalogQuery, get_catalog
+from app.domain.catalog.presets import get_menu
 from app.domain.solver import DoorOpening, SolverInput, SolverItem, composition_for, solve
 from app.schemas.state import (
     CatalogRef,
@@ -30,16 +31,26 @@ class IntentExecutionError(Exception):
 # ---------- Public API ----------
 
 
-# Intents that are *manual placement* — the user (or the collaborator on the
-# user's behalf) put the item exactly where they want it. Don't re-run the
-# solver afterward, that would undo the move. Everything else changes the item
-# set or sizes, so a re-lay is appropriate.
+# Intents that must NOT trigger a full solver re-run on all items.
+# Key rule: if the user placed something or we handle placement inline, leave
+# every other item at its current (x_mm, z_mm). The old solver reshuffled the
+# whole room on every add/remove — that's the root of the "amateurish" complaint.
 _NO_RESOLVE_KINDS = {
+    # Manual placement — always in this set
     IntentKind.MOVE,
     IntentKind.ROTATE,
+    # Cosmetic only
     IntentKind.RECOLOR_ROOM,
     IntentKind.CHANGE_FABRIC,
     IntentKind.CHANGE_FINISH,
+    IntentKind.CHANGE_STYLE,   # catalog swap in-place; position kept
+    # Structural but handled inline without global re-layout
+    IntentKind.REMOVE,         # just filter, existing items stay put
+    IntentKind.REPLACE,        # swap catalog ref on target only
+    IntentKind.MAKE_BIGGER,    # resize target in-place
+    IntentKind.MAKE_SMALLER,   # resize target in-place
+    IntentKind.DUPLICATE,      # offset copy, no need to re-solve all
+    IntentKind.ADD,            # wall-snap in _add; existing items untouched
 }
 
 
@@ -283,23 +294,47 @@ def _replace(room: RoomState, target_id: str | None, params: dict) -> RoomState 
 
 def _add(room: RoomState, params: dict) -> RoomState | None:
     sku = params.get("sku")
-    catalog = get_catalog()
-    item = catalog.get(sku) if isinstance(sku, str) else None
-    if item is None and isinstance(params.get("sub_category"), str):
-        sub = params["sub_category"]
-        candidates = [
-            c for c in catalog._items  # noqa: SLF001
-            if c.sub_category == sub and room.intake.room_type in c.rooms
-        ]
-        if not candidates:
-            # Relax room constraint — the user asked for it even if the catalog
-            # doesn't list it for this room type (e.g. desk in a living room).
-            candidates = [c for c in catalog._items if c.sub_category == sub]  # noqa: SLF001
-        if candidates:
-            item = min(candidates, key=lambda c: c.price_inr)
+    sub = params.get("sub_category") if isinstance(params.get("sub_category"), str) else None
+
+    # Prefer the curated menu for this (room_type, philosophy) — that's the same
+    # menu the planner drawer serves and the AI sees in its prompt. Round-tripped
+    # SKUs always resolve; sub_category lookups land on a real curated GLB.
+    menu = get_menu(room.intake.room_type.value, room.philosophy) if room.philosophy else {}
+    item = None
+    if isinstance(sku, str):
+        for entry in menu.values():
+            if entry.sku == sku:
+                item = entry
+                break
+    if item is None and sub:
+        item = menu.get(sub)
+
+    # Hero catalog fallback ONLY when the room has no philosophy attached.
+    # When philosophy IS set, refusing unknown subs is safer than serving a hero
+    # SKU that points at a deleted `3df/*.glb` asset — the frontend would silently
+    # fail to render. The drawer/AI both already steer toward menu items.
+    if item is None and not room.philosophy:
+        catalog = get_catalog()
+        item = catalog.get(sku) if isinstance(sku, str) else None
+        if item is None and sub:
+            candidates = [
+                c for c in catalog._items  # noqa: SLF001
+                if c.sub_category == sub and room.intake.room_type in c.rooms
+            ]
+            if not candidates:
+                candidates = [c for c in catalog._items if c.sub_category == sub]  # noqa: SLF001
+            if candidates:
+                item = min(candidates, key=lambda c: c.price_inr)
     if item is None:
         return None
     new_id = f"{item.sub_category}-{uuid.uuid4().hex[:6]}"
+    new_dims = Dimensions(
+        width_mm=item.dimensions.width_mm,
+        depth_mm=item.dimensions.depth_mm,
+        height_mm=item.dimensions.height_mm,
+    )
+    # Find a wall-snapped position that doesn't disturb existing items.
+    position = _wall_snap_place(room, item.category, new_dims)
     placed = PlacedItem(
         id=new_id,
         catalog=CatalogRef(
@@ -315,23 +350,104 @@ def _add(room: RoomState, params: dict) -> RoomState | None:
         name_en=item.name_en,
         name_hi=item.name_hi,
         category=item.category,
-        dimensions=Dimensions(
-            width_mm=item.dimensions.width_mm,
-            depth_mm=item.dimensions.depth_mm,
-            height_mm=item.dimensions.height_mm,
-        ),
-        # Tentative centre = room centre; the solver re-lays it afterward.
-        position=Position(
-            x_mm=room.intake.room_dimensions.width_mm // 2,
-            z_mm=room.intake.room_dimensions.depth_mm // 2,
-            rotation_deg=0,
-        ),
+        dimensions=new_dims,
+        position=position,
         facing=None,
         is_buy=item.category not in {"storage", "tv_unit", "mandir", "kitchen"},
         price_inr=item.price_inr,
         build_price_inr=item.build_price_inr,
     )
     return room.model_copy(update={"items": [*room.items, placed]})
+
+
+# ---------- Smart wall-snap placement for ADD ----------
+
+
+# Preferred wall order by category. First hit that produces a non-overlapping
+# slot wins; if nothing fits, fall back to the first wall's center.
+_WALL_PREFS: dict[str, list[str]] = {
+    "sleeping":  ["opp_entrance", "W", "E", "N", "S"],
+    "seating":   ["W", "E", "S", "N"],
+    "storage":   ["W", "E", "N", "S"],
+    "tv_unit":   ["opp_entrance", "W", "E", "N", "S"],
+    "dining":    ["N", "S", "W", "E"],
+    "mandir":    ["N", "S", "W", "E"],
+    "decor":     ["W", "E", "N", "S"],
+    "lighting":  ["N", "S", "W", "E"],
+}
+_WALL_MARGIN_MM = 150   # mm from wall face to item centre
+_SCAN_STEP_MM = 200     # mm step when scanning along a wall for a clear slot
+_OVERLAP_MARGIN_MM = 100  # minimum clearance between items
+
+
+def _opposite_wall(d: str) -> str:
+    return {"N": "S", "S": "N", "E": "W", "W": "E"}.get(d, "N")
+
+
+def _aabb_overlaps(
+    cx1: int, cz1: int, w1: int, d1: int,
+    cx2: int, cz2: int, w2: int, d2: int,
+    margin: int = _OVERLAP_MARGIN_MM,
+) -> bool:
+    return (
+        abs(cx1 - cx2) < (w1 + w2) / 2 + margin
+        and abs(cz1 - cz2) < (d1 + d2) / 2 + margin
+    )
+
+
+def _slot_clear(
+    items: list[PlacedItem],
+    cx: int, cz: int,
+    new_w: int, new_d: int,
+) -> bool:
+    for i in items:
+        iw, id_ = i.dimensions.width_mm, i.dimensions.depth_mm
+        if int(i.position.rotation_deg) % 180 == 90:
+            iw, id_ = id_, iw
+        if _aabb_overlaps(cx, cz, new_w, new_d, i.position.x_mm, i.position.z_mm, iw, id_):
+            return False
+    return True
+
+
+def _wall_snap_place(room: RoomState, category: str, dims: Dimensions) -> Position:
+    """Return a Position along a preferred wall where the item fits without overlapping
+    existing items. Existing items are never moved."""
+    rw = room.intake.room_dimensions.width_mm
+    rd = room.intake.room_dimensions.depth_mm
+    entrance = room.intake.entrance_direction.value if hasattr(room.intake.entrance_direction, "value") else str(room.intake.entrance_direction)
+    iw, id_ = dims.width_mm, dims.depth_mm
+
+    wall_order = _WALL_PREFS.get(category, ["S", "N", "W", "E"])
+    resolved_walls = [
+        _opposite_wall(entrance) if w == "opp_entrance" else w
+        for w in wall_order
+    ]
+
+    fallback: Position | None = None
+    m = _WALL_MARGIN_MM
+
+    for wall in resolved_walls:
+        if wall in ("S", "N"):
+            # Item long-axis runs along x; depth sticks into the room.
+            eff_w, eff_d = iw, id_
+            z = m + eff_d // 2 if wall == "S" else rd - m - eff_d // 2
+            rot = 0 if wall == "S" else 180
+            for x in range(eff_w // 2 + 200, rw - eff_w // 2 - 200, _SCAN_STEP_MM):
+                if _slot_clear(room.items, x, z, eff_w, eff_d):
+                    return Position(x_mm=x, z_mm=z, rotation_deg=rot)
+            if fallback is None:
+                fallback = Position(x_mm=rw // 2, z_mm=z, rotation_deg=rot)
+        else:  # W or E
+            eff_w, eff_d = id_, iw  # rotated 90° — depth becomes wall-parallel
+            x = m + eff_w // 2 if wall == "W" else rw - m - eff_w // 2
+            rot = 270 if wall == "W" else 90
+            for z in range(eff_d // 2 + 200, rd - eff_d // 2 - 200, _SCAN_STEP_MM):
+                if _slot_clear(room.items, x, z, eff_w, eff_d):
+                    return Position(x_mm=x, z_mm=z, rotation_deg=rot)
+            if fallback is None:
+                fallback = Position(x_mm=x, z_mm=rd // 2, rotation_deg=rot)
+
+    return fallback or Position(x_mm=rw // 2, z_mm=rd // 2, rotation_deg=0)
 
 
 def _mix(

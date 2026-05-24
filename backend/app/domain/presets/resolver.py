@@ -19,8 +19,10 @@ import math
 import uuid
 
 from app.domain.catalog import CatalogQuery, get_catalog
+from app.domain.catalog.presets import get_preset_catalog
 from app.domain.catalog.repository import CatalogRepository
 from app.domain.presets import engine as bp_engine
+from app.domain.presets.compose import apply_composition_rules
 from app.domain.presets.layouts import ALL_PRESETS, get_preset
 from app.domain.presets.model import AnchoredItem, PresetLayout
 from app.domain.vastu import VastuZone, preferred_zone_for_category
@@ -90,14 +92,17 @@ def resolve_preset_via_engine(
     room_d = intake.room_dimensions.depth_mm
 
     # Build AnchoredItemSpec list, picking catalog items first so we can pass
-    # real dimensions to the engine.
-    budget_per_item = intake.budget_inr // max(len(layout.items), 1)
+    # real dimensions to the engine. New catalog lookup is per-preset (see
+    # [[project-per-preset-catalog]]) — each preset has its own dict of
+    # CatalogItems keyed by sub_category. Missing slots (plant/rug/mandir_wall
+    # have no 3D-Front equivalent) are silently skipped.
+    preset_catalog = get_preset_catalog(layout.id)
     spec_items: list[dict] = []
     spec_to_catalog: list = []  # parallel list of catalog items for re-attach
     spec_to_anchored: list[AnchoredItem] = []
 
     for fi in layout.items:
-        catalog_item = _pick_catalog_item(fi, intake, catalog, budget_per_item)
+        catalog_item = preset_catalog.get(fi.sub_category)
         if catalog_item is None:
             continue
         spec_items.append({
@@ -204,6 +209,11 @@ def resolve_preset_via_engine(
         )
         for o in scene.openings
     ]
+
+    # Apply designer composition rules (coffee-table distance, TV alignment,
+    # side-table flanking, bookshelf-clears-window, symmetric pairs,
+    # lounge-chair angle). Uses scene.openings for window positions.
+    placed = apply_composition_rules(placed, intake, scene.openings)
 
     return placed, openings
 

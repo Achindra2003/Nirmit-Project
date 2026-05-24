@@ -77,7 +77,9 @@ class Scene:
 # ── Room-type defaults (per the 2026-05-21 decision) ────────────────────────
 DEFAULT_ROOM_DIMS_MM: dict[str, tuple[int, int]] = {
     "living": (4200, 3600),
-    "bedroom": (3600, 3000),
+    # Bedroom depth bumped to 3500mm (was 3000) so a 2200mm-deep queen bed
+    # plus 900mm door-arc clearance fits — 3000mm was geometrically impossible.
+    "bedroom": (3600, 3500),
     "dining": (3300, 3000),
     "study": (2700, 2400),
     # Fallbacks for room types without 24-preset coverage but that may appear

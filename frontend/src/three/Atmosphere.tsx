@@ -35,18 +35,16 @@ interface PropPlacement {
 }
 
 interface PropSpec extends PropPlacement {
-  kind: "chai" | "book" | "throw" | "plant_potted" | "frame" | "vase" | "diya";
+  kind: "chai" | "book" | "throw" | "plant_potted" | "frame" | "vase" | "diya" | "rug";
+  accent?: string;
 }
 
 function deriveProps(room: RoomState): PropSpec[] {
   const out: PropSpec[] = [];
-  const sofa = room.items.find((i) => i.category === "seating" && /sofa|diwan/i.test(i.name_en));
   const coffee = room.items.find((i) => i.category === "table" && /coffee/i.test(i.name_en));
   const bookshelf = room.items.find((i) => i.category === "storage" && /shelf|book/i.test(i.name_en));
   const mandir = room.items.find((i) => i.category === "mandir");
   const tv = room.items.find((i) => i.category === "tv_unit" || /tv unit/i.test(i.name_en));
-  const w = mmToM(room.intake.room_dimensions.width_mm);
-  const d = mmToM(room.intake.room_dimensions.depth_mm);
 
   // Chai mug + book on the coffee table
   if (coffee) {
@@ -55,17 +53,11 @@ function deriveProps(room: RoomState): PropSpec[] {
     out.push({ kind: "book", x: c.x + 0.18, y: c.h, z: c.z - 0.05, rotation: 0.18 });
   }
 
-  // Throw blanket on the sofa
-  if (sofa) {
-    const c = visualCentreOf(sofa);
-    out.push({
-      kind: "throw",
-      x: c.x + (sofa.dimensions.width_mm * 0.0015),
-      y: c.h,
-      z: c.z + 0.02,
-      rotation: -0.05,
-    });
-  }
+  // The procedural throw blanket on the sofa + procedural rug under the
+  // conversation were removed (2026-05-23). The throw read as a floating red
+  // rectangle to users; the rug fought with the real `rug` GLB people now add
+  // from the curated menu. Atmosphere is for small accent props (chai, book,
+  // diya, vase) — anything sofa- or floor-sized should be a real catalog item.
 
   // Books on the bookshelf
   if (bookshelf) {
@@ -86,11 +78,8 @@ function deriveProps(room: RoomState): PropSpec[] {
     out.push({ kind: "vase", x: c.x - 0.5, y: c.h, z: c.z, scale: 0.85 });
   }
 
-  // Potted plant near the window-facing corner of the room.
-  out.push({ kind: "plant_potted", x: w - 0.45, y: 0, z: d - 0.45 });
-
-  // Picture frame on a long wall (just a hint of art on the entrance wall).
-  out.push({ kind: "frame", x: w / 2 - 1.2, y: 1.5, z: 0.06, rotation: 0 });
+  // The hard-coded picture frame on the entrance wall was also removed — when
+  // users add a real wall_art SKU, the procedural frame double-stacked on it.
 
   return out;
 }
@@ -104,7 +93,7 @@ function visualCentreOf(item: PlacedItem) {
   };
 }
 
-function AtmosphereProp({ kind, x, y, z, rotation = 0, scale = 1 }: PropSpec) {
+function AtmosphereProp({ kind, x, y, z, rotation = 0, scale = 1, accent }: PropSpec) {
   switch (kind) {
     case "chai":
       return <ChaiMug x={x} y={y} z={z} rotation={rotation} scale={scale} />;
@@ -120,6 +109,8 @@ function AtmosphereProp({ kind, x, y, z, rotation = 0, scale = 1 }: PropSpec) {
       return <Vase x={x} y={y} z={z} scale={scale} />;
     case "diya":
       return <Diya x={x} y={y} z={z} />;
+    case "rug":
+      return <Rug x={x} y={y} z={z} rotation={rotation} accent={accent} />;
   }
 }
 
@@ -235,6 +226,28 @@ function Diya({ x, y, z }: PropPlacement) {
         <meshStandardMaterial color="#ffb347" emissive="#ffb347" emissiveIntensity={1.5} />
       </mesh>
       <pointLight position={[0, 0.04, 0]} intensity={0.4} color="#ffb347" distance={1.2} decay={2} />
+    </group>
+  );
+}
+
+function Rug({ x, y, z, rotation = 0, accent = "#8B6347" }: PropPlacement & { accent?: string }) {
+  return (
+    <group position={[x, y, z]} rotation={[0, rotation, 0]}>
+      {/* Base rug plane — 2.4 × 1.6m */}
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2.4, 1.6]} />
+        <meshStandardMaterial color={accent} roughness={0.9} />
+      </mesh>
+      {/* Inner border — slightly lighter, inset 80mm */}
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]}>
+        <planeGeometry args={[2.24, 1.44]} />
+        <meshStandardMaterial color={accent} roughness={0.85} opacity={0.6} transparent />
+      </mesh>
+      {/* Centre motif — small diamond */}
+      <mesh receiveShadow rotation={[-Math.PI / 2, Math.PI / 4, 0]} position={[0, 0.002, 0]}>
+        <planeGeometry args={[0.4, 0.4]} />
+        <meshStandardMaterial color={accent} roughness={0.8} opacity={0.5} transparent />
+      </mesh>
     </group>
   );
 }

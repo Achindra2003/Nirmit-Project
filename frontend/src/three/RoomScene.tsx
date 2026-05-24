@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import type { Direction, RoomState } from "@/api/types";
+import type { Direction, Opening, RoomState } from "@/api/types";
 import { GlbItem } from "./GlbItem";
 import { RoomShell, type WallRefs } from "./RoomShell";
 import { Lighting } from "./Lighting";
@@ -88,7 +88,7 @@ export function RoomScene({
       <Environment preset="apartment" background={false} environmentIntensity={0.85} />
 
       <RoomShell room={room} wallRefs={wallRefs} />
-      <WallFader wallRefs={wallRefs} roomW={w} roomD={d} />
+      <WallFader wallRefs={wallRefs} roomW={w} roomD={d} openings={room.openings ?? []} />
 
       {/* Items + atmosphere in a frame whose origin is the room corner. */}
       <group position={[-w / 2, 0, -d / 2]}>
@@ -137,7 +137,12 @@ interface WallSpec {
   outwardSign: 1 | -1; // +1 if outward normal points along +axis
 }
 
-function WallFader({ wallRefs, roomW, roomD }: { wallRefs: React.MutableRefObject<WallRefs>; roomW: number; roomD: number }) {
+function WallFader({ wallRefs, roomW, roomD, openings }: {
+  wallRefs: React.MutableRefObject<WallRefs>;
+  roomW: number; roomD: number;
+  openings: readonly Opening[];
+}) {
+  void openings;
   const { camera } = useThree();
   // Track current opacity per wall in a ref so the lerp persists across renders
   // without mutating stale material instances.
@@ -151,6 +156,11 @@ function WallFader({ wallRefs, roomW, roomD }: { wallRefs: React.MutableRefObjec
     ],
     [roomW, roomD],
   );
+  // depthWrite needs to be STABLE per frame — toggling it at the opacity 0.5
+  // boundary used to make doors + items near a fading wall visibly twitch each
+  // frame. Track the last-applied state in a ref and only flip with hysteresis
+  // (off below 0.45, on above 0.95). Within the dead band, keep prior state.
+  const depthWriteRef = useRef<Record<string, boolean>>({ S: true, N: true, W: true, E: true });
   useFrame(() => {
     for (const wall of walls) {
       const mesh = wallRefs.current[wall.key];
@@ -159,12 +169,23 @@ function WallFader({ wallRefs, roomW, roomD }: { wallRefs: React.MutableRefObjec
       if (!mat?.isMeshStandardMaterial) continue;
       const camCoord = wall.axis === "x" ? camera.position.x : camera.position.z;
       const camToPlaneOutside = (camCoord - wall.plane) * wall.outwardSign;
-      const target = camToPlaneOutside > 0.3 ? 0.06 : camToPlaneOutside < -0.3 ? 1.0 : 0.06 + ((-camToPlaneOutside + 0.3) / 0.6) * 0.94;
+      const floor = 0.06;
+      const span = 1.0 - floor;
+      const target = camToPlaneOutside > 0.3
+        ? floor
+        : camToPlaneOutside < -0.3
+          ? 1.0
+          : floor + ((-camToPlaneOutside + 0.3) / 0.6) * span;
       const cur = opacityRef.current[wall.key] ?? 1;
       const next = cur + (target - cur) * 0.18;
       opacityRef.current[wall.key] = next;
       mat.opacity = next;
-      mat.depthWrite = next > 0.5;
+      const prevDW = depthWriteRef.current[wall.key];
+      const nextDW = next >= 0.95 ? true : next <= 0.45 ? false : prevDW;
+      if (nextDW !== prevDW) {
+        mat.depthWrite = nextDW;
+        depthWriteRef.current[wall.key] = nextDW;
+      }
     }
   });
   return null;
@@ -196,7 +217,10 @@ function CameraController({
   const presetFor = (v: CameraView): { pos: THREE.Vector3; tgt: THREE.Vector3 } => {
     const cx = 0, cz = 0;
     if (v === "top") {
-      return { pos: new THREE.Vector3(cx, Math.max(roomW, roomD) * 1.5, cz + 0.01), tgt: new THREE.Vector3(cx, 0, cz) };
+      // Camera nudged SOUTH of target so screen-up = +z (north) — matches the
+      // Planner2D convention (north at top of canvas). The 0.01 epsilon avoids
+      // the gimbal singularity from a perfectly vertical look-down.
+      return { pos: new THREE.Vector3(cx, Math.max(roomW, roomD) * 1.5, cz - 0.01), tgt: new THREE.Vector3(cx, 0, cz) };
     }
     if (v === "eye" || v === "walk") {
       // Stand just inside the entrance wall, looking into the room.

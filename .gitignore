@@ -4,6 +4,11 @@ _legacy_poc/dist/
 frontend/dist/
 backend/__pycache__/
 backend/data/3d-front/
+# Sweet Home 3D source data (897MB) — pulled locally by scripts/curate_from_sh3d.py
+backend/data/sweethome3d/
+# Converted GLB mesh library (307MB) — too large for git, regenerated from
+# the SH3D sources via scripts/convert_sh3d.mjs.
+frontend/public/models/sh3d/
 temp_models/
 .vscode/
 *.log

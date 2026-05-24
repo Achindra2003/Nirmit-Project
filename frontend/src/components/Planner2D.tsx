@@ -11,7 +11,7 @@
  * drag (snap to 50mm + walls) and double-click to rotate 90°.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Direction, PlacedItem, RoomState } from "@/api/types";
+import type { Direction, Opening, PlacedItem, RoomState } from "@/api/types";
 import { useAppStore } from "@/store/useAppStore";
 
 const PAD = 64;
@@ -55,9 +55,14 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
     const svg = svgRef.current;
     if (!svg) return { x: 0, z: 0 };
     const r = svg.getBoundingClientRect();
+    // Canvas convention: N at top, S at bottom. Backend convention: z=0 at the
+    // entrance (south wall), z=dMm at the opposite wall (north). So canvas y
+    // and backend z run in OPPOSITE directions — invert here so the cursor's
+    // canvas y maps to the right backend z.
+    const canvasMmY = (clientY - r.top) / r.height * svgH - oy;
     return {
       x: Math.round(((clientX - r.left) / r.width * svgW - ox) / scale),
-      z: Math.round(((clientY - r.top) / r.height * svgH - oy) / scale),
+      z: Math.round(dMm - canvasMmY / scale),
     };
   }
 
@@ -99,7 +104,32 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
     return snapCentre(drag.curMm.x - drag.offMm.x, drag.curMm.z - drag.offMm.z, item, wMm, dMm);
   }, [drag, room, wMm, dMm]);
 
-  const winSide = oppositeWall(room.intake.entrance_direction);
+  // Drive door + window marks from room.openings[]. Fall back to entrance-based
+  // defaults (legacy behaviour) only when the backend hasn't emitted any.
+  const entrance = room.intake.entrance_direction;
+  const openings: Opening[] = room.openings ?? [];
+  const doorOpenings = openings.filter((o) => o.kind === "door");
+  const windowOpenings = openings.filter((o) => o.kind === "window");
+  const effectiveDoors: Opening[] = doorOpenings.length > 0 ? doorOpenings : [{
+    wall: entrance,
+    center_frac: 0.5,
+    width_mm: 900,
+    height_mm: 2100,
+    kind: "door",
+    sill_mm: 0,
+  }];
+  const effectiveWindows: Opening[] = windowOpenings.length > 0 ? windowOpenings : (() => {
+    const fallbackWall = oppositeWall(entrance);
+    const isNS = fallbackWall === "N" || fallbackWall === "S";
+    return [{
+      wall: fallbackWall,
+      center_frac: 0.5,
+      width_mm: Math.round((isNS ? wMm : dMm) * 0.5),
+      height_mm: 1400,
+      sill_mm: 850,
+      kind: "window",
+    }];
+  })();
 
   return (
     <svg
@@ -135,10 +165,25 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
       <rect x={ox - wallPx / 2} y={oy - wallPx / 2} width={wPx + wallPx} height={dPx + wallPx} fill="none" stroke="#1a1410" strokeWidth={1.4} />
       <rect x={ox} y={oy} width={wPx} height={dPx} fill="none" stroke={darkenHex(accentTone, 0.1)} strokeWidth={0.7} opacity={0.5} />
 
-      {/* Door swing arc + opening */}
-      <DoorMark entrance={room.intake.entrance_direction} ox={ox} oy={oy} wPx={wPx} dPx={dPx} />
-      {/* Window */}
-      <WindowMark side={winSide} ox={ox} oy={oy} wPx={wPx} dPx={dPx} />
+      {/* Door swing arcs + openings (one per door in room.openings[]) */}
+      {effectiveDoors.map((opening, i) => (
+        <DoorMark
+          key={`door-${i}-${opening.wall}`}
+          opening={opening}
+          ox={ox} oy={oy} wPx={wPx} dPx={dPx}
+          wMm={wMm} dMm={dMm} scale={scale}
+          label={i === 0 ? "Entrance" : undefined}
+        />
+      ))}
+      {/* Windows (one per window in room.openings[]) */}
+      {effectiveWindows.map((opening, i) => (
+        <WindowMark
+          key={`win-${i}-${opening.wall}`}
+          opening={opening}
+          ox={ox} oy={oy} wPx={wPx} dPx={dPx}
+          wMm={wMm} dMm={dMm} scale={scale}
+        />
+      ))}
 
       {/* Furniture */}
       {room.items.map((item) => {
@@ -151,6 +196,7 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
             cMm={cMm}
             ox={ox}
             oy={oy}
+            dMm={dMm}
             scale={scale}
             accentTone={accentTone}
             selected={selectedItemId === item.id}
@@ -189,6 +235,7 @@ function ItemRect({
   cMm,
   ox,
   oy,
+  dMm,
   scale,
   accentTone,
   selected,
@@ -201,6 +248,7 @@ function ItemRect({
   cMm: { x: number; z: number };
   ox: number;
   oy: number;
+  dMm: number;
   scale: number;
   accentTone: string;
   selected: boolean;
@@ -212,13 +260,24 @@ function ItemRect({
   const w = item.dimensions.width_mm * scale;
   const d = item.dimensions.depth_mm * scale;
   const cx = ox + cMm.x * scale;
-  const cy = oy + cMm.z * scale;
+  // Canvas convention: N at top, S at bottom (the door for entrance=S is drawn
+  // at the bottom). Backend convention: z=0 is south, z=dMm is north. So we
+  // invert z so a sofa with its back to the south wall actually renders against
+  // the bottom of the canvas, not the top.
+  const cy = oy + (dMm - cMm.z) * scale;
+  // The local rect has "back" at -y / "front" at +y (front-tick line below).
+  // After the z-flip, the local +y now points NORTH on canvas — we need front
+  // to point in the direction backend rot says it faces, so add 180° to the
+  // rotation so the local front lands at canvas's south direction at rot=0.
+  // Pattern: rot=0 → SVG 180 → front north; rot=90 → SVG 270 → front east;
+  //          rot=180 → SVG 0 → front south; rot=270 → SVG 90 → front west.
   const rot = item.position.rotation_deg;
+  const svgRot = (180 + rot) % 360;
   const fill = item.catalog.tint_hex ?? categoryFill(item.category);
   // Stroke picks up the scene's accent so all items share the room's trim
   // language — keeps the 2D and 3D feeling cohesive.
   const stroke = selected ? "#D4A574" : darkenHex(accentTone, 0.18);
-  const transform = `translate(${cx} ${cy}) rotate(${rot})`;
+  const transform = `translate(${cx} ${cy}) rotate(${svgRot})`;
   const labelSize = Math.min(11, Math.max(8, w / 9));
   return (
     <g>
@@ -271,19 +330,22 @@ function ItemRect({
         {/* Front-edge tick */}
         <line x1={-w * 0.32} y1={d / 2 - 3} x2={w * 0.32} y2={d / 2 - 3} stroke="rgba(255,255,255,0.92)" strokeWidth={1.8} strokeLinecap="round" />
         {w > 26 && d > 24 && (
-          <text
-            x={0}
-            y={4}
-            fontSize={labelSize}
-            fill="rgba(255,255,255,0.96)"
-            fontFamily="'Inter', ui-sans-serif, system-ui, sans-serif"
-            fontWeight={500}
-            textAnchor="middle"
-            pointerEvents="none"
-            style={{ letterSpacing: "0.02em" }}
-          >
-            {short(item.name_en, 16)}
-          </text>
+          // Counter-rotate so the label stays upright regardless of item rotation.
+          <g transform={`rotate(${-svgRot})`}>
+            <text
+              x={0}
+              y={4}
+              fontSize={labelSize}
+              fill="rgba(255,255,255,0.96)"
+              fontFamily="'Inter', ui-sans-serif, system-ui, sans-serif"
+              fontWeight={500}
+              textAnchor="middle"
+              pointerEvents="none"
+              style={{ letterSpacing: "0.02em" }}
+            >
+              {short(item.name_en, 16)}
+            </text>
+          </g>
         )}
       </g>
     </g>
@@ -332,61 +394,84 @@ function DraftIcon({ category, w, d }: { category: string; w: number; d: number 
   return null;
 }
 
-function DoorMark({ entrance, ox, oy, wPx, dPx }: { entrance: Direction; ox: number; oy: number; wPx: number; dPx: number }) {
-  const arc = Math.min(60, Math.max(30, Math.min(wPx, dPx) * 0.16));
-  // Entrance wall: opposite of the window. We place the door at the mid of the entrance wall.
-  const wall: Direction = entrance; // entrance faces this direction, so the wall on the near side
+function DoorMark({ opening, ox, oy, wPx, dPx, wMm, dMm, scale, label }: {
+  opening: Opening;
+  ox: number; oy: number; wPx: number; dPx: number;
+  wMm: number; dMm: number; scale: number;
+  label?: string;
+}) {
+  const wall = opening.wall;
+  const isNS = wall === "N" || wall === "S";
+  const doorWPx = opening.width_mm * scale;
+  const half = doorWPx / 2;
+  const arc = Math.min(60, Math.max(30, doorWPx * 0.85));
+  const centerMm = (isNS ? wMm : dMm) * opening.center_frac;
   let line: { x1: number; y1: number; x2: number; y2: number };
   let path: string;
-  let label: { x: number; y: number };
+  let lbl: { x: number; y: number };
   if (wall === "S") {
-    line = { x1: ox + wPx * 0.42, y1: oy + dPx, x2: ox + wPx * 0.58, y2: oy + dPx };
-    path = `M ${ox + wPx * 0.42} ${oy + dPx} A ${arc} ${arc} 0 0 1 ${ox + wPx * 0.42 + arc} ${oy + dPx - arc}`;
-    label = { x: ox + wPx * 0.5 - 24, y: oy + dPx + 18 };
+    const cx = ox + centerMm * scale;
+    line = { x1: cx - half, y1: oy + dPx, x2: cx + half, y2: oy + dPx };
+    path = `M ${cx - half} ${oy + dPx} A ${arc} ${arc} 0 0 1 ${cx - half + arc} ${oy + dPx - arc}`;
+    lbl = { x: cx - 24, y: oy + dPx + 18 };
   } else if (wall === "N") {
-    line = { x1: ox + wPx * 0.42, y1: oy, x2: ox + wPx * 0.58, y2: oy };
-    path = `M ${ox + wPx * 0.58} ${oy} A ${arc} ${arc} 0 0 1 ${ox + wPx * 0.58 - arc} ${oy + arc}`;
-    label = { x: ox + wPx * 0.5 - 24, y: oy - 8 };
+    const cx = ox + centerMm * scale;
+    line = { x1: cx - half, y1: oy, x2: cx + half, y2: oy };
+    path = `M ${cx + half} ${oy} A ${arc} ${arc} 0 0 1 ${cx + half - arc} ${oy + arc}`;
+    lbl = { x: cx - 24, y: oy - 8 };
   } else if (wall === "W") {
-    line = { x1: ox, y1: oy + dPx * 0.42, x2: ox, y2: oy + dPx * 0.58 };
-    path = `M ${ox} ${oy + dPx * 0.42} A ${arc} ${arc} 0 0 1 ${ox + arc} ${oy + dPx * 0.42 + arc}`;
-    label = { x: ox + 6, y: oy + dPx * 0.5 + 16 };
+    const cy = oy + centerMm * scale;
+    line = { x1: ox, y1: cy - half, x2: ox, y2: cy + half };
+    path = `M ${ox} ${cy - half} A ${arc} ${arc} 0 0 1 ${ox + arc} ${cy - half + arc}`;
+    lbl = { x: ox + 6, y: cy + 16 };
   } else {
-    line = { x1: ox + wPx, y1: oy + dPx * 0.42, x2: ox + wPx, y2: oy + dPx * 0.58 };
-    path = `M ${ox + wPx} ${oy + dPx * 0.58} A ${arc} ${arc} 0 0 1 ${ox + wPx - arc} ${oy + dPx * 0.58 - arc}`;
-    label = { x: ox + wPx - 56, y: oy + dPx * 0.5 + 16 };
+    const cy = oy + centerMm * scale;
+    line = { x1: ox + wPx, y1: cy - half, x2: ox + wPx, y2: cy + half };
+    path = `M ${ox + wPx} ${cy + half} A ${arc} ${arc} 0 0 1 ${ox + wPx - arc} ${cy + half - arc}`;
+    lbl = { x: ox + wPx - 56, y: cy + 16 };
   }
   return (
     <g pointerEvents="none">
       <line {...line} stroke="#f4efe6" strokeWidth={8} />
       <line {...line} stroke="#2a2218" strokeWidth={2} />
       <path d={path} fill="none" stroke="#2a2218" strokeWidth={1} strokeDasharray="4 3" />
-      <text x={label.x} y={label.y} fontSize={11} fill="#2a2218" fontFamily="ui-monospace, monospace">Entrance</text>
+      {label && <text x={lbl.x} y={lbl.y} fontSize={11} fill="#2a2218" fontFamily="ui-monospace, monospace">{label}</text>}
     </g>
   );
 }
 
-function WindowMark({ side, ox, oy, wPx, dPx }: { side: Direction; ox: number; oy: number; wPx: number; dPx: number }) {
-  const isNS = side === "N" || side === "S";
-  const span = (isNS ? wPx : dPx) * 0.5;
+function WindowMark({ opening, ox, oy, wPx, dPx, wMm, dMm, scale }: {
+  opening: Opening;
+  ox: number; oy: number; wPx: number; dPx: number;
+  wMm: number; dMm: number; scale: number;
+}) {
+  const wall = opening.wall;
+  const isNS = wall === "N" || wall === "S";
+  const winWPx = opening.width_mm * scale;
+  const half = winWPx / 2;
+  const centerMm = (isNS ? wMm : dMm) * opening.center_frac;
   let rect: { x: number; y: number; w: number; h: number };
   let label: { x: number; y: number };
-  if (side === "S") {
-    rect = { x: ox + wPx / 2 - span / 2, y: oy + dPx - 4, w: span, h: 8 };
-    label = { x: ox + wPx / 2 - 18, y: oy + dPx + 18 };
-  } else if (side === "N") {
-    rect = { x: ox + wPx / 2 - span / 2, y: oy - 4, w: span, h: 8 };
-    label = { x: ox + wPx / 2 - 18, y: oy - 8 };
-  } else if (side === "W") {
-    rect = { x: ox - 4, y: oy + dPx / 2 - span / 2, w: 8, h: span };
-    label = { x: ox - 52, y: oy + dPx / 2 };
+  if (wall === "S") {
+    const cx = ox + centerMm * scale;
+    rect = { x: cx - half, y: oy + dPx - 4, w: winWPx, h: 8 };
+    label = { x: cx - 18, y: oy + dPx + 18 };
+  } else if (wall === "N") {
+    const cx = ox + centerMm * scale;
+    rect = { x: cx - half, y: oy - 4, w: winWPx, h: 8 };
+    label = { x: cx - 18, y: oy - 8 };
+  } else if (wall === "W") {
+    const cy = oy + centerMm * scale;
+    rect = { x: ox - 4, y: cy - half, w: 8, h: winWPx };
+    label = { x: ox - 52, y: cy };
   } else {
-    rect = { x: ox + wPx - 4, y: oy + dPx / 2 - span / 2, w: 8, h: span };
-    label = { x: ox + wPx + 6, y: oy + dPx / 2 };
+    const cy = oy + centerMm * scale;
+    rect = { x: ox + wPx - 4, y: cy - half, w: 8, h: winWPx };
+    label = { x: ox + wPx + 6, y: cy };
   }
   return (
     <g pointerEvents="none">
-      <rect {...{ x: rect.x, y: rect.y, width: rect.w, height: rect.h }} fill="#cfe6f4" stroke="#3a5a7a" strokeWidth={1.2} />
+      <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} fill="#cfe6f4" stroke="#3a5a7a" strokeWidth={1.2} />
       <text x={label.x} y={label.y} fontSize={11} fill="#3a5a7a" fontFamily="ui-monospace, monospace">Window</text>
     </g>
   );

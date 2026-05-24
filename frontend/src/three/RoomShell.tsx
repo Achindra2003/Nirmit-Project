@@ -12,15 +12,12 @@
  */
 import { forwardRef, useMemo } from "react";
 import * as THREE from "three";
-import type { Direction, RoomState } from "@/api/types";
+import type { Direction, Opening, RoomState } from "@/api/types";
 import { mmToM } from "./units";
 
 const WALL_T = 0.12; // 120mm wall thickness
 const BASE_H = 0.1;
 const BASE_D = 0.018;
-const WIN_H = 1.4;
-const WIN_SILL = 0.85;
-const WIN_FRAC = 0.55;
 const DOOR_W = 0.9;  // 900mm door width
 const DOOR_H = 2.1;  // 2100mm door height
 
@@ -47,8 +44,11 @@ export function RoomShell({ room, wallRefs }: Props) {
   const wallFinish = room.wall_finish ?? "off-white limewash";
 
   const floorMat = useMemo(() => makeFloorMaterial(flooring, palette.floor ?? "#B89B7A"), [flooring, palette.floor]);
+  // Single material shared by all four walls so palette changes apply uniformly.
+  // (Previously side walls were lighten(wallColor, 0.06), which left W/E walls
+  // visually unchanged when the user re-coloured the room.)
   const wallMatBack = useMemo(() => makeWallMaterial(wallColor, wallFinish), [wallColor, wallFinish]);
-  const wallMatSide = useMemo(() => makeWallMaterial(lighten(wallColor, 0.06), wallFinish), [wallColor, wallFinish]);
+  const wallMatSide = wallMatBack;
   const ceilMat = useMemo(
     () => new THREE.MeshStandardMaterial({
       map: makeWallTexture("#F8F4ED", "matte"),
@@ -59,18 +59,32 @@ export function RoomShell({ room, wallRefs }: Props) {
     [],
   );
   const baseMat = useMemo(() => new THREE.MeshStandardMaterial({ color: lighten(accent, 0.12), roughness: 0.55 }), [accent]);
-  const glassMat = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: "#dcecf6", roughness: 0.04, metalness: 0.1, transparent: true, opacity: 0.28 }),
-    [],
-  );
-  const frameMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#4a4035", roughness: 0.6 }), []);
 
   const entrance = room.intake.entrance_direction;
-  const windowWall = oppositeWall(entrance);
+
+  // Window rendering removed (2026-05-23): the window+curtains never read
+  // convincingly as a window — read more as a glowing rectangle on a flat wall.
+  // Only the entrance door punctures a wall; every other wall is solid.
+  const openings: Opening[] = room.openings ?? [];
+  const doorsByWall = new Map<Direction, Opening>();
+  for (const o of openings) {
+    if (o.kind === "door" && !doorsByWall.has(o.wall)) doorsByWall.set(o.wall, o);
+  }
+  if (doorsByWall.size === 0) {
+    doorsByWall.set(entrance, {
+      wall: entrance,
+      center_frac: 0.5,
+      width_mm: DOOR_W * 1000,
+      height_mm: DOOR_H * 1000,
+      kind: "door",
+      sill_mm: 0,
+    });
+  }
 
   function wallOrDoor(dir: Direction, pos: [number, number, number], args: [number, number, number], mat: THREE.Material, refKey: keyof WallRefs) {
-    if (dir === entrance) {
-      return <DoorWall dir={dir} w={w} d={d} h={h} material={mat} wallRef={(m) => (wallRefs.current[refKey] = m)} />;
+    const door = doorsByWall.get(dir);
+    if (door) {
+      return <DoorWall dir={dir} w={w} d={d} h={h} door={door} material={mat} wallRef={(m) => (wallRefs.current[refKey] = m)} />;
     }
     return <WallBox ref={(m) => (wallRefs.current[refKey] = m)} position={pos} args={args} material={mat} />;
   }
@@ -88,8 +102,18 @@ export function RoomShell({ room, wallRefs }: Props) {
       </mesh>
       <mesh position={[0, h - 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[Math.min(w, d) * 0.22, Math.min(w, d) * 0.25, 32]} />
-        <meshStandardMaterial color="#fff3da" emissive="#ffe4b5" emissiveIntensity={0.35} side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#fff3da" emissive="#ffe4b5" emissiveIntensity={0.6} side={THREE.DoubleSide} />
       </mesh>
+      {/* Actual point light at the ceiling fixture so the room has a soft warm
+          interior glow on top of the daylight from the window. Without this the
+          ring was emissive-only and contributed no illumination. */}
+      <pointLight
+        position={[0, h - 0.18, 0]}
+        intensity={0.55}
+        color="#ffd9a0"
+        distance={Math.max(w, d) * 1.6}
+        decay={1.5}
+      />
 
       {wallOrDoor("S", [0, h / 2, -d / 2 + WALL_T / 2], [w + WALL_T, h, WALL_T], wallMatBack, "S")}
       {wallOrDoor("N", [0, h / 2, d / 2 - WALL_T / 2], [w + WALL_T, h, WALL_T], wallMatBack, "N")}
@@ -101,7 +125,8 @@ export function RoomShell({ room, wallRefs }: Props) {
       <mesh position={[-w / 2 + WALL_T + BASE_D / 2, BASE_H / 2, 0]}><boxGeometry args={[BASE_D, BASE_H, d]} /><primitive object={baseMat} attach="material" /></mesh>
       <mesh position={[w / 2 - WALL_T - BASE_D / 2, BASE_H / 2, 0]}><boxGeometry args={[BASE_D, BASE_H, d]} /><primitive object={baseMat} attach="material" /></mesh>
 
-      <WindowOnWall wall={windowWall} w={w} d={d} glass={glassMat} frame={frameMat} />
+      {/* Crown molding — 40mm tall × 30mm deep ring at ceiling perimeter */}
+      <CrownMolding w={w} d={d} h={h} mat={baseMat} />
     </group>
   );
 }
@@ -117,77 +142,157 @@ const WallBox = forwardRef<THREE.Mesh, { position: [number, number, number]; arg
   },
 );
 
-/** Entrance wall split into left-panel + right-panel + lintel, leaving a DOOR_W × DOOR_H gap at center. */
-function DoorWall({ dir, w, d, h, material, wallRef }: {
+const DOOR_LEAF_T = 0.038; // 38mm door leaf thickness
+const TRIM_W = 0.012;      // 12mm frame trim width
+
+/** Thin crown molding ring at the top of all four walls. */
+function CrownMolding({ w, d, h, mat }: { w: number; d: number; h: number; mat: THREE.Material }) {
+  const mH = 0.04;  // 40mm tall
+  const mD = 0.03;  // 30mm deep
+  const y = h - mH / 2 - 0.01;
+  return (
+    <group>
+      <mesh position={[0, y, -d / 2 + mD / 2]}><boxGeometry args={[w, mH, mD]} /><primitive object={mat} attach="material" /></mesh>
+      <mesh position={[0, y, d / 2 - mD / 2]}><boxGeometry args={[w, mH, mD]} /><primitive object={mat} attach="material" /></mesh>
+      <mesh position={[-w / 2 + mD / 2, y, 0]}><boxGeometry args={[mD, mH, d]} /><primitive object={mat} attach="material" /></mesh>
+      <mesh position={[w / 2 - mD / 2, y, 0]}><boxGeometry args={[mD, mH, d]} /><primitive object={mat} attach="material" /></mesh>
+    </group>
+  );
+}
+
+/** Door wall: split into left-panel + right-panel + lintel, leaving the opening's gap at its center_frac.
+ *  Includes procedural door leaf (wood), frame trim, and handle. */
+function DoorWall({ dir, w, d, h, door, material, wallRef }: {
   dir: Direction; w: number; d: number; h: number;
+  door: Opening;
   material: THREE.Material;
   wallRef: (m: THREE.Mesh | null) => void;
 }) {
+  const doorLeafMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#5c3d1e", roughness: 0.68, metalness: 0 }), []);
+  const trimMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#3a2512", roughness: 0.6, metalness: 0 }), []);
+  const handleMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#b8b8b8", roughness: 0.18, metalness: 0.85 }), []);
+
   const isNS = dir === "N" || dir === "S";
   const wallLen = isNS ? w + WALL_T : d + WALL_T;
-  const panelLen = Math.max(0.01, (wallLen - DOOR_W) / 2);
-  const lintelH = Math.max(0, h - DOOR_H);
-  const halfGap = DOOR_W / 2;
+  const interiorLen = isNS ? w : d;
+  const doorW = mmToM(door.width_mm);
+  const doorH = mmToM(door.height_mm);
+  // center_frac=0.5 puts the gap dead-centre (matches legacy behaviour).
+  const doorCenter = -interiorLen / 2 + interiorLen * door.center_frac;
+  const halfGap = doorW / 2;
+  const wallMin = -wallLen / 2;
+  const wallMax = wallLen / 2;
+  const leftLen = Math.max(0.01, (doorCenter - halfGap) - wallMin);
+  const rightLen = Math.max(0.01, wallMax - (doorCenter + halfGap));
+  const leftMid = (wallMin + (doorCenter - halfGap)) / 2;
+  const rightMid = ((doorCenter + halfGap) + wallMax) / 2;
+  const lintelH = Math.max(0, h - doorH);
+  const handleH = 1.0; // handle at 1.0 m
 
   if (isNS) {
     const z = dir === "S" ? -d / 2 + WALL_T / 2 : d / 2 - WALL_T / 2;
+    // Door leaf flush in the opening so it doesn't obstruct walk / entrance camera.
+    // (The frame trim around the gap is enough to read "doorway" without the
+    // swinging leaf blocking interior sightlines.)
+    const hingeX = doorCenter - halfGap;
+    const openAngle = 0;
     return (
       <group>
-        <mesh ref={wallRef} position={[-(halfGap + panelLen / 2), h / 2, z]} receiveShadow>
-          <boxGeometry args={[panelLen, h, WALL_T]} />
+        {/* Wall panels */}
+        <mesh ref={wallRef} position={[leftMid, h / 2, z]} receiveShadow>
+          <boxGeometry args={[leftLen, h, WALL_T]} />
           <primitive object={material} attach="material" />
         </mesh>
-        <mesh position={[halfGap + panelLen / 2, h / 2, z]} receiveShadow>
-          <boxGeometry args={[panelLen, h, WALL_T]} />
+        <mesh position={[rightMid, h / 2, z]} receiveShadow>
+          <boxGeometry args={[rightLen, h, WALL_T]} />
           <primitive object={material} attach="material" />
         </mesh>
         {lintelH > 0.005 && (
-          <mesh position={[0, DOOR_H + lintelH / 2, z]} receiveShadow>
-            <boxGeometry args={[DOOR_W, lintelH, WALL_T]} />
+          <mesh position={[doorCenter, doorH + lintelH / 2, z]} receiveShadow>
+            <boxGeometry args={[doorW, lintelH, WALL_T]} />
             <primitive object={material} attach="material" />
           </mesh>
         )}
+        {/* Frame trim */}
+        <mesh position={[doorCenter - halfGap - TRIM_W / 2, doorH / 2, z]} castShadow>
+          <boxGeometry args={[TRIM_W, doorH, WALL_T + 0.01]} />
+          <primitive object={trimMat} attach="material" />
+        </mesh>
+        <mesh position={[doorCenter + halfGap + TRIM_W / 2, doorH / 2, z]} castShadow>
+          <boxGeometry args={[TRIM_W, doorH, WALL_T + 0.01]} />
+          <primitive object={trimMat} attach="material" />
+        </mesh>
+        <mesh position={[doorCenter, doorH + TRIM_W / 2, z]} castShadow>
+          <boxGeometry args={[doorW + TRIM_W * 2, TRIM_W, WALL_T + 0.01]} />
+          <primitive object={trimMat} attach="material" />
+        </mesh>
+        {/* Door leaf + handle */}
+        <group position={[hingeX, doorH / 2, z]} rotation={[0, openAngle, 0]}>
+          <mesh position={[doorW / 2, 0, DOOR_LEAF_T / 2]} castShadow receiveShadow>
+            <boxGeometry args={[doorW, doorH, DOOR_LEAF_T]} />
+            <primitive object={doorLeafMat} attach="material" />
+          </mesh>
+          {/* Handle sphere near free edge */}
+          <mesh position={[doorW - 0.06, handleH - doorH / 2, DOOR_LEAF_T + 0.018]} castShadow>
+            <sphereGeometry args={[0.018, 10, 8]} />
+            <primitive object={handleMat} attach="material" />
+          </mesh>
+        </group>
       </group>
     );
   }
 
   const x = dir === "W" ? -w / 2 + WALL_T / 2 : w / 2 - WALL_T / 2;
+  const hingeZ = doorCenter - halfGap;
+  const openAngleWE = 0;   // flush — don't block walk view
   return (
     <group>
-      <mesh ref={wallRef} position={[x, h / 2, -(halfGap + panelLen / 2)]} receiveShadow>
-        <boxGeometry args={[WALL_T, h, panelLen]} />
+      {/* Wall panels */}
+      <mesh ref={wallRef} position={[x, h / 2, leftMid]} receiveShadow>
+        <boxGeometry args={[WALL_T, h, leftLen]} />
         <primitive object={material} attach="material" />
       </mesh>
-      <mesh position={[x, h / 2, halfGap + panelLen / 2]} receiveShadow>
-        <boxGeometry args={[WALL_T, h, panelLen]} />
+      <mesh position={[x, h / 2, rightMid]} receiveShadow>
+        <boxGeometry args={[WALL_T, h, rightLen]} />
         <primitive object={material} attach="material" />
       </mesh>
       {lintelH > 0.005 && (
-        <mesh position={[x, DOOR_H + lintelH / 2, 0]} receiveShadow>
-          <boxGeometry args={[WALL_T, lintelH, DOOR_W]} />
+        <mesh position={[x, doorH + lintelH / 2, doorCenter]} receiveShadow>
+          <boxGeometry args={[WALL_T, lintelH, doorW]} />
           <primitive object={material} attach="material" />
         </mesh>
       )}
+      {/* Frame trim */}
+      <mesh position={[x, doorH / 2, doorCenter - halfGap - TRIM_W / 2]} castShadow>
+        <boxGeometry args={[WALL_T + 0.01, doorH, TRIM_W]} />
+        <primitive object={trimMat} attach="material" />
+      </mesh>
+      <mesh position={[x, doorH / 2, doorCenter + halfGap + TRIM_W / 2]} castShadow>
+        <boxGeometry args={[WALL_T + 0.01, doorH, TRIM_W]} />
+        <primitive object={trimMat} attach="material" />
+      </mesh>
+      <mesh position={[x, doorH + TRIM_W / 2, doorCenter]} castShadow>
+        <boxGeometry args={[WALL_T + 0.01, TRIM_W, doorW + TRIM_W * 2]} />
+        <primitive object={trimMat} attach="material" />
+      </mesh>
+      {/* Door leaf + handle */}
+      <group position={[x, doorH / 2, hingeZ]} rotation={[0, openAngleWE, 0]}>
+        <mesh position={[DOOR_LEAF_T / 2, 0, doorW / 2]} castShadow receiveShadow>
+          <boxGeometry args={[DOOR_LEAF_T, doorH, doorW]} />
+          <primitive object={doorLeafMat} attach="material" />
+        </mesh>
+        <mesh position={[DOOR_LEAF_T + 0.018, handleH - doorH / 2, doorW - 0.06]} castShadow>
+          <sphereGeometry args={[0.018, 10, 8]} />
+          <primitive object={handleMat} attach="material" />
+        </mesh>
+      </group>
     </group>
   );
 }
 
-function WindowOnWall({ wall, w, d, glass, frame }: { wall: Direction; w: number; d: number; glass: THREE.Material; frame: THREE.Material }) {
-  const winY = WIN_SILL + WIN_H / 2;
-  const isNS = wall === "N" || wall === "S";
-  const span = isNS ? w * WIN_FRAC : d * WIN_FRAC;
-  const offX = wall === "W" ? -w / 2 + WALL_T * 0.4 : wall === "E" ? w / 2 - WALL_T * 0.4 : 0;
-  const offZ = wall === "S" ? -d / 2 + WALL_T * 0.4 : wall === "N" ? d / 2 - WALL_T * 0.4 : 0;
-  const glassArgs: [number, number, number] = isNS ? [span, WIN_H, 0.03] : [0.03, WIN_H, span];
-  const frameArgs: [number, number, number] = isNS ? [span + 0.08, WIN_H + 0.08, 0.05] : [0.05, WIN_H + 0.08, span + 0.08];
-  return (
-    <group>
-      <mesh position={[offX, winY, offZ]}><boxGeometry args={frameArgs} /><primitive object={frame} attach="material" /></mesh>
-      <mesh position={[offX, winY, offZ]}><boxGeometry args={glassArgs} /><primitive object={glass} attach="material" /></mesh>
-      <mesh position={[offX, winY, offZ]}><boxGeometry args={isNS ? [0.03, WIN_H, 0.04] : [0.04, WIN_H, 0.03]} /><primitive object={frame} attach="material" /></mesh>
-    </group>
-  );
-}
+// WindowWall removed (2026-05-23). The frame+glass+mullion never sold
+// "window" — read as a flat lit rectangle. Keep walls solid; light comes from
+// the directional sun + ambient regardless of wall geometry.
 
 // ---------- Materials ----------
 
@@ -329,13 +434,4 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 function rgbToHex(r: number, g: number, b: number): string {
   const t = (n: number) => Math.round(n).toString(16).padStart(2, "0");
   return `#${t(r)}${t(g)}${t(b)}`;
-}
-function oppositeWall(entrance: Direction): Direction {
-  switch (entrance) {
-    case "N": return "S";
-    case "S": return "N";
-    case "E": return "W";
-    case "W": return "E";
-    default: return "N";
-  }
 }

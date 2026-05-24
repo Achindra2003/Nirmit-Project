@@ -22,38 +22,42 @@ interface Props {
   warmthK?: number; // 2700 (warm) - 4000 (cool)
 }
 
-const SUN_INTENSITY = 2.2;
+// Sun ("hero" key light) is the only strong directional. Everything else fills.
+// Old setup stacked hemisphere + sun + bounce + fill + ambient at near-equal
+// strength → walls and items had no shadow direction, every surface looked
+// equally lit. That's the "CAD diagram" look. Cut every fill ~40%, let the
+// sun cast real shadows, and put a warm sky panel outside the window so the
+// scene reads as "lit by daylight pouring in", not "lit by light bulbs".
+const SUN_INTENSITY = 2.6;
 
 export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, warmthK = 3200 }: Props) {
   const w = mmToM(roomWmm);
   const d = mmToM(roomDmm);
   const h = mmToM(roomHmm);
 
-  // Sun colour: warmer at sunset (2700), neutral at noon (4000).
   const sunColor = useMemo(() => kelvinToHex(warmthK), [warmthK]);
   const skyColor = useMemo(() => kelvinToHex(Math.min(warmthK + 1500, 6500)), [warmthK]);
 
   // Sun position: opposite the entrance wall (light comes through the window).
-  // Room is centred at world origin so the sun should be on-axis (x or z = 0).
   const sunPos = useMemo(() => {
     const reach = Math.max(w, d) * 1.5;
     switch (entrance) {
-      case "S":
-        return [0, h * 1.8, reach] as const; // light from N
-      case "N":
-        return [0, h * 1.8, -reach] as const; // light from S
-      case "W":
-        return [reach, h * 1.8, 0] as const; // light from E
-      case "E":
-        return [-reach, h * 1.8, 0] as const; // light from W
-      default:
-        return [0, h * 1.8, reach] as const;
+      case "S": return [0, h * 1.8, reach] as const;
+      case "N": return [0, h * 1.8, -reach] as const;
+      case "W": return [reach, h * 1.8, 0] as const;
+      case "E": return [-reach, h * 1.8, 0] as const;
+      default:  return [0, h * 1.8, reach] as const;
     }
   }, [entrance, w, d, h]);
 
+  // Window-side sky panel removed (2026-05-23): the panel was visible from
+  // outside the room as a giant rectangle behind the wall when the wall faded.
+  // Now we rely on the directional sun + ambient + bounce alone.
+
   return (
     <>
-      <hemisphereLight args={[skyColor, "#4a3828", 0.55]} />
+      {/* Cool sky + warm ground bias for hemisphere — keeps shadow side honest. */}
+      <hemisphereLight args={[skyColor, "#3a2c1e", 0.28]} />
 
       <directionalLight
         position={sunPos}
@@ -69,27 +73,20 @@ export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, warmthK = 3200 }
         shadow-camera-top={d}
         shadow-camera-bottom={-d}
         shadow-bias={-0.0008}
+        shadow-normalBias={0.02}
       />
 
-      {/* Warm bounce from the floor — fills the underside of furniture */}
+      {/* Warm bounce off the floor — gives the underside of furniture a glow. */}
       <pointLight
         position={[0, h * 0.08, 0]}
-        intensity={0.35}
-        color="#ffe4b5"
+        intensity={0.28}
+        color="#ffd9a8"
         distance={Math.max(w, d) * 2.0}
-        decay={1.4}
+        decay={1.6}
       />
 
-      {/* Fill light — softens the dark side of the room opposite the window */}
-      <pointLight
-        position={[-w / 2, h * 0.55, -d / 2]}
-        intensity={0.22}
-        color="#fff3e0"
-        distance={Math.max(w, d) * 2.5}
-        decay={1.2}
-      />
-
-      <ambientLight intensity={0.22} color="#ede1c8" />
+      {/* Tiny ambient so deepest shadows aren't pure black on PBR materials. */}
+      <ambientLight intensity={0.08} color="#ede1c8" />
     </>
   );
 }

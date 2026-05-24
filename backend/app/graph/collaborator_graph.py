@@ -31,6 +31,7 @@ from langgraph.graph import END, StateGraph
 
 from app.domain.catalog import get_catalog
 from app.domain.catalog.model import CatalogQuery
+from app.domain.catalog.presets import get_menu
 from app.domain.costing import build_cost_breakdown
 from app.domain.intent import IntentExecutionError, apply_intents
 from app.llm import get_llm
@@ -64,8 +65,17 @@ class CollabState(TypedDict, total=False):
 
 def _generate(state: CollabState) -> CollabState:
     intake = state["room_state"].intake
-    catalog = get_catalog()
-    catalog_items = catalog.query(CatalogQuery(room=intake.room_type, limit=30))
+    room = state["room_state"]
+    # Prefer the curated menu (sku/name/asset_url all match what the planner
+    # drawer serves and what executor._add can resolve). Falls back to the
+    # global hero catalog if the room has no philosophy attached.
+    catalog_items: list = []
+    if room.philosophy:
+        menu = get_menu(intake.room_type.value, room.philosophy)
+        catalog_items = list(menu.values())
+    if not catalog_items:
+        catalog = get_catalog()
+        catalog_items = catalog.query(CatalogQuery(room=intake.room_type, limit=30))
     diff_context = build_diff_context(
         previous=state.get("previous_room_state"),
         current=state["room_state"],

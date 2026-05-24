@@ -1,0 +1,2351 @@
+{
+  "sofa_l": [
+    {
+      "sku": "blendswap_cc_0_couch2",
+      "name": "Couch",
+      "asset": "sh3d/blendswap_cc_0_couch2.glb",
+      "dims": {
+        "width": 2300,
+        "height": 866,
+        "depth": 1597
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Sofa",
+        "Corner"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_sofa",
+      "name": "Corner sofa",
+      "asset": "sh3d/blendswap_cc_0_sofa.glb",
+      "dims": {
+        "width": 2488,
+        "height": 780,
+        "depth": 1896
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Couch",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_l_shaped_sofa",
+      "name": "Corner sofa",
+      "asset": "sh3d/blendswap_cc_0_l_shaped_sofa.glb",
+      "dims": {
+        "width": 2337,
+        "height": 800,
+        "depth": 1436
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Couch",
+        "Seat"
+      ]
+    }
+  ],
+  "sofa_3seat": [
+    {
+      "sku": "contributions_couchtwoseats",
+      "name": "Couch two seats",
+      "asset": "sh3d/contributions_couchtwoseats.glb",
+      "dims": {
+        "width": 1980,
+        "height": 720,
+        "depth": 906
+      },
+      "tags": [
+        "Sofa",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "katorlegaz_futon_couch",
+      "name": "Futon couch",
+      "asset": "sh3d/katorlegaz_futon_couch.glb",
+      "dims": {
+        "width": 1960,
+        "height": 878,
+        "depth": 898
+      },
+      "tags": [
+        "Sofa",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_clicclac",
+      "name": "Sofa bed",
+      "asset": "sh3d/contributions_clicclac.glb",
+      "dims": {
+        "width": 1820,
+        "height": 931,
+        "depth": 933
+      },
+      "tags": [
+        "Couch",
+        "Convertible",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "katorlegaz_mid_century_sofa",
+      "name": "Sofa",
+      "asset": "sh3d/katorlegaz_mid_century_sofa.glb",
+      "dims": {
+        "width": 1990,
+        "height": 800,
+        "depth": 840
+      },
+      "tags": [
+        "Couch",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_canapejardin",
+      "name": "Garden sofa",
+      "asset": "sh3d/contributions_canapejardin.glb",
+      "dims": {
+        "width": 2210,
+        "height": 1800,
+        "depth": 750
+      },
+      "tags": [
+        "Couch",
+        "Seat",
+        "Outdoor",
+        "Deck",
+        "Garden"
+      ]
+    },
+    {
+      "sku": "scopia_clear_sofa",
+      "name": "Clear sofa",
+      "asset": "sh3d/scopia_clear_sofa.glb",
+      "dims": {
+        "width": 1939,
+        "height": 800,
+        "depth": 759
+      },
+      "tags": [
+        "Couch",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_by_couch3",
+      "name": "Couch",
+      "asset": "sh3d/blendswap_cc_by_couch3.glb",
+      "dims": {
+        "width": 2010,
+        "height": 843,
+        "depth": 909
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Sofa",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_winchestersofa",
+      "name": "Winchester sofa",
+      "asset": "sh3d/blendswap_cc_0_winchestersofa.glb",
+      "dims": {
+        "width": 2319,
+        "height": 804,
+        "depth": 938
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Couch"
+      ]
+    },
+    {
+      "sku": "contributions_sofa1",
+      "name": "Sofa",
+      "asset": "sh3d/contributions_sofa1.glb",
+      "dims": {
+        "width": 2340,
+        "height": 792,
+        "depth": 794
+      },
+      "tags": [
+        "Couch",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_sofa4",
+      "name": "Sofa",
+      "asset": "sh3d/contributions_sofa4.glb",
+      "dims": {
+        "width": 1850,
+        "height": 835,
+        "depth": 740
+      },
+      "tags": [
+        "Couch",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "scopia_leather_sofa",
+      "name": "Sofa",
+      "asset": "sh3d/scopia_leather_sofa.glb",
+      "dims": {
+        "width": 1925,
+        "height": 1001,
+        "depth": 903
+      },
+      "tags": [
+        "Couch",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_couch",
+      "name": "Couch",
+      "asset": "sh3d/blendswap_cc_0_couch.glb",
+      "dims": {
+        "width": 2074,
+        "height": 856,
+        "depth": 876
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Sofa"
+      ]
+    }
+  ],
+  "sofa_2seat": [
+    {
+      "sku": "scopia_beige_sofa_2seats",
+      "name": "Sofa 2 seats",
+      "asset": "sh3d/scopia_beige_sofa_2seats.glb",
+      "dims": {
+        "width": 1589,
+        "height": 866,
+        "depth": 735
+      },
+      "tags": [
+        "Couch"
+      ]
+    }
+  ],
+  "diwan_daybed": [
+    {
+      "sku": "scopia_day_bed_frame",
+      "name": "Day bed",
+      "asset": "sh3d/scopia_day_bed_frame.glb",
+      "dims": {
+        "width": 2080,
+        "height": 700,
+        "depth": 970
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_trundlebed",
+      "name": "Daybed",
+      "asset": "sh3d/contributions_trundlebed.glb",
+      "dims": {
+        "width": 2157,
+        "height": 1171,
+        "depth": 950
+      },
+      "tags": [
+        "Bed"
+      ]
+    }
+  ],
+  "accent_chair": [
+    {
+      "sku": "scopia_armchair",
+      "name": "Armchair",
+      "asset": "sh3d/scopia_armchair.glb",
+      "dims": {
+        "width": 788,
+        "height": 1001,
+        "depth": 777
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_chair_high",
+      "name": "Armchair",
+      "asset": "sh3d/contributions_chair_high.glb",
+      "dims": {
+        "width": 650,
+        "height": 1350,
+        "depth": 700
+      },
+      "tags": [
+        "OKH",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "scopia_rattanarmchair",
+      "name": "Rattan armchair",
+      "asset": "sh3d/scopia_rattanarmchair.glb",
+      "dims": {
+        "width": 710,
+        "height": 787,
+        "depth": 724
+      },
+      "tags": [
+        "Seat",
+        "Outdoor",
+        "Deck",
+        "Patio",
+        "Garden"
+      ]
+    },
+    {
+      "sku": "contributions_armchair2",
+      "name": "Armchair",
+      "asset": "sh3d/contributions_armchair2.glb",
+      "dims": {
+        "width": 680,
+        "height": 1000,
+        "depth": 830
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_armchair_wing",
+      "name": "Armchair",
+      "asset": "sh3d/contributions_armchair_wing.glb",
+      "dims": {
+        "width": 850,
+        "height": 1120,
+        "depth": 900
+      },
+      "tags": [
+        "OKH"
+      ]
+    },
+    {
+      "sku": "katorlegaz_mid_century_chair",
+      "name": "Armchair",
+      "asset": "sh3d/katorlegaz_mid_century_chair.glb",
+      "dims": {
+        "width": 735,
+        "height": 800,
+        "depth": 844
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_by_fotel",
+      "name": "Armchair",
+      "asset": "sh3d/blendswap_cc_by_fotel.glb",
+      "dims": {
+        "width": 735,
+        "height": 697,
+        "depth": 611
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "scopia_armchair3",
+      "name": "Armchair",
+      "asset": "sh3d/scopia_armchair3.glb",
+      "dims": {
+        "width": 591,
+        "height": 949,
+        "depth": 694
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_armchair2",
+      "name": "Armchair",
+      "asset": "sh3d/blendswap_cc_0_armchair2.glb",
+      "dims": {
+        "width": 953,
+        "height": 783,
+        "depth": 833
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_by_armchair2",
+      "name": "Armchair",
+      "asset": "sh3d/blendswap_cc_by_armchair2.glb",
+      "dims": {
+        "width": 978,
+        "height": 885,
+        "depth": 821
+      },
+      "tags": [
+        "Blend",
+        "Swap"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_modernarmchair",
+      "name": "Armchair",
+      "asset": "sh3d/blendswap_cc_0_modernarmchair.glb",
+      "dims": {
+        "width": 773,
+        "height": 865,
+        "depth": 849
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_chair_granmother",
+      "name": "Armchair",
+      "asset": "sh3d/contributions_chair_granmother.glb",
+      "dims": {
+        "width": 610,
+        "height": 1050,
+        "depth": 580
+      },
+      "tags": [
+        "OKH",
+        "Seat"
+      ]
+    }
+  ],
+  "lounge_chair": [
+    {
+      "sku": "blendswap_cc_by_poollounge",
+      "name": "Pool lounge",
+      "asset": "sh3d/blendswap_cc_by_poollounge.glb",
+      "dims": {
+        "width": 880,
+        "height": 885,
+        "depth": 2000
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Swimming",
+        "Outdoor",
+        "Deck",
+        "Chair",
+        "Seat"
+      ]
+    }
+  ],
+  "ottoman": [],
+  "bench": [
+    {
+      "sku": "katorlegaz_bench",
+      "name": "Bench",
+      "asset": "sh3d/katorlegaz_bench.glb",
+      "dims": {
+        "width": 1182,
+        "height": 450,
+        "depth": 452
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_pancafratinosing",
+      "name": "Bench",
+      "asset": "sh3d/contributions_pancafratinosing.glb",
+      "dims": {
+        "width": 850,
+        "height": 850,
+        "depth": 498
+      },
+      "tags": []
+    }
+  ],
+  "dining_chair": [
+    {
+      "sku": "contributions_chair_office_y",
+      "name": "Chair",
+      "asset": "sh3d/contributions_chair_office_y.glb",
+      "dims": {
+        "width": 480,
+        "height": 870,
+        "depth": 495
+      },
+      "tags": [
+        "OKH",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_osakachair",
+      "name": "Osaka chair",
+      "asset": "sh3d/blendswap_cc_0_osakachair.glb",
+      "dims": {
+        "width": 475,
+        "height": 770,
+        "depth": 525
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_by_chair3",
+      "name": "Chair",
+      "asset": "sh3d/blendswap_cc_by_chair3.glb",
+      "dims": {
+        "width": 433,
+        "height": 906,
+        "depth": 504
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "scopia_tubular_chair",
+      "name": "Chair",
+      "asset": "sh3d/scopia_tubular_chair.glb",
+      "dims": {
+        "width": 532,
+        "height": 814,
+        "depth": 499
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "scopia_chair3",
+      "name": "Chair",
+      "asset": "sh3d/scopia_chair3.glb",
+      "dims": {
+        "width": 522,
+        "height": 859,
+        "depth": 576
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "scopia_chair",
+      "name": "Chair",
+      "asset": "sh3d/scopia_chair.glb",
+      "dims": {
+        "width": 420,
+        "height": 880,
+        "depth": 474
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_stool",
+      "name": "Stool",
+      "asset": "sh3d/blendswap_cc_0_stool.glb",
+      "dims": {
+        "width": 530,
+        "height": 980,
+        "depth": 521
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Chair"
+      ]
+    },
+    {
+      "sku": "katorlegaz_dining_chair",
+      "name": "Chair",
+      "asset": "sh3d/katorlegaz_dining_chair.glb",
+      "dims": {
+        "width": 423,
+        "height": 1000,
+        "depth": 573
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "scopia_chair4",
+      "name": "Chair",
+      "asset": "sh3d/scopia_chair4.glb",
+      "dims": {
+        "width": 484,
+        "height": 884,
+        "depth": 442
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_sillablanca",
+      "name": "Chair",
+      "asset": "sh3d/blendswap_cc_0_sillablanca.glb",
+      "dims": {
+        "width": 505,
+        "height": 850,
+        "depth": 584
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_chair2",
+      "name": "Chair",
+      "asset": "sh3d/contributions_chair2.glb",
+      "dims": {
+        "width": 380,
+        "height": 980,
+        "depth": 520
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_chaiseorange",
+      "name": "Orange chair",
+      "asset": "sh3d/contributions_chaiseorange.glb",
+      "dims": {
+        "width": 412,
+        "height": 950,
+        "depth": 467
+      },
+      "tags": [
+        "Seat"
+      ]
+    }
+  ],
+  "bar_stool": [
+    {
+      "sku": "contributions_bar_stool",
+      "name": "Bar stool",
+      "asset": "sh3d/contributions_bar_stool.glb",
+      "dims": {
+        "width": 445,
+        "height": 700,
+        "depth": 420
+      },
+      "tags": [
+        "Adjustable"
+      ]
+    },
+    {
+      "sku": "katorlegaz_bar_stool",
+      "name": "Bar stool",
+      "asset": "sh3d/katorlegaz_bar_stool.glb",
+      "dims": {
+        "width": 532,
+        "height": 1100,
+        "depth": 593
+      },
+      "tags": [
+        "Chair",
+        "Seat"
+      ]
+    }
+  ],
+  "desk_chair": [
+    {
+      "sku": "contributions_officechair",
+      "name": "Office chair",
+      "asset": "sh3d/contributions_officechair.glb",
+      "dims": {
+        "width": 626,
+        "height": 873,
+        "depth": 597
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_officechair2",
+      "name": "Office chair",
+      "asset": "sh3d/contributions_officechair2.glb",
+      "dims": {
+        "width": 629,
+        "height": 1015,
+        "depth": 688
+      },
+      "tags": [
+        "Seat"
+      ]
+    },
+    {
+      "sku": "contributions_officechair3",
+      "name": "Office chair",
+      "asset": "sh3d/contributions_officechair3.glb",
+      "dims": {
+        "width": 559,
+        "height": 1070,
+        "depth": 564
+      },
+      "tags": [
+        "Seat"
+      ]
+    }
+  ],
+  "coffee_table": [
+    {
+      "sku": "blendswap_cc_by_coffeetable",
+      "name": "Coffee table",
+      "asset": "sh3d/blendswap_cc_by_coffeetable.glb",
+      "dims": {
+        "width": 1200,
+        "height": 450,
+        "depth": 701
+      },
+      "tags": [
+        "Blend",
+        "Swap"
+      ]
+    },
+    {
+      "sku": "contributions_tablebasse",
+      "name": "Coffee table",
+      "asset": "sh3d/contributions_tablebasse.glb",
+      "dims": {
+        "width": 1125,
+        "height": 391,
+        "depth": 598
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_couchtable",
+      "name": "Couch table",
+      "asset": "sh3d/contributions_couchtable.glb",
+      "dims": {
+        "width": 1001,
+        "height": 440,
+        "depth": 701
+      },
+      "tags": [
+        "Coffee"
+      ]
+    },
+    {
+      "sku": "contributions_coffeetable",
+      "name": "Coffee table",
+      "asset": "sh3d/contributions_coffeetable.glb",
+      "dims": {
+        "width": 1170,
+        "height": 440,
+        "depth": 490
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_tablebassebois",
+      "name": "Wooden coffee table",
+      "asset": "sh3d/contributions_tablebassebois.glb",
+      "dims": {
+        "width": 950,
+        "height": 378,
+        "depth": 500
+      },
+      "tags": []
+    },
+    {
+      "sku": "scopia_table_wood_and_iron",
+      "name": "Coffee table",
+      "asset": "sh3d/scopia_table_wood_and_iron.glb",
+      "dims": {
+        "width": 1214,
+        "height": 503,
+        "depth": 759
+      },
+      "tags": []
+    },
+    {
+      "sku": "scopia_coffee_table",
+      "name": "Coffee table",
+      "asset": "sh3d/scopia_coffee_table.glb",
+      "dims": {
+        "width": 896,
+        "height": 475,
+        "depth": 459
+      },
+      "tags": []
+    },
+    {
+      "sku": "scopia_saloon_table",
+      "name": "Coffee table",
+      "asset": "sh3d/scopia_saloon_table.glb",
+      "dims": {
+        "width": 1439,
+        "height": 511,
+        "depth": 641
+      },
+      "tags": []
+    },
+    {
+      "sku": "scopia_coffee_table2",
+      "name": "Coffee table",
+      "asset": "sh3d/scopia_coffee_table2.glb",
+      "dims": {
+        "width": 1238,
+        "height": 477,
+        "depth": 512
+      },
+      "tags": []
+    }
+  ],
+  "side_table": [
+    {
+      "sku": "blendswap_cc_by_bedsidetable",
+      "name": "Bedside table",
+      "asset": "sh3d/blendswap_cc_by_bedsidetable.glb",
+      "dims": {
+        "width": 500,
+        "height": 480,
+        "depth": 414
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Nightstand"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_bedsidetable2",
+      "name": "Bedside table",
+      "asset": "sh3d/blendswap_cc_0_bedsidetable2.glb",
+      "dims": {
+        "width": 486,
+        "height": 454,
+        "depth": 481
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Nightstand"
+      ]
+    },
+    {
+      "sku": "lucapresidente_comodinoazzurro",
+      "name": "Blue bedside table",
+      "asset": "sh3d/lucapresidente_comodinoazzurro.glb",
+      "dims": {
+        "width": 500,
+        "height": 480,
+        "depth": 425
+      },
+      "tags": [
+        "Nightstand"
+      ]
+    }
+  ],
+  "console_table": [],
+  "dining_table": [],
+  "desk": [
+    {
+      "sku": "contributions_desk",
+      "name": "Desk",
+      "asset": "sh3d/contributions_desk.glb",
+      "dims": {
+        "width": 1410,
+        "height": 740,
+        "depth": 705
+      },
+      "tags": [
+        "Table"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_by_simpledesk",
+      "name": "Desk",
+      "asset": "sh3d/blendswap_cc_by_simpledesk.glb",
+      "dims": {
+        "width": 1401,
+        "height": 720,
+        "depth": 811
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Table"
+      ]
+    },
+    {
+      "sku": "contributions_bureau3",
+      "name": "Desk",
+      "asset": "sh3d/contributions_bureau3.glb",
+      "dims": {
+        "width": 1200,
+        "height": 725,
+        "depth": 590
+      },
+      "tags": [
+        "Table"
+      ]
+    },
+    {
+      "sku": "contributions_office_desk",
+      "name": "Desk",
+      "asset": "sh3d/contributions_office_desk.glb",
+      "dims": {
+        "width": 1600,
+        "height": 720,
+        "depth": 800
+      },
+      "tags": [
+        "OKH",
+        "Table"
+      ]
+    },
+    {
+      "sku": "lucapresidente_scrivania160w",
+      "name": "Desk",
+      "asset": "sh3d/lucapresidente_scrivania160w.glb",
+      "dims": {
+        "width": 1600,
+        "height": 720,
+        "depth": 800
+      },
+      "tags": [
+        "Table"
+      ]
+    },
+    {
+      "sku": "scopia_kids_desk_table",
+      "name": "Desk table",
+      "asset": "sh3d/scopia_kids_desk_table.glb",
+      "dims": {
+        "width": 1120,
+        "height": 746,
+        "depth": 605
+      },
+      "tags": []
+    },
+    {
+      "sku": "blendswap_cc_0_lbdesk",
+      "name": "Desk",
+      "asset": "sh3d/blendswap_cc_0_lbdesk.glb",
+      "dims": {
+        "width": 1600,
+        "height": 723,
+        "depth": 800
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Table"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_by_biurko3",
+      "name": "Desk",
+      "asset": "sh3d/blendswap_cc_by_biurko3.glb",
+      "dims": {
+        "width": 1201,
+        "height": 720,
+        "depth": 602
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Table"
+      ]
+    },
+    {
+      "sku": "scopia_kids_wooden_desk",
+      "name": "Wooden desk",
+      "asset": "sh3d/scopia_kids_wooden_desk.glb",
+      "dims": {
+        "width": 1004,
+        "height": 746,
+        "depth": 618
+      },
+      "tags": [
+        "Table"
+      ]
+    }
+  ],
+  "bed_queen": [
+    {
+      "sku": "contributions_lit",
+      "name": "Bed",
+      "asset": "sh3d/contributions_lit.glb",
+      "dims": {
+        "width": 1672,
+        "height": 785,
+        "depth": 2201
+      },
+      "tags": []
+    },
+    {
+      "sku": "lucapresidente_lettociliegio",
+      "name": "Bed cherry",
+      "asset": "sh3d/lucapresidente_lettociliegio.glb",
+      "dims": {
+        "width": 1840,
+        "height": 650,
+        "depth": 1970
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_litparents",
+      "name": "Bed",
+      "asset": "sh3d/contributions_litparents.glb",
+      "dims": {
+        "width": 1888,
+        "height": 888,
+        "depth": 2256
+      },
+      "tags": []
+    },
+    {
+      "sku": "scopia_bed1",
+      "name": "Bed",
+      "asset": "sh3d/scopia_bed1.glb",
+      "dims": {
+        "width": 1705,
+        "height": 1108,
+        "depth": 2165
+      },
+      "tags": [
+        "Double"
+      ]
+    },
+    {
+      "sku": "contributions_futon",
+      "name": "Futon",
+      "asset": "sh3d/contributions_futon.glb",
+      "dims": {
+        "width": 1620,
+        "height": 321,
+        "depth": 2070
+      },
+      "tags": [
+        "Bed"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_bedwithtexture",
+      "name": "Bed",
+      "asset": "sh3d/blendswap_cc_0_bedwithtexture.glb",
+      "dims": {
+        "width": 1980,
+        "height": 765,
+        "depth": 2264
+      },
+      "tags": [
+        "Blend",
+        "Swap"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_by_lettocloud",
+      "name": "Bed",
+      "asset": "sh3d/blendswap_cc_by_lettocloud.glb",
+      "dims": {
+        "width": 1889,
+        "height": 788,
+        "depth": 2165
+      },
+      "tags": [
+        "Blend",
+        "Swap"
+      ]
+    }
+  ],
+  "bed_king": [],
+  "bed_single": [],
+  "wardrobe": [
+    {
+      "sku": "blendswap_cc_by_wardrobe2",
+      "name": "Wardrobe",
+      "asset": "sh3d/blendswap_cc_by_wardrobe2.glb",
+      "dims": {
+        "width": 1735,
+        "height": 2080,
+        "depth": 600
+      },
+      "tags": [
+        "Blend",
+        "Swap"
+      ]
+    },
+    {
+      "sku": "contributions_armoirelotus",
+      "name": "Wardrobe",
+      "asset": "sh3d/contributions_armoirelotus.glb",
+      "dims": {
+        "width": 1795,
+        "height": 2214,
+        "depth": 675
+      },
+      "tags": [
+        "Closet"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_wardrobewithslidingdoors",
+      "name": "Wardrobe",
+      "asset": "sh3d/blendswap_cc_0_wardrobewithslidingdoors.glb",
+      "dims": {
+        "width": 2000,
+        "height": 2364,
+        "depth": 660
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Closet"
+      ]
+    },
+    {
+      "sku": "contributions_armoire",
+      "name": "Wardrobe",
+      "asset": "sh3d/contributions_armoire.glb",
+      "dims": {
+        "width": 1090,
+        "height": 2005,
+        "depth": 528
+      },
+      "tags": [
+        "Closet"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_by_wardrobe",
+      "name": "Wardrobe",
+      "asset": "sh3d/blendswap_cc_by_wardrobe.glb",
+      "dims": {
+        "width": 921,
+        "height": 2000,
+        "depth": 680
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Closet"
+      ]
+    },
+    {
+      "sku": "lucapresidente_mobileazzurro",
+      "name": "Blue wardrobe",
+      "asset": "sh3d/lucapresidente_mobileazzurro.glb",
+      "dims": {
+        "width": 1000,
+        "height": 2400,
+        "depth": 570
+      },
+      "tags": [
+        "Closet"
+      ]
+    },
+    {
+      "sku": "lucapresidente_mobileciliegio",
+      "name": "Wardrobe cherry",
+      "asset": "sh3d/lucapresidente_mobileciliegio.glb",
+      "dims": {
+        "width": 1000,
+        "height": 2400,
+        "depth": 500
+      },
+      "tags": [
+        "Closet"
+      ]
+    },
+    {
+      "sku": "contributions_pantry",
+      "name": "Wood pantry",
+      "asset": "sh3d/contributions_pantry.glb",
+      "dims": {
+        "width": 983,
+        "height": 1846,
+        "depth": 640
+      },
+      "tags": [
+        "Cupboard",
+        "Closet"
+      ]
+    },
+    {
+      "sku": "scopia_wardrobe1",
+      "name": "Wardrobe",
+      "asset": "sh3d/scopia_wardrobe1.glb",
+      "dims": {
+        "width": 2174,
+        "height": 2000,
+        "depth": 530
+      },
+      "tags": [
+        "Closet"
+      ]
+    }
+  ],
+  "chest": [
+    {
+      "sku": "contributions_kommode",
+      "name": "Chest",
+      "asset": "sh3d/contributions_kommode.glb",
+      "dims": {
+        "width": 951,
+        "height": 930,
+        "depth": 419
+      },
+      "tags": []
+    },
+    {
+      "sku": "scopia_changing_table",
+      "name": "Changing table",
+      "asset": "sh3d/scopia_changing_table.glb",
+      "dims": {
+        "width": 1227,
+        "height": 975,
+        "depth": 481
+      },
+      "tags": [
+        "Baby",
+        "Chest"
+      ]
+    },
+    {
+      "sku": "contributions_dresser",
+      "name": "Dresser",
+      "asset": "sh3d/contributions_dresser.glb",
+      "dims": {
+        "width": 1385,
+        "height": 620,
+        "depth": 455
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_petitecommode",
+      "name": "Small chest",
+      "asset": "sh3d/contributions_petitecommode.glb",
+      "dims": {
+        "width": 820,
+        "height": 830,
+        "depth": 464
+      },
+      "tags": []
+    }
+  ],
+  "bookshelf": [
+    {
+      "sku": "contributions_etageres",
+      "name": "Shelves",
+      "asset": "sh3d/contributions_etageres.glb",
+      "dims": {
+        "width": 1500,
+        "height": 1500,
+        "depth": 390
+      },
+      "tags": [
+        "Shelf",
+        "Bookcase"
+      ]
+    },
+    {
+      "sku": "scopia_kids_shelves",
+      "name": "Shelves",
+      "asset": "sh3d/scopia_kids_shelves.glb",
+      "dims": {
+        "width": 1010,
+        "height": 1907,
+        "depth": 424
+      },
+      "tags": [
+        "Shelf",
+        "Bookcase"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_by_bookcase",
+      "name": "Bookcase",
+      "asset": "sh3d/blendswap_cc_by_bookcase.glb",
+      "dims": {
+        "width": 1664,
+        "height": 1864,
+        "depth": 331
+      },
+      "tags": [
+        "Blend",
+        "Swap"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_bookcase",
+      "name": "Bookcase",
+      "asset": "sh3d/blendswap_cc_0_bookcase.glb",
+      "dims": {
+        "width": 919,
+        "height": 1472,
+        "depth": 365
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Shelves",
+        "Bookshelf"
+      ]
+    },
+    {
+      "sku": "contributions_shelves_storage_wood2",
+      "name": "Wood shelves",
+      "asset": "sh3d/contributions_shelves_storage_wood2.glb",
+      "dims": {
+        "width": 770,
+        "height": 1700,
+        "depth": 370
+      },
+      "tags": [
+        "OKH",
+        "Storage",
+        "Shelf",
+        "Rack",
+        "Bookcase"
+      ]
+    },
+    {
+      "sku": "contributions_pinewoodrackmediumheight",
+      "name": "Pinewood rack medium height",
+      "asset": "sh3d/contributions_pinewoodrackmediumheight.glb",
+      "dims": {
+        "width": 898,
+        "height": 1430,
+        "depth": 302
+      },
+      "tags": [
+        "Shelves",
+        "Shelf",
+        "Bookcase"
+      ]
+    },
+    {
+      "sku": "contributions_pinewoodrackfullheight",
+      "name": "Pinewood rack full height",
+      "asset": "sh3d/contributions_pinewoodrackfullheight.glb",
+      "dims": {
+        "width": 898,
+        "height": 2270,
+        "depth": 302
+      },
+      "tags": [
+        "Shelves",
+        "Shelf",
+        "Bookcase"
+      ]
+    },
+    {
+      "sku": "contributions_meublehifihaut",
+      "name": "Shelf unit",
+      "asset": "sh3d/contributions_meublehifihaut.glb",
+      "dims": {
+        "width": 1559,
+        "height": 1830,
+        "depth": 414
+      },
+      "tags": [
+        "Shelves",
+        "Bookcase"
+      ]
+    },
+    {
+      "sku": "contributions_bookcase2",
+      "name": "Bookcase",
+      "asset": "sh3d/contributions_bookcase2.glb",
+      "dims": {
+        "width": 820,
+        "height": 1500,
+        "depth": 440
+      },
+      "tags": [
+        "Shelves",
+        "Bookshelf"
+      ]
+    },
+    {
+      "sku": "contributions_shelves_storage_wood",
+      "name": "Wood shelves",
+      "asset": "sh3d/contributions_shelves_storage_wood.glb",
+      "dims": {
+        "width": 780,
+        "height": 1710,
+        "depth": 315
+      },
+      "tags": [
+        "OKH",
+        "Storage",
+        "Shelf",
+        "Rack",
+        "Bookcase"
+      ]
+    },
+    {
+      "sku": "contributions_shelves_storage_steel",
+      "name": "Steel shelves",
+      "asset": "sh3d/contributions_shelves_storage_steel.glb",
+      "dims": {
+        "width": 800,
+        "height": 1800,
+        "depth": 300
+      },
+      "tags": [
+        "OKH",
+        "Storage",
+        "Shelf",
+        "Rack",
+        "Bookcase"
+      ]
+    },
+    {
+      "sku": "contributions_glassdoorcabinet",
+      "name": "Glass-door cabinet",
+      "asset": "sh3d/contributions_glassdoorcabinet.glb",
+      "dims": {
+        "width": 745,
+        "height": 1500,
+        "depth": 455
+      },
+      "tags": [
+        "Shelf",
+        "Shelves"
+      ]
+    }
+  ],
+  "sideboard": [
+    {
+      "sku": "lucapresidente_credenza",
+      "name": "Sideboard",
+      "asset": "sh3d/lucapresidente_credenza.glb",
+      "dims": {
+        "width": 1660,
+        "height": 780,
+        "depth": 500
+      },
+      "tags": []
+    }
+  ],
+  "cabinet": [
+    {
+      "sku": "contributions_uppercabinet2",
+      "name": "Gray smaller upper cabinet",
+      "asset": "sh3d/contributions_uppercabinet2.glb",
+      "dims": {
+        "width": 800,
+        "height": 401,
+        "depth": 439
+      },
+      "tags": [
+        "Cupboard"
+      ]
+    },
+    {
+      "sku": "contributions_bathroom_sink",
+      "name": "Washbasin with cabinet",
+      "asset": "sh3d/contributions_bathroom_sink.glb",
+      "dims": {
+        "width": 1220,
+        "height": 780,
+        "depth": 550
+      },
+      "tags": [
+        "OKH",
+        "Washbasin"
+      ]
+    },
+    {
+      "sku": "contributions_glassdoorkitchencabinet",
+      "name": "Glass door cabinet",
+      "asset": "sh3d/contributions_glassdoorkitchencabinet.glb",
+      "dims": {
+        "width": 1326,
+        "height": 1210,
+        "depth": 360
+      },
+      "tags": [
+        "Cupboard"
+      ]
+    },
+    {
+      "sku": "contributions_glassdoorcabinet",
+      "name": "Glass-door cabinet",
+      "asset": "sh3d/contributions_glassdoorcabinet.glb",
+      "dims": {
+        "width": 745,
+        "height": 1500,
+        "depth": 455
+      },
+      "tags": [
+        "Shelf",
+        "Shelves"
+      ]
+    },
+    {
+      "sku": "contributions_2glassdoorcabinet",
+      "name": "Wood glass door cabinet",
+      "asset": "sh3d/contributions_2glassdoorcabinet.glb",
+      "dims": {
+        "width": 960,
+        "height": 700,
+        "depth": 392
+      },
+      "tags": [
+        "Cupboard"
+      ]
+    },
+    {
+      "sku": "contributions_2dooruppercabinet",
+      "name": "Wood upper cabinet",
+      "asset": "sh3d/contributions_2dooruppercabinet.glb",
+      "dims": {
+        "width": 960,
+        "height": 709,
+        "depth": 392
+      },
+      "tags": [
+        "Cupboard"
+      ]
+    },
+    {
+      "sku": "lucapresidente_mobilettowenge",
+      "name": "Cabinet",
+      "asset": "sh3d/lucapresidente_mobilettowenge.glb",
+      "dims": {
+        "width": 800,
+        "height": 820,
+        "depth": 420
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_pensile_cucina_60x70",
+      "name": "Glass door cabinet",
+      "asset": "sh3d/contributions_pensile_cucina_60x70.glb",
+      "dims": {
+        "width": 700,
+        "height": 590,
+        "depth": 495
+      },
+      "tags": [
+        "Cupboard"
+      ]
+    },
+    {
+      "sku": "contributions_meublechaussures",
+      "name": "Shoe cabinet",
+      "asset": "sh3d/contributions_meublechaussures.glb",
+      "dims": {
+        "width": 717,
+        "height": 1023,
+        "depth": 396
+      },
+      "tags": []
+    },
+    {
+      "sku": "blendswap_cc_0_cupboard",
+      "name": "Cupboard",
+      "asset": "sh3d/blendswap_cc_0_cupboard.glb",
+      "dims": {
+        "width": 1005,
+        "height": 1500,
+        "depth": 390
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Wardrobe"
+      ]
+    },
+    {
+      "sku": "lucapresidente_mobilettolavabowenge",
+      "name": "Washbasin with cabinet",
+      "asset": "sh3d/lucapresidente_mobilettolavabowenge.glb",
+      "dims": {
+        "width": 810,
+        "height": 1013,
+        "depth": 425
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_bathroomfurniture",
+      "name": "Cabinet",
+      "asset": "sh3d/contributions_bathroomfurniture.glb",
+      "dims": {
+        "width": 1190,
+        "height": 1311,
+        "depth": 509
+      },
+      "tags": []
+    }
+  ],
+  "tv_unit": [
+    {
+      "sku": "blendswap_cc_by_tvstand",
+      "name": "TV stand",
+      "asset": "sh3d/blendswap_cc_by_tvstand.glb",
+      "dims": {
+        "width": 1351,
+        "height": 526,
+        "depth": 465
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Cabinet"
+      ]
+    }
+  ],
+  "vanity": [
+    {
+      "sku": "scopia_dressing_table",
+      "name": "Dressing table",
+      "asset": "sh3d/scopia_dressing_table.glb",
+      "dims": {
+        "width": 857,
+        "height": 1359,
+        "depth": 465
+      },
+      "tags": []
+    },
+    {
+      "sku": "scopia_bathroom_vanity",
+      "name": "Vanity",
+      "asset": "sh3d/scopia_bathroom_vanity.glb",
+      "dims": {
+        "width": 1071,
+        "height": 2078,
+        "depth": 385
+      },
+      "tags": [
+        "Washbasin"
+      ]
+    }
+  ],
+  "floor_lamp": [
+    {
+      "sku": "contributions_lampehalogene",
+      "name": "Floor lamp",
+      "asset": "sh3d/contributions_lampehalogene.glb",
+      "dims": {
+        "width": 313,
+        "height": 1800,
+        "depth": 689
+      },
+      "tags": []
+    }
+  ],
+  "table_lamp": [
+    {
+      "sku": "contributions_lamp_office",
+      "name": "Desk lamp",
+      "asset": "sh3d/contributions_lamp_office.glb",
+      "dims": {
+        "width": 160,
+        "height": 470,
+        "depth": 500
+      },
+      "tags": [
+        "OKH"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_desklamp",
+      "name": "Desk lamp",
+      "asset": "sh3d/blendswap_cc_0_desklamp.glb",
+      "dims": {
+        "width": 244,
+        "height": 400,
+        "depth": 244
+      },
+      "tags": [
+        "Blend",
+        "Swap"
+      ]
+    },
+    {
+      "sku": "scopia_desk_lamp2",
+      "name": "Desk lamp",
+      "asset": "sh3d/scopia_desk_lamp2.glb",
+      "dims": {
+        "width": 225,
+        "height": 400,
+        "depth": 417
+      },
+      "tags": []
+    },
+    {
+      "sku": "scopia_desk_lamp1",
+      "name": "Desk lamp",
+      "asset": "sh3d/scopia_desk_lamp1.glb",
+      "dims": {
+        "width": 137,
+        "height": 450,
+        "depth": 342
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_desklight",
+      "name": "Desk lamp",
+      "asset": "sh3d/contributions_desklight.glb",
+      "dims": {
+        "width": 232,
+        "height": 562,
+        "depth": 738
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_desklamp1",
+      "name": "Desk lamp",
+      "asset": "sh3d/contributions_desklamp1.glb",
+      "dims": {
+        "width": 406,
+        "height": 612,
+        "depth": 406
+      },
+      "tags": []
+    }
+  ],
+  "pendant_light": [
+    {
+      "sku": "blendswap_cc_by_hanginglight",
+      "name": "Hanging light",
+      "asset": "sh3d/blendswap_cc_by_hanginglight.glb",
+      "dims": {
+        "width": 439,
+        "height": 860,
+        "depth": 439
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Pendant",
+        "Ceiling"
+      ]
+    },
+    {
+      "sku": "contributions_hanginglight",
+      "name": "Hanging light",
+      "asset": "sh3d/contributions_hanginglight.glb",
+      "dims": {
+        "width": 323,
+        "height": 372,
+        "depth": 323
+      },
+      "tags": [
+        "Pendant",
+        "Ceiling"
+      ]
+    },
+    {
+      "sku": "katorlegaz_hanging_restaurant_light",
+      "name": "Hanging light",
+      "asset": "sh3d/katorlegaz_hanging_restaurant_light.glb",
+      "dims": {
+        "width": 393,
+        "height": 662,
+        "depth": 393
+      },
+      "tags": [
+        "Pendant",
+        "Ceiling"
+      ]
+    },
+    {
+      "sku": "contributions_lustreboule",
+      "name": "Pendant light",
+      "asset": "sh3d/contributions_lustreboule.glb",
+      "dims": {
+        "width": 300,
+        "height": 676,
+        "depth": 300
+      },
+      "tags": [
+        "Hanging",
+        "Pendant",
+        "Ceiling"
+      ]
+    },
+    {
+      "sku": "scopia_saloon_lamp",
+      "name": "Pendant lamp",
+      "asset": "sh3d/scopia_saloon_lamp.glb",
+      "dims": {
+        "width": 132,
+        "height": 600,
+        "depth": 836
+      },
+      "tags": [
+        "Hanging",
+        "Pendant",
+        "Ceiling"
+      ]
+    },
+    {
+      "sku": "scopia_chandelier_lamp",
+      "name": "Chandelier lamp",
+      "asset": "sh3d/scopia_chandelier_lamp.glb",
+      "dims": {
+        "width": 1306,
+        "height": 1744,
+        "depth": 1306
+      },
+      "tags": [
+        "Hanging",
+        "Pendant",
+        "Ceiling",
+        "Adjustable"
+      ]
+    }
+  ],
+  "wall_art": [
+    {
+      "sku": "contributions_tableauvisage",
+      "name": "Picture portrait",
+      "asset": "sh3d/contributions_tableauvisage.glb",
+      "dims": {
+        "width": 213,
+        "height": 300,
+        "depth": 6
+      },
+      "tags": [
+        "Frame",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_tableauying",
+      "name": "Picture Ying",
+      "asset": "sh3d/contributions_tableauying.glb",
+      "dims": {
+        "width": 370,
+        "height": 429,
+        "depth": 5
+      },
+      "tags": [
+        "Frame",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_tableaumulet",
+      "name": "Picture mule",
+      "asset": "sh3d/contributions_tableaumulet.glb",
+      "dims": {
+        "width": 320,
+        "height": 212,
+        "depth": 4
+      },
+      "tags": [
+        "Frame",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_eiffeltowerframe",
+      "name": "Frame Eiffel Tower",
+      "asset": "sh3d/contributions_eiffeltowerframe.glb",
+      "dims": {
+        "width": 670,
+        "height": 479,
+        "depth": 16
+      },
+      "tags": [
+        "Photo",
+        "Picture",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_statueoflibertyframe",
+      "name": "Frame Statue Of Liberty",
+      "asset": "sh3d/contributions_statueoflibertyframe.glb",
+      "dims": {
+        "width": 501,
+        "height": 880,
+        "depth": 16
+      },
+      "tags": [
+        "Photo",
+        "Picture",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_tableauvisage3",
+      "name": "Picture portrait",
+      "asset": "sh3d/contributions_tableauvisage3.glb",
+      "dims": {
+        "width": 266,
+        "height": 350,
+        "depth": 4
+      },
+      "tags": [
+        "Frame",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_antelopecanyonframe",
+      "name": "Frame Antelope Canyon",
+      "asset": "sh3d/contributions_antelopecanyonframe.glb",
+      "dims": {
+        "width": 501,
+        "height": 880,
+        "depth": 16
+      },
+      "tags": [
+        "Photo",
+        "Picture",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_haivanpassframe",
+      "name": "Frame Hai Van Pass",
+      "asset": "sh3d/contributions_haivanpassframe.glb",
+      "dims": {
+        "width": 772,
+        "height": 479,
+        "depth": 15
+      },
+      "tags": [
+        "Photo",
+        "Picture",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_montblancframe",
+      "name": "Frame Mont Blanc",
+      "asset": "sh3d/contributions_montblancframe.glb",
+      "dims": {
+        "width": 945,
+        "height": 479,
+        "depth": 16
+      },
+      "tags": [
+        "Photo",
+        "Picture",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_veniceframe",
+      "name": "Frame Venice",
+      "asset": "sh3d/contributions_veniceframe.glb",
+      "dims": {
+        "width": 735,
+        "height": 479,
+        "depth": 16
+      },
+      "tags": [
+        "Photo",
+        "Picture",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_torontoontarioplaceframe",
+      "name": "Frame Toronto Ontario Place",
+      "asset": "sh3d/contributions_torontoontarioplaceframe.glb",
+      "dims": {
+        "width": 611,
+        "height": 479,
+        "depth": 16
+      },
+      "tags": [
+        "Photo",
+        "Picture",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_inariframe",
+      "name": "Frame Inari",
+      "asset": "sh3d/contributions_inariframe.glb",
+      "dims": {
+        "width": 480,
+        "height": 679,
+        "depth": 16
+      },
+      "tags": [
+        "Photo",
+        "Picture",
+        "Decoration"
+      ]
+    }
+  ],
+  "mirror": [
+    {
+      "sku": "contributions_mirror",
+      "name": "Mirror",
+      "asset": "sh3d/contributions_mirror.glb",
+      "dims": {
+        "width": 400,
+        "height": 400,
+        "depth": 5
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_rectangularmirror",
+      "name": "Rectangular mirror",
+      "asset": "sh3d/contributions_rectangularmirror.glb",
+      "dims": {
+        "width": 500,
+        "height": 700,
+        "depth": 10
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_ovalmirror",
+      "name": "Oval mirror",
+      "asset": "sh3d/contributions_ovalmirror.glb",
+      "dims": {
+        "width": 550,
+        "height": 1050,
+        "depth": 10
+      },
+      "tags": []
+    }
+  ],
+  "rug": [
+    {
+      "sku": "katorlegaz_oriental_rug",
+      "name": "Oriental rug",
+      "asset": "sh3d/katorlegaz_oriental_rug.glb",
+      "dims": {
+        "width": 1858,
+        "height": 25,
+        "depth": 2577
+      },
+      "tags": [
+        "Carpet",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "katorlegaz_bathmat",
+      "name": "Bathmat",
+      "asset": "sh3d/katorlegaz_bathmat.glb",
+      "dims": {
+        "width": 733,
+        "height": 14,
+        "depth": 470
+      },
+      "tags": [
+        "Rug",
+        "Carpet"
+      ]
+    },
+    {
+      "sku": "contributions_carpet",
+      "name": "Carpet",
+      "asset": "sh3d/contributions_carpet.glb",
+      "dims": {
+        "width": 1600,
+        "height": 10,
+        "depth": 2250
+      },
+      "tags": [
+        "Rug",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "scopia_round_carpet",
+      "name": "Round carpet",
+      "asset": "sh3d/scopia_round_carpet.glb",
+      "dims": {
+        "width": 800,
+        "height": 5,
+        "depth": 800
+      },
+      "tags": [
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_kleed_grieks",
+      "name": "Greek carpet",
+      "asset": "sh3d/contributions_kleed_grieks.glb",
+      "dims": {
+        "width": 1700,
+        "height": 10,
+        "depth": 1200
+      },
+      "tags": [
+        "Rug",
+        "Decoration"
+      ]
+    }
+  ],
+  "plant": [
+    {
+      "sku": "blendswap_cc_by_utensilspot",
+      "name": "Utensils pot",
+      "asset": "sh3d/blendswap_cc_by_utensilspot.glb",
+      "dims": {
+        "width": 122,
+        "height": 402,
+        "depth": 111
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Tool"
+      ]
+    },
+    {
+      "sku": "contributions_plantersdesk",
+      "name": "Planters desk",
+      "asset": "sh3d/contributions_plantersdesk.glb",
+      "dims": {
+        "width": 760,
+        "height": 1600,
+        "depth": 660
+      },
+      "tags": [
+        "Table"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_cosmeticspot",
+      "name": "Cosmetics pot",
+      "asset": "sh3d/blendswap_cc_0_cosmeticspot.glb",
+      "dims": {
+        "width": 77,
+        "height": 71,
+        "depth": 78
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Makeup"
+      ]
+    },
+    {
+      "sku": "katorlegaz_pedestal_vase_lamp",
+      "name": "Pedestal vase lamp",
+      "asset": "sh3d/katorlegaz_pedestal_vase_lamp.glb",
+      "dims": {
+        "width": 282,
+        "height": 800,
+        "depth": 282
+      },
+      "tags": []
+    },
+    {
+      "sku": "scopia_vase1",
+      "name": "Vase",
+      "asset": "sh3d/scopia_vase1.glb",
+      "dims": {
+        "width": 227,
+        "height": 300,
+        "depth": 227
+      },
+      "tags": [
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "scopia_vase3",
+      "name": "Vase",
+      "asset": "sh3d/scopia_vase3.glb",
+      "dims": {
+        "width": 235,
+        "height": 509,
+        "depth": 235
+      },
+      "tags": [
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "katorlegaz_spray_bottle",
+      "name": "Spray bottle",
+      "asset": "sh3d/katorlegaz_spray_bottle.glb",
+      "dims": {
+        "width": 96,
+        "height": 300,
+        "depth": 119
+      },
+      "tags": [
+        "Outdoor",
+        "Garden",
+        "Plant"
+      ]
+    },
+    {
+      "sku": "scopia_maceta",
+      "name": "Plant",
+      "asset": "sh3d/scopia_maceta.glb",
+      "dims": {
+        "width": 590,
+        "height": 580,
+        "depth": 650
+      },
+      "tags": [
+        "Patio",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "scopia_jar",
+      "name": "Vase",
+      "asset": "sh3d/scopia_jar.glb",
+      "dims": {
+        "width": 244,
+        "height": 400,
+        "depth": 244
+      },
+      "tags": [
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "contributions_potplant2",
+      "name": "Plant",
+      "asset": "sh3d/contributions_potplant2.glb",
+      "dims": {
+        "width": 967,
+        "height": 854,
+        "depth": 962
+      },
+      "tags": [
+        "Patio"
+      ]
+    },
+    {
+      "sku": "contributions_flowers",
+      "name": "Flowers",
+      "asset": "sh3d/contributions_flowers.glb",
+      "dims": {
+        "width": 209,
+        "height": 500,
+        "depth": 159
+      },
+      "tags": [
+        "Vase",
+        "Tulips",
+        "Decoration"
+      ]
+    },
+    {
+      "sku": "blendswap_cc_0_littleplant",
+      "name": "Little plant",
+      "asset": "sh3d/blendswap_cc_0_littleplant.glb",
+      "dims": {
+        "width": 266,
+        "height": 232,
+        "depth": 266
+      },
+      "tags": [
+        "Blend",
+        "Swap",
+        "Patio",
+        "Decoration"
+      ]
+    }
+  ],
+  "curtain": [
+    {
+      "sku": "katorlegaz_showercurtain",
+      "name": "Shower curtain",
+      "asset": "sh3d/katorlegaz_showercurtain.glb",
+      "dims": {
+        "width": 903,
+        "height": 1900,
+        "depth": 294
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_curtainrod",
+      "name": "Curtain rod",
+      "asset": "sh3d/contributions_curtainrod.glb",
+      "dims": {
+        "width": 1500,
+        "height": 77,
+        "depth": 165
+      },
+      "tags": [
+        "Window"
+      ]
+    },
+    {
+      "sku": "contributions_curtain",
+      "name": "Curtain",
+      "asset": "sh3d/contributions_curtain.glb",
+      "dims": {
+        "width": 670,
+        "height": 2250,
+        "depth": 230
+      },
+      "tags": [
+        "Window"
+      ]
+    },
+    {
+      "sku": "scopia_curtain",
+      "name": "Curtain",
+      "asset": "sh3d/scopia_curtain.glb",
+      "dims": {
+        "width": 1300,
+        "height": 2250,
+        "depth": 50
+      },
+      "tags": []
+    },
+    {
+      "sku": "contributions_tendadoccia",
+      "name": "Corner shower curtain",
+      "asset": "sh3d/contributions_tendadoccia.glb",
+      "dims": {
+        "width": 736,
+        "height": 1979,
+        "depth": 934
+      },
+      "tags": []
+    }
+  ]
+}

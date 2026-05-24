@@ -271,21 +271,49 @@ function GlbMesh({
     const native = new THREE.Box3().setFromObject(cloned);
     const size = new THREE.Vector3();
     native.getSize(size);
+    const yawRad = (tuning.yawDeg * Math.PI) / 180;
     if (size.x < 1e-5 || size.y < 1e-5 || size.z < 1e-5) {
-      return { scaleX: 1, scaleY: 1, scaleZ: 1, offset: new THREE.Vector3(0, yNudge, 0) };
+      return {
+        scaleX: 1, scaleY: 1, scaleZ: 1,
+        innerShift: new THREE.Vector3(0, 0, 0),
+        outerY: yNudge,
+        yawRad,
+      };
     }
-    const scaleX = (w / size.x) * tuning.scaleMul;
+    // After yaw, world-x extent comes from native-z extent (and vice-versa).
+    // Scale each native axis so the rendered footprint fits (w, d) given yaw.
+    const swapped = Math.abs(tuning.yawDeg % 180) === 90;
+    const scaleX = (swapped ? d / size.x : w / size.x) * tuning.scaleMul;
     const scaleY = (h / size.y) * tuning.scaleMul;
-    const scaleZ = (d / size.z) * tuning.scaleMul;
-    const floorOffset = -native.min.y * scaleY;
-    const cX = (native.min.x + native.max.x) * 0.5 * scaleX;
-    const cZ = (native.min.z + native.max.z) * 0.5 * scaleZ;
-    return { scaleX, scaleY, scaleZ, offset: new THREE.Vector3(-cX, floorOffset + yNudge, -cZ) };
+    const scaleZ = (swapped ? w / size.z : d / size.z) * tuning.scaleMul;
+    // Centre the mesh's XZ centroid and lift its bottom to y=0 in PRE-rotation,
+    // PRE-scale local coords. With the centroid at origin, Y-rotation about that
+    // origin no longer displaces the footprint — fixes the old yaw bug where
+    // setting yawDeg shifted the model by 2× its half-extent.
+    const centroidX = (native.min.x + native.max.x) * 0.5;
+    const centroidZ = (native.min.z + native.max.z) * 0.5;
+    const bottomY = native.min.y;
+    return {
+      scaleX, scaleY, scaleZ,
+      innerShift: new THREE.Vector3(-centroidX, -bottomY, -centroidZ),
+      outerY: yNudge,
+      yawRad,
+    };
   }, [cloned, assetUrl, yNudge, w, d, h]);
 
   return (
-    <group scale={[fit.scaleX, fit.scaleY, fit.scaleZ]} position={fit.offset}>
-      <primitive object={cloned} />
+    // Outer: world placement + per-asset yNudge (wall items + ceiling items).
+    <group position={[0, fit.outerY, 0]}>
+      {/* Scale operates in pre-rotation local frame so yaw doesn't change footprint. */}
+      <group scale={[fit.scaleX, fit.scaleY, fit.scaleZ]}>
+        {/* Rotation about the centred origin — centroid stays at (0,_,0). */}
+        <group rotation={[0, fit.yawRad, 0]}>
+          {/* Inner shift centres the mesh in its native (unscaled) frame. */}
+          <group position={fit.innerShift}>
+            <primitive object={cloned} />
+          </group>
+        </group>
+      </group>
     </group>
   );
 }
@@ -335,15 +363,12 @@ function categoryColor(category: string, accent: string): string {
   }
 }
 
-// Preload the hero living-room GLBs (3D-FRONT, cc-by-nc-4.0 prototype assets)
-// so the first render doesn't stall.
-useGLTF.preload("/models/3df/3df_sofa_main.glb");
-useGLTF.preload("/models/3df/3df_sofa_l.glb");
-useGLTF.preload("/models/3df/3df_tv_unit.glb");
-useGLTF.preload("/models/3df/3df_coffee_table.glb");
-useGLTF.preload("/models/3df/3df_lounge_chair.glb");
-useGLTF.preload("/models/3df/3df_ottoman.glb");
-useGLTF.preload("/models/3df/3df_bookshelf.glb");
-useGLTF.preload("/models/3df/3df_lamp.glb");
-useGLTF.preload("/models/3df/3df_chair_dining.glb");
-useGLTF.preload("/models/3df/3df_cabinet.glb");
+// Preload the highest-traffic SH3D GLBs (Sweet Home 3D Packs, CC-BY/CC-0/Free
+// Art licenses) so the first render doesn't stall. Paths come from the v1
+// picks in scripts/curate_from_sh3d.py — regenerate if the picks change.
+useGLTF.preload("/models/sh3d/blendswap_cc_0_couch.glb");
+useGLTF.preload("/models/sh3d/blendswap_cc_by_tvstand.glb");
+useGLTF.preload("/models/sh3d/contributions_tablebasse.glb");
+useGLTF.preload("/models/sh3d/blendswap_cc_by_fotel.glb");
+useGLTF.preload("/models/sh3d/blendswap_cc_by_bedsidetable.glb");
+useGLTF.preload("/models/sh3d/blendswap_cc_by_bookcase.glb");

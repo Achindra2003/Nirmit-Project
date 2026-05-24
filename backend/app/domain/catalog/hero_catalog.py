@@ -589,6 +589,83 @@ HERO_ITEMS: list[CatalogItem] = [
     ),
 
     # ── Decor: additional plants ─────────────────────────────────────────
+
+    # ── Expansion 2026-05-23: pricing for new curated sub_categories. ────
+    # The generate_preset_catalogs script needs a hero pricing entry per
+    # sub_category to attach price/name/materials to the SH3D mesh pick.
+    _item(
+        sku="HERO-RUG-01", asset_url="3df/3df_rug.glb",
+        name_en="Hand-Knotted Rug", name_hi="कालीन",
+        category="decor", sub_category="rug", rooms=_LIVING_BEDROOM,
+        w=2000, h=10, d=1400, price=14000, build_price=None,
+        materials=["wool"], tags=["rug", "decor", "floor", "anchor"], roughness=0.95,
+        front_clearance_mm=0, placement_type="floor",
+        size_label="large", material_label="wool",
+    ),
+    _item(
+        sku="HERO-PLANT-01", asset_url="3df/3df_plant.glb",
+        name_en="Potted Floor Plant", name_hi="पौधा",
+        category="decor", sub_category="plant", rooms=_ALL_ROOMS,
+        w=500, h=1200, d=500, price=2800, build_price=None,
+        materials=["ceramic", "foliage"], tags=["plant", "decor", "softness", "prana"], roughness=0.9,
+        front_clearance_mm=200, placement_type="floor",
+        size_label="standard", material_label="ceramic",
+    ),
+    _item(
+        sku="HERO-ART-01", asset_url="3df/3df_art.glb",
+        name_en="Framed Wall Art", name_hi="दीवार चित्र",
+        category="decor", sub_category="wall_art", rooms=_ALL_ROOMS,
+        w=700, h=900, d=30, price=4500, build_price=None,
+        materials=["paper", "wood_frame"], tags=["art", "decor", "wall"], roughness=0.6,
+        front_clearance_mm=0, placement_type="wall",
+        size_label="standard", material_label="frame",
+    ),
+    _item(
+        sku="HERO-DRESS-01", asset_url="3df/3df_dresser.glb",
+        name_en="Dressing Table with Mirror", name_hi="ड्रेसिंग टेबल",
+        category="storage", sub_category="dressing_table", rooms=_BEDROOM,
+        w=1100, h=760, d=500, price=19000, build_price=12000,
+        materials=["wood_engineered", "glass"], tags=["dressing", "vanity", "bedroom", "storage"],
+        roughness=0.6, front_clearance_mm=700, placement_type="floor",
+        size_label="standard", material_label="wood",
+    ),
+    _item(
+        sku="HERO-DESKLAMP-01", asset_url="3df/3df_desk_lamp.glb",
+        name_en="Task Desk Lamp", name_hi="डेस्क लैंप",
+        category="lighting", sub_category="desk_lamp",
+        rooms=[RoomType.STUDY, RoomType.BEDROOM, RoomType.LIVING],
+        w=200, h=450, d=200, price=2200, build_price=None,
+        materials=["metal"], tags=["lighting", "desk_lamp", "task"], roughness=0.4,
+        front_clearance_mm=0, placement_type="floor",
+        size_label="small", material_label="metal",
+    ),
+    _item(
+        sku="HERO-PENDANT-01", asset_url="3df/3df_pendant.glb",
+        name_en="Pendant Ceiling Light", name_hi="पेंडेंट लाइट",
+        category="lighting", sub_category="pendant_light", rooms=_ALL_ROOMS,
+        w=400, h=600, d=400, price=7500, build_price=None,
+        materials=["metal", "glass"], tags=["lighting", "pendant", "ceiling"], roughness=0.4,
+        front_clearance_mm=0, placement_type="ceiling",
+        size_label="standard", material_label="metal",
+    ),
+    _item(
+        sku="HERO-FSHELF-01", asset_url="3df/3df_shelf.glb",
+        name_en="Floating Wall Shelf", name_hi="फ्लोटिंग शेल्फ",
+        category="storage", sub_category="floating_shelf", rooms=_LIVING_BEDROOM_STUDY,
+        w=1200, h=30, d=300, price=4500, build_price=2800,
+        materials=["wood_engineered"], tags=["shelf", "storage", "wall"], roughness=0.7,
+        front_clearance_mm=0, placement_type="wall",
+        size_label="standard", material_label="wood",
+    ),
+    _item(
+        sku="HERO-FIRE-01", asset_url="3df/3df_fireplace.glb",
+        name_en="Fireplace", name_hi="चिमनी",
+        category="decor", sub_category="fireplace", rooms=_LIVING,
+        w=1200, h=1100, d=400, price=48000, build_price=32000,
+        materials=["stone", "metal"], tags=["fireplace", "decor", "anchor"], roughness=0.7,
+        front_clearance_mm=900, placement_type="floor",
+        size_label="large", material_label="stone",
+    ),
 ]
 
 _BY_SUB_ROOM: dict[tuple[str, RoomType], list[CatalogItem]] = defaultdict(list)

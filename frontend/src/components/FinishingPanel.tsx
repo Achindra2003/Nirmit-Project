@@ -74,11 +74,11 @@ export function FinishingPanel({ room, onApply, activeSection }: Props) {
             <div style={{ ...previewSwatch, background: activePaint?.hex ?? room.palette.wall }} />
             <div style={previewMeta}>
               <span style={previewLabel}>Currently on wall</span>
-              <span style={previewName}>{activePaint?.color_name ?? "Custom"}</span>
+              <span style={previewName}>{activePaint?.color_name ?? titleCase(room.wall_finish ?? "Custom")}</span>
               <span style={previewSub}>
                 {activePaint
                   ? `${activePaint.brand} · ${activePaint.product}`
-                  : room.palette.wall.toUpperCase()}
+                  : "Preset finish"}
               </span>
             </div>
           </div>
@@ -124,11 +124,11 @@ export function FinishingPanel({ room, onApply, activeSection }: Props) {
             <div style={{ ...previewSwatch, background: activeFloor?.hex ?? room.palette.floor }} />
             <div style={previewMeta}>
               <span style={previewLabel}>Currently on floor</span>
-              <span style={previewName}>{activeFloor?.label ?? "Custom"}</span>
+              <span style={previewName}>{activeFloor?.label ?? titleCase(room.flooring ?? "Custom")}</span>
               <span style={previewSub}>
                 {activeFloor
                   ? `${activeFloor.brand} · ${activeFloor.product}`
-                  : room.palette.floor.toUpperCase()}
+                  : "Preset flooring"}
               </span>
             </div>
           </div>
@@ -287,6 +287,10 @@ function Section({
 }
 
 // ── helpers ───────────────────────────────────────────────────────────
+function titleCase(s: string): string {
+  // "off-white limewash" → "Off-White Limewash"; preserves hyphens and existing capitalisation.
+  return s.replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1));
+}
 function warmthHex(k: number): string {
   if (k < 2700) return "#FF8A2A";
   if (k < 3100) return "#FFB257";

@@ -1,0 +1,2403 @@
+{
+  "generated_at": "2026-05-21T10:49:22.101Z",
+  "items": [
+    {
+      "sku": "sofa_v1",
+      "sub_category": "sofa",
+      "asset_url": "sh3d/blendswap_cc_0_couch.glb",
+      "native_dims_mm": [
+        2074,
+        856,
+        876
+      ],
+      "target_dims_mm": [
+        2200,
+        850,
+        900
+      ],
+      "source_sku": "blendswap_cc_0_couch",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Couch",
+      "source_category": "Living room",
+      "license": "CC-0",
+      "creator": "TowerCG",
+      "score": 0.004
+    },
+    {
+      "sku": "sofa_v2",
+      "sub_category": "sofa",
+      "asset_url": "sh3d/blendswap_cc_by_couch3.glb",
+      "native_dims_mm": [
+        2010,
+        843,
+        909
+      ],
+      "target_dims_mm": [
+        2200,
+        850,
+        900
+      ],
+      "source_sku": "blendswap_cc_by_couch3",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Couch",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "MatBot",
+      "score": 0.008
+    },
+    {
+      "sku": "sofa_v3",
+      "sub_category": "sofa",
+      "asset_url": "sh3d/blendswap_cc_0_winchestersofa.glb",
+      "native_dims_mm": [
+        2319,
+        804,
+        938
+      ],
+      "target_dims_mm": [
+        2200,
+        850,
+        900
+      ],
+      "source_sku": "blendswap_cc_0_winchestersofa",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Winchester sofa",
+      "source_category": "Living room",
+      "license": "CC-0",
+      "creator": "Gnanasaireddy",
+      "score": 0.008
+    },
+    {
+      "sku": "sofa_v4",
+      "sub_category": "sofa",
+      "asset_url": "sh3d/katorlegaz_futon_couch.glb",
+      "native_dims_mm": [
+        1960,
+        878,
+        898
+      ],
+      "target_dims_mm": [
+        2200,
+        850,
+        900
+      ],
+      "source_sku": "katorlegaz_futon_couch",
+      "source_pack": "KatorLegaz",
+      "source_name": "Futon couch",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Kator Legaz",
+      "score": 0.013
+    },
+    {
+      "sku": "diwan_v1",
+      "sub_category": "diwan",
+      "asset_url": "sh3d/scopia_day_bed_frame.glb",
+      "native_dims_mm": [
+        2080,
+        700,
+        970
+      ],
+      "target_dims_mm": [
+        2000,
+        700,
+        900
+      ],
+      "source_sku": "scopia_day_bed_frame",
+      "source_pack": "Scopia",
+      "source_name": "Day bed",
+      "source_category": "Bedroom",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.008
+    },
+    {
+      "sku": "diwan_v2",
+      "sub_category": "diwan",
+      "asset_url": "sh3d/contributions_trundlebed.glb",
+      "native_dims_mm": [
+        2157,
+        1171,
+        950
+      ],
+      "target_dims_mm": [
+        2000,
+        700,
+        900
+      ],
+      "source_sku": "contributions_trundlebed",
+      "source_pack": "Contributions",
+      "source_name": "Daybed",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "Pencilart",
+      "score": 0.462
+    },
+    {
+      "sku": "coffee_table_v1",
+      "sub_category": "coffee_table",
+      "asset_url": "sh3d/contributions_tablebasse.glb",
+      "native_dims_mm": [
+        1125,
+        391,
+        598
+      ],
+      "target_dims_mm": [
+        1100,
+        450,
+        600
+      ],
+      "source_sku": "contributions_tablebasse",
+      "source_pack": "Contributions",
+      "source_name": "Coffee table",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Ga\ufffdl Bettinelli",
+      "score": 0.018
+    },
+    {
+      "sku": "coffee_table_v2",
+      "sub_category": "coffee_table",
+      "asset_url": "sh3d/blendswap_cc_by_coffeetable.glb",
+      "native_dims_mm": [
+        1200,
+        450,
+        701
+      ],
+      "target_dims_mm": [
+        1100,
+        450,
+        600
+      ],
+      "source_sku": "blendswap_cc_by_coffeetable",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Coffee table",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Nikitron",
+      "score": 0.037
+    },
+    {
+      "sku": "coffee_table_v3",
+      "sub_category": "coffee_table",
+      "asset_url": "sh3d/contributions_coffeetable.glb",
+      "native_dims_mm": [
+        1170,
+        440,
+        490
+      ],
+      "target_dims_mm": [
+        1100,
+        450,
+        600
+      ],
+      "source_sku": "contributions_coffeetable",
+      "source_pack": "Contributions",
+      "source_name": "Coffee table",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Sheep",
+      "score": 0.038
+    },
+    {
+      "sku": "coffee_table_v4",
+      "sub_category": "coffee_table",
+      "asset_url": "sh3d/scopia_coffee_table2.glb",
+      "native_dims_mm": [
+        1238,
+        477,
+        512
+      ],
+      "target_dims_mm": [
+        1100,
+        450,
+        600
+      ],
+      "source_sku": "scopia_coffee_table2",
+      "source_pack": "Scopia",
+      "source_name": "Coffee table",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.041
+    },
+    {
+      "sku": "side_table_v1",
+      "sub_category": "side_table",
+      "asset_url": "sh3d/blendswap_cc_by_bedsidetable.glb",
+      "native_dims_mm": [
+        500,
+        480,
+        414
+      ],
+      "target_dims_mm": [
+        535,
+        500,
+        386
+      ],
+      "source_sku": "blendswap_cc_by_bedsidetable",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Bedside table",
+      "source_category": "Bedroom",
+      "license": "CC-BY",
+      "creator": "SirOccor",
+      "score": 0.011
+    },
+    {
+      "sku": "side_table_v2",
+      "sub_category": "side_table",
+      "asset_url": "sh3d/lucapresidente_comodinoazzurro.glb",
+      "native_dims_mm": [
+        500,
+        480,
+        425
+      ],
+      "target_dims_mm": [
+        535,
+        500,
+        386
+      ],
+      "source_sku": "lucapresidente_comodinoazzurro",
+      "source_pack": "LucaPresidente",
+      "source_name": "Blue bedside table",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 0.016
+    },
+    {
+      "sku": "side_table_v3",
+      "sub_category": "side_table",
+      "asset_url": "sh3d/blendswap_cc_0_bedsidetable2.glb",
+      "native_dims_mm": [
+        486,
+        454,
+        481
+      ],
+      "target_dims_mm": [
+        535,
+        500,
+        386
+      ],
+      "source_sku": "blendswap_cc_0_bedsidetable2",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Bedside table",
+      "source_category": "Bedroom",
+      "license": "CC-0",
+      "creator": "Nhumrod",
+      "score": 0.077
+    },
+    {
+      "sku": "side_table_v4",
+      "sub_category": "side_table",
+      "asset_url": "sh3d/contributions_meublechevet.glb",
+      "native_dims_mm": [
+        399,
+        540,
+        290
+      ],
+      "target_dims_mm": [
+        535,
+        500,
+        386
+      ],
+      "source_sku": "contributions_meublechevet",
+      "source_pack": "Contributions",
+      "source_name": "Bedside table",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "Ga\ufffdl Bettinelli",
+      "score": 0.133
+    },
+    {
+      "sku": "tv_unit_v1",
+      "sub_category": "tv_unit",
+      "asset_url": "sh3d/blendswap_cc_by_tvstand.glb",
+      "native_dims_mm": [
+        1351,
+        526,
+        465
+      ],
+      "target_dims_mm": [
+        1800,
+        526,
+        465
+      ],
+      "source_sku": "blendswap_cc_by_tvstand",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "TV stand",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Leximumxii",
+      "score": 0.062
+    },
+    {
+      "sku": "tv_unit_v2",
+      "sub_category": "tv_unit",
+      "asset_url": "sh3d/contributions_meublehifibas.glb",
+      "native_dims_mm": [
+        1038,
+        333,
+        444
+      ],
+      "target_dims_mm": [
+        1800,
+        526,
+        465
+      ],
+      "source_sku": "contributions_meublehifibas",
+      "source_pack": "Contributions",
+      "source_name": "TV shelf unit",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Ga\ufffdl Bettinelli",
+      "score": 0.316
+    },
+    {
+      "sku": "tv_unit_v3",
+      "sub_category": "tv_unit",
+      "asset_url": "sh3d/blendswap_cc_0_televisioncabinet.glb",
+      "native_dims_mm": [
+        1354,
+        1600,
+        693
+      ],
+      "target_dims_mm": [
+        1800,
+        526,
+        465
+      ],
+      "source_sku": "blendswap_cc_0_televisioncabinet",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Television cabinet",
+      "source_category": "Living room",
+      "license": "CC-0",
+      "creator": "Niebieski",
+      "score": 4.471
+    },
+    {
+      "sku": "bookshelf_v1",
+      "sub_category": "bookshelf",
+      "asset_url": "sh3d/blendswap_cc_by_bookcase.glb",
+      "native_dims_mm": [
+        1664,
+        1864,
+        331
+      ],
+      "target_dims_mm": [
+        1663,
+        1863,
+        331
+      ],
+      "source_sku": "blendswap_cc_by_bookcase",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Bookcase",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Gerardbelnder",
+      "score": 0.0
+    },
+    {
+      "sku": "bookshelf_v2",
+      "sub_category": "bookshelf",
+      "asset_url": "sh3d/contributions_bookcase.glb",
+      "native_dims_mm": [
+        1825,
+        1500,
+        313
+      ],
+      "target_dims_mm": [
+        1663,
+        1863,
+        331
+      ],
+      "source_sku": "contributions_bookcase",
+      "source_pack": "Contributions",
+      "source_name": "Bookcase",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Peter Smolik",
+      "score": 0.05
+    },
+    {
+      "sku": "bookshelf_v3",
+      "sub_category": "bookshelf",
+      "asset_url": "sh3d/contributions_meublehifihaut.glb",
+      "native_dims_mm": [
+        1559,
+        1830,
+        414
+      ],
+      "target_dims_mm": [
+        1663,
+        1863,
+        331
+      ],
+      "source_sku": "contributions_meublehifihaut",
+      "source_pack": "Contributions",
+      "source_name": "Shelf unit",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Ga\ufffdl Bettinelli",
+      "score": 0.067
+    },
+    {
+      "sku": "bookshelf_v4",
+      "sub_category": "bookshelf",
+      "asset_url": "sh3d/katorlegaz_full_bookcase.glb",
+      "native_dims_mm": [
+        898,
+        2210,
+        347
+      ],
+      "target_dims_mm": [
+        1663,
+        1863,
+        331
+      ],
+      "source_sku": "katorlegaz_full_bookcase",
+      "source_pack": "KatorLegaz",
+      "source_name": "Full bookcase",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Kator Legaz",
+      "score": 0.249
+    },
+    {
+      "sku": "wardrobe_v1",
+      "sub_category": "wardrobe",
+      "asset_url": "sh3d/contributions_armoire.glb",
+      "native_dims_mm": [
+        1090,
+        2005,
+        528
+      ],
+      "target_dims_mm": [
+        1200,
+        2100,
+        600
+      ],
+      "source_sku": "contributions_armoire",
+      "source_pack": "Contributions",
+      "source_name": "Wardrobe",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "Icybones",
+      "score": 0.025
+    },
+    {
+      "sku": "wardrobe_v2",
+      "sub_category": "wardrobe",
+      "asset_url": "sh3d/lucapresidente_mobileazzurro.glb",
+      "native_dims_mm": [
+        1000,
+        2400,
+        570
+      ],
+      "target_dims_mm": [
+        1200,
+        2100,
+        600
+      ],
+      "source_sku": "lucapresidente_mobileazzurro",
+      "source_pack": "LucaPresidente",
+      "source_name": "Blue wardrobe",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 0.051
+    },
+    {
+      "sku": "wardrobe_v3",
+      "sub_category": "wardrobe",
+      "asset_url": "sh3d/blendswap_cc_by_wardrobe.glb",
+      "native_dims_mm": [
+        921,
+        2000,
+        680
+      ],
+      "target_dims_mm": [
+        1200,
+        2100,
+        600
+      ],
+      "source_sku": "blendswap_cc_by_wardrobe",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Wardrobe",
+      "source_category": "Bedroom",
+      "license": "CC-BY",
+      "creator": "SirOccor",
+      "score": 0.074
+    },
+    {
+      "sku": "wardrobe_v4",
+      "sub_category": "wardrobe",
+      "asset_url": "sh3d/lucapresidente_mobileciliegio.glb",
+      "native_dims_mm": [
+        1000,
+        2400,
+        500
+      ],
+      "target_dims_mm": [
+        1200,
+        2100,
+        600
+      ],
+      "source_sku": "lucapresidente_mobileciliegio",
+      "source_pack": "LucaPresidente",
+      "source_name": "Wardrobe cherry",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 0.076
+    },
+    {
+      "sku": "cabinet_v1",
+      "sub_category": "cabinet",
+      "asset_url": "sh3d/contributions_glassdoorcabinet.glb",
+      "native_dims_mm": [
+        745,
+        1500,
+        455
+      ],
+      "target_dims_mm": [
+        800,
+        1200,
+        400
+      ],
+      "source_sku": "contributions_glassdoorcabinet",
+      "source_pack": "Contributions",
+      "source_name": "Glass-door cabinet",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Geantick",
+      "score": 0.086
+    },
+    {
+      "sku": "cabinet_v2",
+      "sub_category": "cabinet",
+      "asset_url": "sh3d/blendswap_cc_0_cupboard.glb",
+      "native_dims_mm": [
+        1005,
+        1500,
+        390
+      ],
+      "target_dims_mm": [
+        800,
+        1200,
+        400
+      ],
+      "source_sku": "blendswap_cc_0_cupboard",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Cupboard",
+      "source_category": "Bedroom",
+      "license": "CC-0",
+      "creator": "Mahmood",
+      "score": 0.129
+    },
+    {
+      "sku": "cabinet_v3",
+      "sub_category": "cabinet",
+      "asset_url": "sh3d/katorlegaz_filing_cabinet.glb",
+      "native_dims_mm": [
+        386,
+        600,
+        526
+      ],
+      "target_dims_mm": [
+        800,
+        1200,
+        400
+      ],
+      "source_sku": "katorlegaz_filing_cabinet",
+      "source_pack": "KatorLegaz",
+      "source_name": "Filing cabinet",
+      "source_category": "Office",
+      "license": "CC-BY",
+      "creator": "Kator Legaz",
+      "score": 0.617
+    },
+    {
+      "sku": "cabinet_v4",
+      "sub_category": "cabinet",
+      "asset_url": "sh3d/contributions_meublechaussures.glb",
+      "native_dims_mm": [
+        717,
+        1023,
+        396
+      ],
+      "target_dims_mm": [
+        800,
+        1200,
+        400
+      ],
+      "source_sku": "contributions_meublechaussures",
+      "source_pack": "Contributions",
+      "source_name": "Shoe cabinet",
+      "source_category": "Kitchen",
+      "license": "Free Art",
+      "creator": "Ga\ufffdl Bettinelli",
+      "score": 1.033
+    },
+    {
+      "sku": "chest_v1",
+      "sub_category": "chest",
+      "asset_url": "sh3d/contributions_petitecommode.glb",
+      "native_dims_mm": [
+        820,
+        830,
+        464
+      ],
+      "target_dims_mm": [
+        1000,
+        820,
+        520
+      ],
+      "source_sku": "contributions_petitecommode",
+      "source_pack": "Contributions",
+      "source_name": "Small chest",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "Snduc",
+      "score": 0.044
+    },
+    {
+      "sku": "chest_v2",
+      "sub_category": "chest",
+      "asset_url": "sh3d/contributions_kommode.glb",
+      "native_dims_mm": [
+        951,
+        930,
+        419
+      ],
+      "target_dims_mm": [
+        1000,
+        820,
+        520
+      ],
+      "source_sku": "contributions_kommode",
+      "source_pack": "Contributions",
+      "source_name": "Chest",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "Jabberwalky",
+      "score": 0.058
+    },
+    {
+      "sku": "chest_v3",
+      "sub_category": "chest",
+      "asset_url": "sh3d/blendswap_cc_by_chest.glb",
+      "native_dims_mm": [
+        1435,
+        820,
+        536
+      ],
+      "target_dims_mm": [
+        1000,
+        820,
+        520
+      ],
+      "source_sku": "blendswap_cc_by_chest",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Chest",
+      "source_category": "Bedroom",
+      "license": "CC-BY",
+      "creator": "Elhzar",
+      "score": 0.19
+    },
+    {
+      "sku": "chest_v4",
+      "sub_category": "chest",
+      "asset_url": "sh3d/lucapresidente_comociliegio.glb",
+      "native_dims_mm": [
+        1600,
+        700,
+        600
+      ],
+      "target_dims_mm": [
+        1000,
+        820,
+        520
+      ],
+      "source_sku": "lucapresidente_comociliegio",
+      "source_pack": "LucaPresidente",
+      "source_name": "Dresser cherry",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 0.405
+    },
+    {
+      "sku": "sideboard_v1",
+      "sub_category": "sideboard",
+      "asset_url": "sh3d/lucapresidente_credenza.glb",
+      "native_dims_mm": [
+        1660,
+        780,
+        500
+      ],
+      "target_dims_mm": [
+        1500,
+        850,
+        420
+      ],
+      "source_sku": "lucapresidente_credenza",
+      "source_pack": "LucaPresidente",
+      "source_name": "Sideboard",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 0.054
+    },
+    {
+      "sku": "desk_v1",
+      "sub_category": "desk",
+      "asset_url": "sh3d/contributions_bureau3.glb",
+      "native_dims_mm": [
+        1200,
+        725,
+        590
+      ],
+      "target_dims_mm": [
+        1200,
+        750,
+        600
+      ],
+      "source_sku": "contributions_bureau3",
+      "source_pack": "Contributions",
+      "source_name": "Desk",
+      "source_category": "Office",
+      "license": "Free Art",
+      "creator": "Ga\ufffdl Bettinelli",
+      "score": 0.001
+    },
+    {
+      "sku": "desk_v2",
+      "sub_category": "desk",
+      "asset_url": "sh3d/blendswap_cc_by_biurko3.glb",
+      "native_dims_mm": [
+        1201,
+        720,
+        602
+      ],
+      "target_dims_mm": [
+        1200,
+        750,
+        600
+      ],
+      "source_sku": "blendswap_cc_by_biurko3",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Desk",
+      "source_category": "Office",
+      "license": "CC-BY",
+      "creator": "Hilux",
+      "score": 0.002
+    },
+    {
+      "sku": "desk_v3",
+      "sub_category": "desk",
+      "asset_url": "sh3d/scopia_kids_desk_table.glb",
+      "native_dims_mm": [
+        1120,
+        746,
+        605
+      ],
+      "target_dims_mm": [
+        1200,
+        750,
+        600
+      ],
+      "source_sku": "scopia_kids_desk_table",
+      "source_pack": "Scopia",
+      "source_name": "Desk table",
+      "source_category": "Office",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.005
+    },
+    {
+      "sku": "desk_v4",
+      "sub_category": "desk",
+      "asset_url": "sh3d/contributions_bureauinformatique.glb",
+      "native_dims_mm": [
+        1171,
+        867,
+        600
+      ],
+      "target_dims_mm": [
+        1200,
+        750,
+        600
+      ],
+      "source_sku": "contributions_bureauinformatique",
+      "source_pack": "Contributions",
+      "source_name": "Computer desk",
+      "source_category": "Office",
+      "license": "Free Art",
+      "creator": "Infernal-quack",
+      "score": 0.025
+    },
+    {
+      "sku": "lounge_chair_v1",
+      "sub_category": "lounge_chair",
+      "asset_url": "sh3d/blendswap_cc_by_fotel.glb",
+      "native_dims_mm": [
+        735,
+        697,
+        611
+      ],
+      "target_dims_mm": [
+        804,
+        640,
+        705
+      ],
+      "source_sku": "blendswap_cc_by_fotel",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Armchair",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "TripleJ",
+      "score": 0.033
+    },
+    {
+      "sku": "lounge_chair_v2",
+      "sub_category": "lounge_chair",
+      "asset_url": "sh3d/contributions_singlechair.glb",
+      "native_dims_mm": [
+        1012,
+        750,
+        771
+      ],
+      "target_dims_mm": [
+        804,
+        640,
+        705
+      ],
+      "source_sku": "contributions_singlechair",
+      "source_pack": "Contributions",
+      "source_name": "Armchair",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Pencilart",
+      "score": 0.105
+    },
+    {
+      "sku": "lounge_chair_v3",
+      "sub_category": "lounge_chair",
+      "asset_url": "sh3d/katorlegaz_mid_century_chair.glb",
+      "native_dims_mm": [
+        735,
+        800,
+        844
+      ],
+      "target_dims_mm": [
+        804,
+        640,
+        705
+      ],
+      "source_sku": "katorlegaz_mid_century_chair",
+      "source_pack": "KatorLegaz",
+      "source_name": "Armchair",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Kator Legaz",
+      "score": 0.109
+    },
+    {
+      "sku": "lounge_chair_v4",
+      "sub_category": "lounge_chair",
+      "asset_url": "sh3d/blendswap_cc_0_armchair2.glb",
+      "native_dims_mm": [
+        953,
+        783,
+        833
+      ],
+      "target_dims_mm": [
+        804,
+        640,
+        705
+      ],
+      "source_sku": "blendswap_cc_0_armchair2",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Armchair",
+      "source_category": "Living room",
+      "license": "CC-0",
+      "creator": "Cris1983",
+      "score": 0.117
+    },
+    {
+      "sku": "desk_chair_v1",
+      "sub_category": "desk_chair",
+      "asset_url": "sh3d/contributions_officechair.glb",
+      "native_dims_mm": [
+        626,
+        873,
+        597
+      ],
+      "target_dims_mm": [
+        600,
+        900,
+        600
+      ],
+      "source_sku": "contributions_officechair",
+      "source_pack": "Contributions",
+      "source_name": "Office chair",
+      "source_category": "Office",
+      "license": "Free Art",
+      "creator": "Peter Smolik",
+      "score": 0.003
+    },
+    {
+      "sku": "desk_chair_v2",
+      "sub_category": "desk_chair",
+      "asset_url": "sh3d/contributions_officechair2.glb",
+      "native_dims_mm": [
+        629,
+        1015,
+        688
+      ],
+      "target_dims_mm": [
+        600,
+        900,
+        600
+      ],
+      "source_sku": "contributions_officechair2",
+      "source_pack": "Contributions",
+      "source_name": "Office chair",
+      "source_category": "Office",
+      "license": "Free Art",
+      "creator": "Peter Smolik",
+      "score": 0.04
+    },
+    {
+      "sku": "desk_chair_v3",
+      "sub_category": "desk_chair",
+      "asset_url": "sh3d/contributions_officechair3.glb",
+      "native_dims_mm": [
+        559,
+        1070,
+        564
+      ],
+      "target_dims_mm": [
+        600,
+        900,
+        600
+      ],
+      "source_sku": "contributions_officechair3",
+      "source_pack": "Contributions",
+      "source_name": "Office chair",
+      "source_category": "Office",
+      "license": "Free Art",
+      "creator": "Peter Smolik",
+      "score": 0.044
+    },
+    {
+      "sku": "dining_chair_v1",
+      "sub_category": "dining_chair",
+      "asset_url": "sh3d/scopia_plastic_chair.glb",
+      "native_dims_mm": [
+        483,
+        965,
+        557
+      ],
+      "target_dims_mm": [
+        480,
+        920,
+        520
+      ],
+      "source_sku": "scopia_plastic_chair",
+      "source_pack": "Scopia",
+      "source_name": "Plastic chair",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.007
+    },
+    {
+      "sku": "dining_chair_v2",
+      "sub_category": "dining_chair",
+      "asset_url": "sh3d/blendswap_cc_by_chair3.glb",
+      "native_dims_mm": [
+        433,
+        906,
+        504
+      ],
+      "target_dims_mm": [
+        480,
+        920,
+        520
+      ],
+      "source_sku": "blendswap_cc_by_chair3",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Chair",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "MatBot",
+      "score": 0.011
+    },
+    {
+      "sku": "dining_chair_v3",
+      "sub_category": "dining_chair",
+      "asset_url": "sh3d/blendswap_cc_by_ella_chair_f.glb",
+      "native_dims_mm": [
+        460,
+        920,
+        570
+      ],
+      "target_dims_mm": [
+        480,
+        920,
+        520
+      ],
+      "source_sku": "blendswap_cc_by_ella_chair_f",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Chair",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Sizzler",
+      "score": 0.011
+    },
+    {
+      "sku": "dining_chair_v4",
+      "sub_category": "dining_chair",
+      "asset_url": "sh3d/blendswap_cc_by_cafe_set_tonon_chair.glb",
+      "native_dims_mm": [
+        480,
+        822,
+        533
+      ],
+      "target_dims_mm": [
+        480,
+        920,
+        520
+      ],
+      "source_sku": "blendswap_cc_by_cafe_set_tonon_chair",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Chair",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Voodoc",
+      "score": 0.012
+    },
+    {
+      "sku": "dining_table_v1",
+      "sub_category": "dining_table",
+      "asset_url": "sh3d/blendswap_cc_by_table.glb",
+      "native_dims_mm": [
+        1443,
+        724,
+        934
+      ],
+      "target_dims_mm": [
+        1500,
+        750,
+        950
+      ],
+      "source_sku": "blendswap_cc_by_table",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Table",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Jay-Artist",
+      "score": 0.003
+    },
+    {
+      "sku": "dining_table_v2",
+      "sub_category": "dining_table",
+      "asset_url": "sh3d/katorlegaz_glass_dining_table.glb",
+      "native_dims_mm": [
+        1618,
+        750,
+        976
+      ],
+      "target_dims_mm": [
+        1500,
+        750,
+        950
+      ],
+      "source_sku": "katorlegaz_glass_dining_table",
+      "source_pack": "KatorLegaz",
+      "source_name": "Glass table",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Kator Legaz",
+      "score": 0.007
+    },
+    {
+      "sku": "dining_table_v3",
+      "sub_category": "dining_table",
+      "asset_url": "sh3d/scopia_table4.glb",
+      "native_dims_mm": [
+        1400,
+        750,
+        900
+      ],
+      "target_dims_mm": [
+        1500,
+        750,
+        950
+      ],
+      "source_sku": "scopia_table4",
+      "source_pack": "Scopia",
+      "source_name": "Table",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.007
+    },
+    {
+      "sku": "dining_table_v4",
+      "sub_category": "dining_table",
+      "asset_url": "sh3d/scopia_metal_glass_table.glb",
+      "native_dims_mm": [
+        1608,
+        767,
+        897
+      ],
+      "target_dims_mm": [
+        1500,
+        750,
+        950
+      ],
+      "source_sku": "scopia_metal_glass_table",
+      "source_pack": "Scopia",
+      "source_name": "Glass table",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.009
+    },
+    {
+      "sku": "bed_queen_v1",
+      "sub_category": "bed_queen",
+      "asset_url": "sh3d/lucapresidente_lettociliegio.glb",
+      "native_dims_mm": [
+        1840,
+        650,
+        1970
+      ],
+      "target_dims_mm": [
+        1623,
+        600,
+        2050
+      ],
+      "source_sku": "lucapresidente_lettociliegio",
+      "source_pack": "LucaPresidente",
+      "source_name": "Bed cherry",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 0.026
+    },
+    {
+      "sku": "bed_queen_v2",
+      "sub_category": "bed_queen",
+      "asset_url": "sh3d/contributions_lit.glb",
+      "native_dims_mm": [
+        1672,
+        785,
+        2201
+      ],
+      "target_dims_mm": [
+        1623,
+        600,
+        2050
+      ],
+      "source_sku": "contributions_lit",
+      "source_pack": "Contributions",
+      "source_name": "Bed",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "Ga\ufffdl Bettinelli",
+      "score": 0.101
+    },
+    {
+      "sku": "bed_queen_v3",
+      "sub_category": "bed_queen",
+      "asset_url": "sh3d/blendswap_cc_by_lettocloud.glb",
+      "native_dims_mm": [
+        1889,
+        788,
+        2165
+      ],
+      "target_dims_mm": [
+        1623,
+        600,
+        2050
+      ],
+      "source_sku": "blendswap_cc_by_lettocloud",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Bed",
+      "source_category": "Bedroom",
+      "license": "CC-BY",
+      "creator": "Fabbyone & Emmanuel Puybaret",
+      "score": 0.128
+    },
+    {
+      "sku": "bed_queen_v4",
+      "sub_category": "bed_queen",
+      "asset_url": "sh3d/blendswap_cc_by_juniorbed.glb",
+      "native_dims_mm": [
+        1057,
+        656,
+        1978
+      ],
+      "target_dims_mm": [
+        1623,
+        600,
+        2050
+      ],
+      "source_sku": "blendswap_cc_by_juniorbed",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Child bed",
+      "source_category": "Bedroom",
+      "license": "CC-BY",
+      "creator": "SirOccor & Emmanuel Puybaret",
+      "score": 0.132
+    },
+    {
+      "sku": "bed_king_v1",
+      "sub_category": "bed_king",
+      "asset_url": "sh3d/lucapresidente_lettociliegio.glb",
+      "native_dims_mm": [
+        1840,
+        650,
+        1970
+      ],
+      "target_dims_mm": [
+        1800,
+        600,
+        2050
+      ],
+      "source_sku": "lucapresidente_lettociliegio",
+      "source_pack": "LucaPresidente",
+      "source_name": "Bed cherry",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 0.009
+    },
+    {
+      "sku": "bed_king_v2",
+      "sub_category": "bed_king",
+      "asset_url": "sh3d/blendswap_cc_0_bedwithtexture.glb",
+      "native_dims_mm": [
+        1980,
+        765,
+        2264
+      ],
+      "target_dims_mm": [
+        1800,
+        600,
+        2050
+      ],
+      "source_sku": "blendswap_cc_0_bedwithtexture",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Bed",
+      "source_category": "Bedroom",
+      "license": "CC-0",
+      "creator": "Nhumrod",
+      "score": 0.097
+    },
+    {
+      "sku": "bed_king_v3",
+      "sub_category": "bed_king",
+      "asset_url": "sh3d/blendswap_cc_by_lettocloud.glb",
+      "native_dims_mm": [
+        1889,
+        788,
+        2165
+      ],
+      "target_dims_mm": [
+        1800,
+        600,
+        2050
+      ],
+      "source_sku": "blendswap_cc_by_lettocloud",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Bed",
+      "source_category": "Bedroom",
+      "license": "CC-BY",
+      "creator": "Fabbyone & Emmanuel Puybaret",
+      "score": 0.104
+    },
+    {
+      "sku": "bed_king_v4",
+      "sub_category": "bed_king",
+      "asset_url": "sh3d/contributions_lit.glb",
+      "native_dims_mm": [
+        1672,
+        785,
+        2201
+      ],
+      "target_dims_mm": [
+        1800,
+        600,
+        2050
+      ],
+      "source_sku": "contributions_lit",
+      "source_pack": "Contributions",
+      "source_name": "Bed",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "Ga\ufffdl Bettinelli",
+      "score": 0.106
+    },
+    {
+      "sku": "lamp_v1",
+      "sub_category": "lamp",
+      "asset_url": "sh3d/contributions_lampehalogene.glb",
+      "native_dims_mm": [
+        313,
+        1800,
+        689
+      ],
+      "target_dims_mm": [
+        400,
+        1673,
+        400
+      ],
+      "source_sku": "contributions_lampehalogene",
+      "source_pack": "Contributions",
+      "source_name": "Floor lamp",
+      "source_category": "Lights",
+      "license": "Free Art",
+      "creator": "GdB",
+      "score": 0.575
+    },
+    {
+      "sku": "sofa_l_v1",
+      "sub_category": "sofa_l",
+      "asset_url": "sh3d/blendswap_cc_0_l_shaped_sofa.glb",
+      "native_dims_mm": [
+        2337,
+        800,
+        1436
+      ],
+      "target_dims_mm": [
+        2400,
+        800,
+        1500
+      ],
+      "source_sku": "blendswap_cc_0_l_shaped_sofa",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Corner sofa",
+      "source_category": "Living room",
+      "license": "CC-0",
+      "creator": "Nhumrod",
+      "score": 0.003
+    },
+    {
+      "sku": "sofa_l_v2",
+      "sub_category": "sofa_l",
+      "asset_url": "sh3d/blendswap_cc_0_sofa.glb",
+      "native_dims_mm": [
+        2488,
+        780,
+        1896
+      ],
+      "target_dims_mm": [
+        2400,
+        800,
+        1500
+      ],
+      "source_sku": "blendswap_cc_0_sofa",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Corner sofa",
+      "source_category": "Living room",
+      "license": "CC-0",
+      "creator": "Mitch37",
+      "score": 0.072
+    },
+    {
+      "sku": "sofa_l_v3",
+      "sub_category": "sofa_l",
+      "asset_url": "sh3d/blendswap_cc_by_cornersofa.glb",
+      "native_dims_mm": [
+        3458,
+        855,
+        1550
+      ],
+      "target_dims_mm": [
+        2400,
+        800,
+        1500
+      ],
+      "source_sku": "blendswap_cc_by_cornersofa",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Corner sofa",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Nikitron",
+      "score": 0.2
+    },
+    {
+      "sku": "sofa_l_v4",
+      "sub_category": "sofa_l",
+      "asset_url": "sh3d/contributions_barreappuil.glb",
+      "native_dims_mm": [
+        592,
+        1276,
+        115
+      ],
+      "target_dims_mm": [
+        2400,
+        800,
+        1500
+      ],
+      "source_sku": "contributions_barreappuil",
+      "source_pack": "Contributions",
+      "source_name": "L shaped grab bar",
+      "source_category": "Bathroom",
+      "license": "Free Art / CC-BY",
+      "creator": "Emmanuel Puybaret",
+      "score": 2.774
+    },
+    {
+      "sku": "sofa_2seat_v1",
+      "sub_category": "sofa_2seat",
+      "asset_url": "sh3d/scopia_beige_sofa_2seats.glb",
+      "native_dims_mm": [
+        1589,
+        866,
+        735
+      ],
+      "target_dims_mm": [
+        1600,
+        850,
+        800
+      ],
+      "source_sku": "scopia_beige_sofa_2seats",
+      "source_pack": "Scopia",
+      "source_name": "Sofa 2 seats",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.007
+    },
+    {
+      "sku": "sofa_2seat_v2",
+      "sub_category": "sofa_2seat",
+      "asset_url": "sh3d/contributions_couchtwoseats.glb",
+      "native_dims_mm": [
+        1980,
+        720,
+        906
+      ],
+      "target_dims_mm": [
+        1600,
+        850,
+        800
+      ],
+      "source_sku": "contributions_couchtwoseats",
+      "source_pack": "Contributions",
+      "source_name": "Couch two seats",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Theo Blonk",
+      "score": 0.097
+    },
+    {
+      "sku": "accent_chair_v1",
+      "sub_category": "accent_chair",
+      "asset_url": "sh3d/blendswap_cc_0_modernarmchair.glb",
+      "native_dims_mm": [
+        773,
+        865,
+        849
+      ],
+      "target_dims_mm": [
+        800,
+        900,
+        800
+      ],
+      "source_sku": "blendswap_cc_0_modernarmchair",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Armchair",
+      "source_category": "Living room",
+      "license": "CC-0",
+      "creator": "Dreadbwai",
+      "score": 0.006
+    },
+    {
+      "sku": "accent_chair_v2",
+      "sub_category": "accent_chair",
+      "asset_url": "sh3d/scopia_armchair.glb",
+      "native_dims_mm": [
+        788,
+        1001,
+        777
+      ],
+      "target_dims_mm": [
+        800,
+        900,
+        800
+      ],
+      "source_sku": "scopia_armchair",
+      "source_pack": "Scopia",
+      "source_name": "Armchair",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.014
+    },
+    {
+      "sku": "accent_chair_v3",
+      "sub_category": "accent_chair",
+      "asset_url": "sh3d/scopia_armchair2.glb",
+      "native_dims_mm": [
+        728,
+        970,
+        812
+      ],
+      "target_dims_mm": [
+        800,
+        900,
+        800
+      ],
+      "source_sku": "scopia_armchair2",
+      "source_pack": "Scopia",
+      "source_name": "Armchair",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.014
+    },
+    {
+      "sku": "accent_chair_v4",
+      "sub_category": "accent_chair",
+      "asset_url": "sh3d/katorlegaz_mid_century_chair.glb",
+      "native_dims_mm": [
+        735,
+        800,
+        844
+      ],
+      "target_dims_mm": [
+        800,
+        900,
+        800
+      ],
+      "source_sku": "katorlegaz_mid_century_chair",
+      "source_pack": "KatorLegaz",
+      "source_name": "Armchair",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Kator Legaz",
+      "score": 0.022
+    },
+    {
+      "sku": "pouffe_v1",
+      "sub_category": "pouffe",
+      "asset_url": "sh3d/blendswap_cc_by_green_stool.glb",
+      "native_dims_mm": [
+        429,
+        460,
+        429
+      ],
+      "target_dims_mm": [
+        450,
+        470,
+        450
+      ],
+      "source_sku": "blendswap_cc_by_green_stool",
+      "source_pack": "BlendSwap-CC-BY",
+      "source_name": "Stool",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Dalenryder",
+      "score": 0.005
+    },
+    {
+      "sku": "pouffe_v2",
+      "sub_category": "pouffe",
+      "asset_url": "sh3d/contributions_stool.glb",
+      "native_dims_mm": [
+        389,
+        489,
+        377
+      ],
+      "target_dims_mm": [
+        450,
+        470,
+        450
+      ],
+      "source_sku": "contributions_stool",
+      "source_pack": "Contributions",
+      "source_name": "Stool",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Peter Smolik",
+      "score": 0.046
+    },
+    {
+      "sku": "pouffe_v3",
+      "sub_category": "pouffe",
+      "asset_url": "sh3d/contributions_stool_small.glb",
+      "native_dims_mm": [
+        300,
+        450,
+        300
+      ],
+      "target_dims_mm": [
+        450,
+        470,
+        450
+      ],
+      "source_sku": "contributions_stool_small",
+      "source_pack": "Contributions",
+      "source_name": "Stool",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "alaX",
+      "score": 0.224
+    },
+    {
+      "sku": "pouffe_v4",
+      "sub_category": "pouffe",
+      "asset_url": "sh3d/blendswap_cc_0_stool2.glb",
+      "native_dims_mm": [
+        361,
+        780,
+        361
+      ],
+      "target_dims_mm": [
+        450,
+        470,
+        450
+      ],
+      "source_sku": "blendswap_cc_0_stool2",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Stool",
+      "source_category": "Kitchen",
+      "license": "CC-0",
+      "creator": "Vladoffsky",
+      "score": 1.513
+    },
+    {
+      "sku": "bench_v1",
+      "sub_category": "bench",
+      "asset_url": "sh3d/katorlegaz_bench.glb",
+      "native_dims_mm": [
+        1182,
+        450,
+        452
+      ],
+      "target_dims_mm": [
+        1300,
+        500,
+        500
+      ],
+      "source_sku": "katorlegaz_bench",
+      "source_pack": "KatorLegaz",
+      "source_name": "Bench",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Kator Legaz",
+      "score": 0.027
+    },
+    {
+      "sku": "bench_v2",
+      "sub_category": "bench",
+      "asset_url": "sh3d/contributions_pancafratinosing.glb",
+      "native_dims_mm": [
+        850,
+        850,
+        498
+      ],
+      "target_dims_mm": [
+        1300,
+        500,
+        500
+      ],
+      "source_sku": "contributions_pancafratinosing",
+      "source_pack": "Contributions",
+      "source_name": "Bench",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Nictac",
+      "score": 0.61
+    },
+    {
+      "sku": "bench_v3",
+      "sub_category": "bench",
+      "asset_url": "sh3d/blendswap_cc_0_bench.glb",
+      "native_dims_mm": [
+        1701,
+        508,
+        459
+      ],
+      "target_dims_mm": [
+        1300,
+        500,
+        500
+      ],
+      "source_sku": "blendswap_cc_0_bench",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Bench",
+      "source_category": "Exterior",
+      "license": "CC-0",
+      "creator": "Ulanbek",
+      "score": 1.102
+    },
+    {
+      "sku": "bench_v4",
+      "sub_category": "bench",
+      "asset_url": "sh3d/contributions_bench.glb",
+      "native_dims_mm": [
+        1420,
+        680,
+        550
+      ],
+      "target_dims_mm": [
+        1300,
+        500,
+        500
+      ],
+      "source_sku": "contributions_bench",
+      "source_pack": "Contributions",
+      "source_name": "Bench",
+      "source_category": "Exterior",
+      "license": "Free Art",
+      "creator": "Pencilart",
+      "score": 1.148
+    },
+    {
+      "sku": "mirror_v1",
+      "sub_category": "mirror",
+      "asset_url": "sh3d/contributions_ovalmirror.glb",
+      "native_dims_mm": [
+        550,
+        1050,
+        10
+      ],
+      "target_dims_mm": [
+        600,
+        900,
+        30
+      ],
+      "source_sku": "contributions_ovalmirror",
+      "source_pack": "Contributions",
+      "source_name": "Oval mirror",
+      "source_category": "Miscellaneous",
+      "license": "Free Art / CC-BY",
+      "creator": "Emmanuel Puybaret",
+      "score": 1.479
+    },
+    {
+      "sku": "mirror_v2",
+      "sub_category": "mirror",
+      "asset_url": "sh3d/contributions_rectangularmirror.glb",
+      "native_dims_mm": [
+        500,
+        700,
+        10
+      ],
+      "target_dims_mm": [
+        600,
+        900,
+        30
+      ],
+      "source_sku": "contributions_rectangularmirror",
+      "source_pack": "Contributions",
+      "source_name": "Rectangular mirror",
+      "source_category": "Miscellaneous",
+      "license": "Free Art / CC-BY",
+      "creator": "Emmanuel Puybaret",
+      "score": 1.522
+    },
+    {
+      "sku": "mirror_v3",
+      "sub_category": "mirror",
+      "asset_url": "sh3d/contributions_mirror.glb",
+      "native_dims_mm": [
+        400,
+        400,
+        5
+      ],
+      "target_dims_mm": [
+        600,
+        900,
+        30
+      ],
+      "source_sku": "contributions_mirror",
+      "source_pack": "Contributions",
+      "source_name": "Mirror",
+      "source_category": "Miscellaneous",
+      "license": "Free Art / CC-BY",
+      "creator": "Emmanuel Puybaret",
+      "score": 2.114
+    },
+    {
+      "sku": "mirror_v4",
+      "sub_category": "mirror",
+      "asset_url": "sh3d/lucapresidente_mobilettospecchioblu.glb",
+      "native_dims_mm": [
+        700,
+        600,
+        125
+      ],
+      "target_dims_mm": [
+        600,
+        900,
+        30
+      ],
+      "source_sku": "lucapresidente_mobilettospecchioblu",
+      "source_pack": "LucaPresidente",
+      "source_name": "Mirror",
+      "source_category": "Bathroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 10.167
+    },
+    {
+      "sku": "rug_v1",
+      "sub_category": "rug",
+      "asset_url": "sh3d/katorlegaz_oriental_rug.glb",
+      "native_dims_mm": [
+        1858,
+        25,
+        2577
+      ],
+      "target_dims_mm": [
+        2000,
+        10,
+        1400
+      ],
+      "source_sku": "katorlegaz_oriental_rug",
+      "source_pack": "KatorLegaz",
+      "source_name": "Oriental rug",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Kator Legaz",
+      "score": 2.962
+    },
+    {
+      "sku": "plant_v1",
+      "sub_category": "plant",
+      "asset_url": "sh3d/blendswap_cc_0_decorativeplant.glb",
+      "native_dims_mm": [
+        559,
+        1031,
+        602
+      ],
+      "target_dims_mm": [
+        500,
+        1200,
+        500
+      ],
+      "source_sku": "blendswap_cc_0_decorativeplant",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Decorative plant",
+      "source_category": "Living room",
+      "license": "CC-0",
+      "creator": "MZiemys",
+      "score": 0.075
+    },
+    {
+      "sku": "plant_v2",
+      "sub_category": "plant",
+      "asset_url": "sh3d/scopia_ficus.glb",
+      "native_dims_mm": [
+        425,
+        824,
+        415
+      ],
+      "target_dims_mm": [
+        500,
+        1200,
+        500
+      ],
+      "source_sku": "scopia_ficus",
+      "source_pack": "Scopia",
+      "source_name": "Ficus",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.15
+    },
+    {
+      "sku": "plant_v3",
+      "sub_category": "plant",
+      "asset_url": "sh3d/scopia_maceta.glb",
+      "native_dims_mm": [
+        590,
+        580,
+        650
+      ],
+      "target_dims_mm": [
+        500,
+        1200,
+        500
+      ],
+      "source_sku": "scopia_maceta",
+      "source_pack": "Scopia",
+      "source_name": "Plant",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.389
+    },
+    {
+      "sku": "plant_v4",
+      "sub_category": "plant",
+      "asset_url": "sh3d/scopia_bonsai_tree.glb",
+      "native_dims_mm": [
+        445,
+        429,
+        382
+      ],
+      "target_dims_mm": [
+        500,
+        1200,
+        500
+      ],
+      "source_sku": "scopia_bonsai_tree",
+      "source_pack": "Scopia",
+      "source_name": "Bonsai tree",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.481
+    },
+    {
+      "sku": "wall_art_v1",
+      "sub_category": "wall_art",
+      "asset_url": "sh3d/scopia_frame1.glb",
+      "native_dims_mm": [
+        145,
+        196,
+        145
+      ],
+      "target_dims_mm": [
+        700,
+        30,
+        500
+      ],
+      "source_sku": "scopia_frame1",
+      "source_pack": "Scopia",
+      "source_name": "Frame Chambord",
+      "source_category": "Miscellaneous",
+      "license": "CC-BY",
+      "creator": "Scopia & Emmanuel Puybaret",
+      "score": 31.751
+    },
+    {
+      "sku": "wall_art_v2",
+      "sub_category": "wall_art",
+      "asset_url": "sh3d/scopia_frame2.glb",
+      "native_dims_mm": [
+        145,
+        199,
+        145
+      ],
+      "target_dims_mm": [
+        700,
+        30,
+        500
+      ],
+      "source_sku": "scopia_frame2",
+      "source_pack": "Scopia",
+      "source_name": "Frame H\ufffdi An",
+      "source_category": "Miscellaneous",
+      "license": "CC-BY",
+      "creator": "Scopia & Emmanuel Puybaret",
+      "score": 32.867
+    },
+    {
+      "sku": "wall_art_v3",
+      "sub_category": "wall_art",
+      "asset_url": "sh3d/contributions_frame3verticalsummerphotos.glb",
+      "native_dims_mm": [
+        525,
+        254,
+        30
+      ],
+      "target_dims_mm": [
+        700,
+        30,
+        500
+      ],
+      "source_sku": "contributions_frame3verticalsummerphotos",
+      "source_pack": "Contributions",
+      "source_name": "Frame summer photos",
+      "source_category": "Miscellaneous",
+      "license": "Free Art / CC-BY",
+      "creator": "Emmanuel Puybaret",
+      "score": 56.697
+    },
+    {
+      "sku": "wall_art_v4",
+      "sub_category": "wall_art",
+      "asset_url": "sh3d/contributions_frame3verticaltowerphotos.glb",
+      "native_dims_mm": [
+        525,
+        254,
+        30
+      ],
+      "target_dims_mm": [
+        700,
+        30,
+        500
+      ],
+      "source_sku": "contributions_frame3verticaltowerphotos",
+      "source_pack": "Contributions",
+      "source_name": "Frame Towers",
+      "source_category": "Miscellaneous",
+      "license": "Free Art / CC-BY",
+      "creator": "Emmanuel Puybaret",
+      "score": 56.697
+    },
+    {
+      "sku": "dressing_table_v1",
+      "sub_category": "dressing_table",
+      "asset_url": "sh3d/scopia_dressing_table.glb",
+      "native_dims_mm": [
+        857,
+        1359,
+        465
+      ],
+      "target_dims_mm": [
+        1100,
+        760,
+        500
+      ],
+      "source_sku": "scopia_dressing_table",
+      "source_pack": "Scopia",
+      "source_name": "Dressing table",
+      "source_category": "Bedroom",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.675
+    },
+    {
+      "sku": "desk_lamp_v1",
+      "sub_category": "desk_lamp",
+      "asset_url": "sh3d/blendswap_cc_0_desklamp.glb",
+      "native_dims_mm": [
+        244,
+        400,
+        244
+      ],
+      "target_dims_mm": [
+        200,
+        450,
+        200
+      ],
+      "source_sku": "blendswap_cc_0_desklamp",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Desk lamp",
+      "source_category": "Lights",
+      "license": "CC-0",
+      "creator": "ColdShiverGames",
+      "score": 0.109
+    },
+    {
+      "sku": "desk_lamp_v2",
+      "sub_category": "desk_lamp",
+      "asset_url": "sh3d/scopia_desk_lamp1.glb",
+      "native_dims_mm": [
+        137,
+        450,
+        342
+      ],
+      "target_dims_mm": [
+        200,
+        450,
+        200
+      ],
+      "source_sku": "scopia_desk_lamp1",
+      "source_pack": "Scopia",
+      "source_name": "Desk lamp",
+      "source_category": "Lights",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.603
+    },
+    {
+      "sku": "desk_lamp_v3",
+      "sub_category": "desk_lamp",
+      "asset_url": "sh3d/scopia_desk_lamp2.glb",
+      "native_dims_mm": [
+        225,
+        400,
+        417
+      ],
+      "target_dims_mm": [
+        200,
+        450,
+        200
+      ],
+      "source_sku": "scopia_desk_lamp2",
+      "source_pack": "Scopia",
+      "source_name": "Desk lamp",
+      "source_category": "Lights",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 1.205
+    },
+    {
+      "sku": "desk_lamp_v4",
+      "sub_category": "desk_lamp",
+      "asset_url": "sh3d/contributions_desklamp1.glb",
+      "native_dims_mm": [
+        406,
+        612,
+        406
+      ],
+      "target_dims_mm": [
+        200,
+        450,
+        200
+      ],
+      "source_sku": "contributions_desklamp1",
+      "source_pack": "Contributions",
+      "source_name": "Desk lamp",
+      "source_category": "Lights",
+      "license": "Free Art",
+      "creator": "Peter Smolik",
+      "score": 2.251
+    },
+    {
+      "sku": "pendant_light_v1",
+      "sub_category": "pendant_light",
+      "asset_url": "sh3d/contributions_lustreboule.glb",
+      "native_dims_mm": [
+        300,
+        676,
+        300
+      ],
+      "target_dims_mm": [
+        400,
+        500,
+        400
+      ],
+      "source_sku": "contributions_lustreboule",
+      "source_pack": "Contributions",
+      "source_name": "Pendant light",
+      "source_category": "Lights",
+      "license": "Free Art",
+      "creator": "Sheep",
+      "score": 0.249
+    },
+    {
+      "sku": "pendant_light_v2",
+      "sub_category": "pendant_light",
+      "asset_url": "sh3d/scopia_saloon_lamp.glb",
+      "native_dims_mm": [
+        132,
+        600,
+        836
+      ],
+      "target_dims_mm": [
+        400,
+        500,
+        400
+      ],
+      "source_sku": "scopia_saloon_lamp",
+      "source_pack": "Scopia",
+      "source_name": "Pendant lamp",
+      "source_category": "Lights",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 1.677
+    },
+    {
+      "sku": "pendant_light_v3",
+      "sub_category": "pendant_light",
+      "asset_url": "sh3d/scopia_chandelier_lamp.glb",
+      "native_dims_mm": [
+        1306,
+        1744,
+        1306
+      ],
+      "target_dims_mm": [
+        400,
+        500,
+        400
+      ],
+      "source_sku": "scopia_chandelier_lamp",
+      "source_pack": "Scopia",
+      "source_name": "Chandelier lamp",
+      "source_category": "Lights",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 16.451
+    },
+    {
+      "sku": "floating_shelf_v1",
+      "sub_category": "floating_shelf",
+      "asset_url": "sh3d/lucapresidente_mensolacurvaacero.glb",
+      "native_dims_mm": [
+        400,
+        30,
+        400
+      ],
+      "target_dims_mm": [
+        1200,
+        30,
+        300
+      ],
+      "source_sku": "lucapresidente_mensolacurvaacero",
+      "source_pack": "LucaPresidente",
+      "source_name": "Corner shelf maple",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 0.556
+    },
+    {
+      "sku": "floating_shelf_v2",
+      "sub_category": "floating_shelf",
+      "asset_url": "sh3d/lucapresidente_mensolaacero.glb",
+      "native_dims_mm": [
+        600,
+        50,
+        200
+      ],
+      "target_dims_mm": [
+        1200,
+        30,
+        300
+      ],
+      "source_sku": "lucapresidente_mensolaacero",
+      "source_pack": "LucaPresidente",
+      "source_name": "Shelf maple",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 0.806
+    },
+    {
+      "sku": "floating_shelf_v3",
+      "sub_category": "floating_shelf",
+      "asset_url": "sh3d/lucapresidente_mensolaciliegio.glb",
+      "native_dims_mm": [
+        1020,
+        340,
+        200
+      ],
+      "target_dims_mm": [
+        1200,
+        30,
+        300
+      ],
+      "source_sku": "lucapresidente_mensolaciliegio",
+      "source_pack": "LucaPresidente",
+      "source_name": "Shelf cherry",
+      "source_category": "Bedroom",
+      "license": "Free Art",
+      "creator": "LucaPresidente",
+      "score": 106.911
+    },
+    {
+      "sku": "floating_shelf_v4",
+      "sub_category": "floating_shelf",
+      "asset_url": "sh3d/blendswap_cc_0_shelves.glb",
+      "native_dims_mm": [
+        790,
+        790,
+        394
+      ],
+      "target_dims_mm": [
+        1200,
+        30,
+        300
+      ],
+      "source_sku": "blendswap_cc_0_shelves",
+      "source_pack": "BlendSwap-CC-0",
+      "source_name": "Shelves",
+      "source_category": "Living room",
+      "license": "CC-0",
+      "creator": "jclevet.net",
+      "score": 641.993
+    },
+    {
+      "sku": "fireplace_v1",
+      "sub_category": "fireplace",
+      "asset_url": "sh3d/scopia_fireplace1.glb",
+      "native_dims_mm": [
+        1154,
+        1050,
+        351
+      ],
+      "target_dims_mm": [
+        1200,
+        1100,
+        400
+      ],
+      "source_sku": "scopia_fireplace1",
+      "source_pack": "Scopia",
+      "source_name": "Fireplace",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 0.019
+    },
+    {
+      "sku": "fireplace_v2",
+      "sub_category": "fireplace",
+      "asset_url": "sh3d/contributions_fireplace2.glb",
+      "native_dims_mm": [
+        1707,
+        1277,
+        579
+      ],
+      "target_dims_mm": [
+        1200,
+        1100,
+        400
+      ],
+      "source_sku": "contributions_fireplace2",
+      "source_pack": "Contributions",
+      "source_name": "Fireplace",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Don Ravey",
+      "score": 0.405
+    },
+    {
+      "sku": "fireplace_v3",
+      "sub_category": "fireplace",
+      "asset_url": "sh3d/scopia_fireplace2.glb",
+      "native_dims_mm": [
+        1210,
+        2500,
+        449
+      ],
+      "target_dims_mm": [
+        1200,
+        1100,
+        400
+      ],
+      "source_sku": "scopia_fireplace2",
+      "source_pack": "Scopia",
+      "source_name": "Fireplace",
+      "source_category": "Living room",
+      "license": "CC-BY",
+      "creator": "Scopia",
+      "score": 1.635
+    },
+    {
+      "sku": "fireplace_v4",
+      "sub_category": "fireplace",
+      "asset_url": "sh3d/contributions_fireplace.glb",
+      "native_dims_mm": [
+        1540,
+        2500,
+        760
+      ],
+      "target_dims_mm": [
+        1200,
+        1100,
+        400
+      ],
+      "source_sku": "contributions_fireplace",
+      "source_pack": "Contributions",
+      "source_name": "Fireplace",
+      "source_category": "Living room",
+      "license": "Free Art",
+      "creator": "Geantick",
+      "score": 2.51
+    }
+  ]
+}
