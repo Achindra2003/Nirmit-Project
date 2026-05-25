@@ -1,26 +1,21 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { RoomScene, type CameraView } from "@/three/RoomScene";
+import { humanizeReasoningCopy } from "@/lib/humanizeReasoning";
 import { useAppStore } from "@/store/useAppStore";
 import { TopNav } from "@/components/shell/TopNav";
 
-/**
- * Reasoning card on the visions page. Two tabs (Thinking / Vastu) keep the
- * default height compact — previously the design-thinking block + Vastu sub-
- * section stacked vertically and pushed the price + CTA below the fold. Tab
- * defaults to Thinking; Vastu tab is hidden entirely when there are no notes.
- */
+/** Warm "why this room" copy — never CAD coordinates or millimetres. */
 function ReasoningCard({ headline, bullets, vastuNotes }: { headline: string; bullets: string[]; vastuNotes: string[] }) {
   const hasVastu = vastuNotes.length > 0;
   const [tab, setTab] = useState<"think" | "vastu">("think");
 
   return (
-    <div style={{ background: "var(--paper-3)", border: "1px solid var(--line)" }}>
-      {/* Tab strip — hidden when there's only one tab to choose from */}
+    <div className="reveal-lift" style={{ background: "var(--paper-3)", border: "1px solid var(--line)" }}>
       {hasVastu && (
         <div style={{ display: "flex", borderBottom: "1px solid var(--line)" }}>
           {([
-            { id: "think" as const, label: "Design thinking" },
+            { id: "think" as const, label: "Made for you" },
             { id: "vastu" as const, label: `Vastu · ${vastuNotes.length}` },
           ]).map((t) => {
             const sel = tab === t.id;
@@ -41,7 +36,7 @@ function ReasoningCard({ headline, bullets, vastuNotes }: { headline: string; bu
                   textTransform: "uppercase" as const,
                   color: sel ? "var(--terra)" : "var(--ink-3)",
                   fontWeight: sel ? 600 : 500,
-                  transition: "all .18s",
+                  transition: "color var(--t-fast) ease, border-color var(--t-fast) ease, background var(--t-fast) ease",
                 }}
               >
                 {t.label}
@@ -51,34 +46,60 @@ function ReasoningCard({ headline, bullets, vastuNotes }: { headline: string; bu
         </div>
       )}
 
-      <div style={{ padding: "16px 18px" }}>
-        {tab === "think" ? (
-          <>
-            {!hasVastu && (
-              <span className="eyebrow" style={{ display: "block", marginBottom: 10 }}>The design thinking</span>
-            )}
-            <p style={{ fontFamily: "var(--fb)", fontSize: 14.5, fontWeight: 500, lineHeight: 1.55, color: "var(--ink)", marginBottom: 12 }}>
-              {headline}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {bullets.map((b, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--terra)", flexShrink: 0, marginTop: 6 }} />
-                  <p style={{ fontFamily: "var(--fb)", fontSize: 13.5, lineHeight: 1.55, color: "var(--ink-2)" }}>{b}</p>
+      <div style={{ padding: "var(--s-4) var(--s-5)" }}>
+        <AnimatePresence mode="wait">
+          {tab === "think" ? (
+            <motion.div
+              key="think"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+            >
+              {!hasVastu && (
+                <span className="eyebrow" style={{ display: "block", marginBottom: 10 }}>Why we drew it this way</span>
+              )}
+              <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 17, fontWeight: 500, lineHeight: 1.45, color: "var(--ink)", marginBottom: 14 }}>
+                {headline}
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {bullets.map((b, i) => (
+                  <div
+                    key={i}
+                    className="reasoning-bullet"
+                    style={{ display: "flex", alignItems: "flex-start", gap: 10, animationDelay: `${0.06 * i}s` }}
+                  >
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--terra)", flexShrink: 0, marginTop: 7 }} />
+                    <p style={{ fontFamily: "var(--fb)", fontSize: 14, lineHeight: 1.6, color: "var(--ink-2)" }}>{b}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="vastu"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              style={{ display: "flex", flexDirection: "column", gap: 12 }}
+            >
+              <p style={{ fontFamily: "var(--fb)", fontSize: 13, color: "var(--ink-3)", lineHeight: 1.5, marginBottom: 4 }}>
+                Placements that respect what matters to your family.
+              </p>
+              {vastuNotes.map((n, i) => (
+                <div
+                  key={i}
+                  className="reasoning-bullet"
+                  style={{ display: "flex", alignItems: "flex-start", gap: 10, animationDelay: `${0.06 * i}s` }}
+                >
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--ink-3)", flexShrink: 0, marginTop: 7 }} />
+                  <p style={{ fontFamily: "var(--fb)", fontSize: 14, lineHeight: 1.6, color: "var(--ink-2)" }}>{n}</p>
                 </div>
               ))}
-            </div>
-          </>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {vastuNotes.map((n, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--ink-3)", flexShrink: 0, marginTop: 6 }} />
-                <p style={{ fontFamily: "var(--fb)", fontSize: 13.5, lineHeight: 1.55, color: "var(--ink-2)" }}>{n}</p>
-              </div>
-            ))}
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -92,16 +113,25 @@ export function RevealRoute() {
   const [show, setShow]   = useState(false);
   const [view, setView]   = useState<CameraView>("corner");
 
+  const reasoning = useMemo(
+    () => humanizeReasoningCopy({
+      headline: vision?.reasoning.headline ?? "",
+      bullets: vision?.reasoning.bullets ?? [],
+      vastu_notes: vision?.reasoning.vastu_notes ?? [],
+    }),
+    [vision?.id, vision?.reasoning.headline, vision?.reasoning.bullets, vision?.reasoning.vastu_notes],
+  );
+
   useEffect(() => {
     setShow(false);
-    const t = setTimeout(() => setShow(true), 800);
+    const t = setTimeout(() => setShow(true), 640);
     return () => clearTimeout(t);
   }, [vision?.id]);
 
   if (!vision) {
     return (
       <div className="paper" style={{ height: "100vh", display: "grid", placeItems: "center" }}>
-        <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", color: "var(--ink-2)" }}>No vision yet. Go back to intake.</p>
+        <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", color: "var(--ink-2)" }}>No room ready yet — tell us about your home first.</p>
       </div>
     );
   }
@@ -134,7 +164,7 @@ export function RevealRoute() {
             {/* Caption overlay bottom-left */}
             <div style={{ position: "absolute", left: 28, bottom: 28, opacity: show ? 1 : 0, transition: "opacity 1s ease .4s", pointerEvents: "none" }}>
               <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "rgba(242,235,221,.55)", letterSpacing: "0.14em", textTransform: "uppercase" as const, display: "block", marginBottom: 6 }}>
-                {({ eye: "ENTRANCE VIEW", corner: "3/4 VIEW", top: "FLOOR PLAN", walk: "WALK-THROUGH" } as const)[view]}
+                {({ eye: "AS YOU WALK IN", corner: "ROOM VIEW", top: "FROM ABOVE", walk: "WALK THROUGH" } as const)[view]}
               </span>
               <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 22, fontWeight: 500, color: "var(--paper)" }}>{vision.name}</div>
               <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "rgba(242,235,221,.6)", marginTop: 3 }}>{vision.tagline}</div>
@@ -144,7 +174,7 @@ export function RevealRoute() {
             <div style={{ position: "absolute", right: 24, bottom: 28, display: "flex", gap: 0, border: "1px solid rgba(242,235,221,.22)", background: "rgba(20,16,12,.55)", backdropFilter: "blur(10px)" }}>
               {(["eye", "corner", "top"] as const).map((v, i) => (
                 <div key={v} onClick={() => setView(v)} style={{ padding: "9px 16px", fontFamily: "var(--fm)", fontSize: 9.5, letterSpacing: "0.1em", color: view === v ? "var(--paper)" : "rgba(242,235,221,.45)", background: view === v ? "rgba(242,235,221,.12)" : "transparent", borderLeft: i > 0 ? "1px solid rgba(242,235,221,.22)" : "none", cursor: "pointer", transition: "all .2s" }}>
-                  {{ eye: "ENTRANCE", corner: "3/4", top: "PLAN" }[v]}
+                  {{ eye: "ENTRY", corner: "ROOM", top: "PLAN" }[v]}
                 </div>
               ))}
             </div>
@@ -235,7 +265,7 @@ export function RevealRoute() {
                 </div>
               )}
 
-              <h2 style={{ fontFamily: "var(--fd)", fontSize: "clamp(26px, 2.6vw, 34px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.015em", color: "var(--ink)", marginBottom: 6 }}>
+              <h2 style={{ fontFamily: "var(--fd)", fontSize: "clamp(26px, 2.6vw, 34px)", fontWeight: 600, lineHeight: 1.14, letterSpacing: "-0.015em", color: "var(--ink)", marginBottom: 6 }}>
                 {vision.name}
               </h2>
               <div className="pull-note" style={{ marginBottom: 0 }}>
@@ -244,13 +274,11 @@ export function RevealRoute() {
             </div>
 
             {/* ── MIDDLE (scrolls) ──────────────────────────────────── */}
-            <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "8px 32px 16px" }}>
-              {/* Headline + bullets — single integrated card. Vastu becomes a
-                  tab-toggle so it doesn't double the card height by default. */}
+            <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "var(--s-2) var(--s-6) var(--s-4)" }}>
               <ReasoningCard
-                headline={vision.reasoning.headline}
-                bullets={vision.reasoning.bullets}
-                vastuNotes={vision.reasoning.vastu_notes}
+                headline={reasoning.headline}
+                bullets={reasoning.bullets}
+                vastuNotes={reasoning.vastu_notes}
               />
             </div>
 
@@ -258,7 +286,7 @@ export function RevealRoute() {
             <div style={{ flexShrink: 0, padding: "16px 32px 22px", borderTop: "1px solid var(--line)", background: "var(--paper)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span className="eyebrow">Total estimate</span>
+                  <span className="eyebrow">Your estimate</span>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                     <span style={{ fontFamily: "var(--fd)", fontSize: "clamp(26px, 2.6vw, 32px)", fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.02em", lineHeight: 1 }}>{totalFmt}</span>
                     <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>OF {budgetFmt}</span>
@@ -271,7 +299,7 @@ export function RevealRoute() {
                 onClick={() => setStage("planner")}
                 style={{ width: "100%" }}
               >
-                Start with this room
+                Refine this room
                 <span style={{ fontSize: 16, fontWeight: 400 }}>→</span>
               </button>
             </div>

@@ -35,7 +35,7 @@ export function App() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.28, ease: "easeInOut" }}
+        transition={{ duration: 0.32, ease: [0.22, 0.7, 0, 1] }}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
       >
         {ROUTE_MAP[stage]}

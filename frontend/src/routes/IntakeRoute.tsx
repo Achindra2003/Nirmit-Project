@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { api } from "@/api/client";
 import type { Direction, Intake, RoomType, Vibe } from "@/api/types";
 import { useAppStore } from "@/store/useAppStore";
@@ -38,10 +38,30 @@ const ROMAN  = ["I", "II", "III", "IV"] as const;
 const WHO_CHIPS = ["Young children", "Elderly parent", "Work from home", "Frequent guests", "Pets", "Just the two of us", "Vastu matters", "Joint family"];
 
 const PAGES = [
-  { title: "What feeling?",        sub: "Not the style. The feeling.",                                                 kind: "vibe" as const },
-  { title: "Which room, how big?", sub: "A rough sense is enough — we'll refine later.",                               kind: "room" as const },
-  { title: "Who lives here?",      sub: "Tell us in your own words. The more you say, the more personal the drawing.", kind: "who" as const },
-  { title: "Budget, and where?",   sub: "For furniture and finishing. Installation is separate.",                       kind: "budget" as const },
+  {
+    titleMain: "The mood",
+    titleAccent: "of your room",
+    sub: "Not a Pinterest style — how should it feel when you walk in? Warm and layered, open and quiet, or somewhere between.",
+    kind: "vibe" as const,
+  },
+  {
+    titleMain: "Which room",
+    titleAccent: "and how big",
+    sub: "A rough size is enough. We shape the layout around a typical Indian flat, not a catalogue template.",
+    kind: "room" as const,
+  },
+  {
+    titleMain: "Who lives",
+    titleAccent: "here with you",
+    sub: "Tell us in your own words. The more specific you are, the more personal the drawing becomes.",
+    kind: "who" as const,
+  },
+  {
+    titleMain: "Your budget",
+    titleAccent: "and city",
+    sub: "Furniture and finishing only — installation and civil work stay separate.",
+    kind: "budget" as const,
+  },
 ];
 
 function truncate(s: string, n: number) { return s.length > n ? s.slice(0, n - 1) + "…" : s; }
@@ -150,7 +170,7 @@ export function IntakeRoute() {
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.4fr", minHeight: 0 }}>
 
         {/* Left — question */}
-        <div style={{ padding: "64px 48px 48px 56px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid var(--line)" }}>
+        <div style={{ padding: "var(--s-8) var(--s-6) var(--s-6) var(--s-7)", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid var(--line)" }}>
           <div>
             <div className="appear" style={{ marginBottom: 24 }}>
               <div className="step-pill">
@@ -159,18 +179,14 @@ export function IntakeRoute() {
               </div>
             </div>
 
-            <h2 key={`q${page}`} className="slide-up" style={{ fontFamily: "var(--fd)", fontSize: "clamp(32px, 3.5vw, 52px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.015em", marginBottom: 16, color: "var(--ink)" }}>
-              {P.title.split(",").map((part, i, arr) => (
-                <Fragment key={i}>
-                  {i > 0 && ", "}
-                  <span style={i === arr.length - 1 ? { fontStyle: "italic", fontWeight: 400, color: "var(--terra)" } : undefined}>{part}</span>
-                </Fragment>
-              ))}
+            <h2 key={`q${page}`} className="intake-display slide-up">
+              <span className="intake-display-line">{P.titleMain}</span>
+              <span className="intake-display-line intake-display-line--accent">{P.titleAccent}</span>
             </h2>
 
-            <div key={`sub${page}`} className="slide-up" style={{ animationDelay: ".08s", fontFamily: "var(--fb)", fontSize: 16, color: "var(--ink-2)", maxWidth: "34ch", lineHeight: 1.6 }}>
+            <p key={`sub${page}`} className="slide-up body-text" style={{ animationDelay: ".08s", maxWidth: "36ch", fontSize: 16 }}>
               {P.sub}
-            </div>
+            </p>
           </div>
 
           {/* Trail — classical ledger */}
@@ -194,7 +210,7 @@ export function IntakeRoute() {
 
         {/* Right — answer */}
         <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div key={`a${page}`} className="slide-up" style={{ animationDelay: ".12s", flex: 1, overflowY: "auto", padding: "48px 64px 24px" }}>
+          <div key={`a${page}`} className="slide-up" style={{ animationDelay: ".12s", flex: 1, overflowY: "auto", padding: "var(--s-7) var(--s-8) var(--s-5)" }}>
             {P.kind === "vibe"   && <VibeAnswer   vibe={vibe}     setVibe={setVibe} />}
             {P.kind === "room"   && <RoomAnswer   room={room}     setRoom={setRoom} size={size} setSize={setSize} entrance={entrance} setEntrance={setEntrance} />}
             {P.kind === "who"    && <WhoAnswer    who={who}       setWho={setWho} chips={chips} toggleChip={toggleChip} />}
@@ -204,7 +220,7 @@ export function IntakeRoute() {
           {error && <p style={{ padding: "0 64px", color: "var(--terra-dk)", fontFamily: "var(--fb)", fontSize: 14 }}>{error}</p>}
 
           {/* Nav footer */}
-          <div className="appear-4" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--line)", padding: "20px 64px 24px" }}>
+          <div className="appear-4" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--line)", padding: "var(--s-5) var(--s-8) var(--s-5)" }}>
             <button
               className="btn-ghost"
               onClick={() => { if (page > 0) prev(); }}
@@ -226,7 +242,7 @@ export function IntakeRoute() {
                 disabled={!ok[page]}
                 style={{ animation: nudge && !ok[page] ? "appear .3s ease" : "none" }}
               >
-                {page < 3 ? "Continue" : "Begin designing"}
+                {page < 3 ? "Continue" : "Draw my room"}
                 <span style={{ fontSize: 16, fontWeight: 400 }}>→</span>
               </button>
               {nudge && !ok[page] && (

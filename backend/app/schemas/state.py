@@ -444,6 +444,10 @@ class ExportRequest(StrictModel):
     vision_name: str | None = None
     vision_tagline: str | None = None
     philosophy: str | None = None
+    hide_prices: bool = Field(
+        default=False,
+        description="If true, the rendered PDF strips rupee amounts (Contractor PDF variant — used to gather labour quotes without revealing the user's budget).",
+    )
 
 
 class ExportResponse(StrictModel):

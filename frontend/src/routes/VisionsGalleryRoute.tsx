@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Vision } from "@/api/types";
+import { humanizeReasoningLine } from "@/lib/humanizeReasoning";
 import { useAppStore } from "@/store/useAppStore";
 
 export function VisionsGalleryRoute() {
@@ -11,24 +12,24 @@ export function VisionsGalleryRoute() {
   }
 
   return (
-    <div className="paper" style={{ minHeight: "calc(100vh - 60px)", padding: "56px 64px 80px" }}>
+    <div className="paper page-shell" style={{ minHeight: "calc(100vh - 64px)" }}>
 
-      <div className="appear" style={{ marginBottom: 48 }}>
-        <span className="eyebrow">Three rooms drawn for you</span>
+      <div className="appear section-head">
+        <span className="eyebrow">Three ways to live in your room</span>
         <h2 style={{
           fontFamily: "var(--fd)", fontSize: "clamp(36px, 4vw, 56px)",
-          fontWeight: 500, lineHeight: 1.0, letterSpacing: "-0.018em",
-          color: "var(--ink)", marginTop: 12, maxWidth: "28ch",
+          fontWeight: 500, lineHeight: 1.12, letterSpacing: "-0.018em",
+          color: "var(--ink)", marginTop: 12, maxWidth: "30ch",
         }}>
-          Choose a starting
-          <span style={{ fontStyle: "italic", color: "var(--terra)" }}> drawing.</span>
+          Pick the room that feels
+          <span style={{ fontStyle: "italic", color: "var(--terra)" }}> like home.</span>
         </h2>
-        <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 16, color: "var(--ink-2)", marginTop: 12, maxWidth: "50ch" }}>
-          Each room below is fully furnished, priced, and ready to edit. Pick the one that speaks to you.
+        <p className="body-text" style={{ marginTop: 12, maxWidth: "52ch" }}>
+          Each vision is fully furnished and priced. Choose the one that matches how you actually want to live — you can refine everything after.
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--s-5)" }}>
         {visions.map((vision, i) => (
           <VisionCard
             key={vision.id}
@@ -82,7 +83,7 @@ function VisionCard({ vision, rank, onSelect }: { vision: Vision; rank: number; 
               color: "var(--paper)", background: "var(--terra)",
               padding: "3px 10px", textTransform: "uppercase",
             }}>
-              TOP CHOICE
+              OUR PICK
             </span>
           </div>
         )}
@@ -102,15 +103,17 @@ function VisionCard({ vision, rank, onSelect }: { vision: Vision; rank: number; 
         </p>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 20 }}>
-          {vision.reasoning.bullets.slice(0, 2).map((b, i) => (
+          {vision.reasoning.bullets.slice(0, 2).map((b, i) => {
+            const snippet = humanizeReasoningLine(b).split(".")[0];
+            return (
             <span key={i} style={{
               fontFamily: "var(--fb)", fontSize: 11,
               border: "1px solid var(--line)", padding: "4px 10px",
-              color: "var(--ink-2)", lineHeight: 1,
+              color: "var(--ink-2)", lineHeight: 1.35,
             }}>
-              {b.split(".")[0]}
+              {snippet}
             </span>
-          ))}
+          );})}
         </div>
 
         <div style={{
@@ -140,7 +143,7 @@ function VisionCard({ vision, rank, onSelect }: { vision: Vision; rank: number; 
           color: hover ? "var(--paper)" : "var(--ink)",
           transition: "color .25s ease",
         }}>
-          Explore this room
+          Step inside
         </span>
         <span style={{ color: hover ? "var(--paper)" : "var(--terra)", transition: "color .25s ease" }}>→</span>
       </div>

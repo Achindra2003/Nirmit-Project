@@ -3,6 +3,7 @@ import { api } from "@/api/client";
 import type { ChatResponse, Intent, IntentKind, RoomState } from "@/api/types";
 import { RoomScene, type CameraView } from "@/three/RoomScene";
 import { Planner2D } from "@/components/Planner2D";
+import { humanizeReasoningLine } from "@/lib/humanizeReasoning";
 import { useAppStore } from "@/store/useAppStore";
 
 type ViewMode = "3d" | "2d";
@@ -174,7 +175,7 @@ export function PlannerRoute() {
     if (baseVision) {
       setChat([{
         role: "assistant",
-        content: `${baseVision.reasoning.headline} Tap anything to select it — or just tell me what you'd change.`,
+        content: `${humanizeReasoningLine(baseVision.reasoning.headline)} Tap anything to select it — or tell me what you'd change in plain words.`,
       }]);
       setSelectedId(null);
       setRoomHistory([]);

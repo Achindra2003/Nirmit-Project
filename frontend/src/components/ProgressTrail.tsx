@@ -1,6 +1,6 @@
 import type { Stage } from "@/store/useAppStore";
 
-const STEPS = ["Discover", "Visions", "Design", "Style", "Quotation"] as const;
+const STEPS = ["Discover", "Your rooms", "Refine", "Style", "Quotation"] as const;
 
 const STAGE_TO_STEP: Partial<Record<Stage, number>> = {
   intake:     0,

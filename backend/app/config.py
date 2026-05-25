@@ -15,8 +15,14 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=str(_ENV_FILE), env_file_encoding="utf-8", extra="ignore")
 
     LLM_PROVIDER: Literal["groq", "anthropic", "openai"] = "groq"
-    LLM_MODEL: str = "moonshotai/kimi-k2-instruct"
+    LLM_MODEL: str = "llama-3.3-70b-versatile"
     GROQ_API_KEY: str | None = None
+
+    # Generation pipeline — each vision used to trigger 2 LLM calls (style + ranker).
+    # Defaults keep Groq free-tier TPD usable; enable when you have headroom.
+    LLM_INTERPRET_ON_GENERATE: bool = False
+    LLM_STYLE_ON_GENERATE: bool = False
+    LLM_RANKER_ON_GENERATE: bool = False
     ANTHROPIC_API_KEY: str | None = None
     OPENAI_API_KEY: str | None = None
 

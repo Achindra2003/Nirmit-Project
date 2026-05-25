@@ -225,6 +225,7 @@ export interface ExportRequest {
   room_state: RoomState;
   format: "pdf" | "json";
   include_hindi_section: boolean;
+  hide_prices?: boolean;
 }
 export interface ExportResponse {
   download_url: string | null;

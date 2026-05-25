@@ -42,7 +42,10 @@ from app.domain.presets import (
 )
 from app.domain.solver import SolverInput, SolverItem, composition_for, solve
 from app.domain.solver.solver import DoorOpening
+from app.domain.reasoning_copy import humanize_reasoning
 from app.domain.vastu import VastuZone, apply_rules as vastu_apply_rules, preferred_zone_for_category
+from app.config import settings
+from app.llm.guard import LlmQuotaGate, safe_llm_invoke
 from app.prompts import RANKER_SYSTEM, STYLE_SYSTEM, build_ranker_prompt, build_style_prompt
 from app.schemas.state import (
     CatalogRef,
@@ -102,18 +105,23 @@ Be conservative: only set a flag true if the text clearly supports it."""
         f"Keep existing: {intake.keep_existing or 'nothing mentioned'}"
     )
 
-    try:
+    if settings.LLM_INTERPRET_ON_GENERATE and not LlmQuotaGate.is_open():
         from langchain_core.messages import HumanMessage, SystemMessage
+
         from app.llm import get_llm
+
         llm = get_llm(temperature=0.2)
-        raw = llm.invoke([SystemMessage(content=INTERPRET_SYSTEM), HumanMessage(content=prompt)])
-        text = raw.content if hasattr(raw, "content") else str(raw)
-        m = _JSON_BLOCK.search(text)
-        if m:
-            brief = json.loads(m.group(0))
-            return {**state, "design_brief": brief}
-    except Exception:
-        log.warning("LLM interpret failed, falling back to keyword matching", exc_info=True)
+        raw = safe_llm_invoke(
+            llm,
+            [SystemMessage(content=INTERPRET_SYSTEM), HumanMessage(content=prompt)],
+            context="interpret",
+        )
+        if raw is not None:
+            text = raw.content if hasattr(raw, "content") else str(raw)
+            m = _JSON_BLOCK.search(text) if isinstance(text, str) else None
+            if m:
+                brief = json.loads(m.group(0))
+                return {**state, "design_brief": brief}
 
     # Fallback: keyword matching
     text_lower = intake.who_lives_here.lower()
@@ -173,10 +181,9 @@ def _rank_and_explain(state: GenerateState) -> GenerateState:
     visions = state["visions"]
     enriched: list[Vision] = []
     for v in visions:
-        try:
+        if settings.LLM_RANKER_ON_GENERATE and not LlmQuotaGate.is_open():
             new_reasoning = _author_reasoning(intake, v)
-        except Exception:
-            log.warning("LLM ranker failed for %s; using deterministic fallback", v.name, exc_info=True)
+        else:
             new_reasoning = v.reasoning
         enriched.append(v.model_copy(update={"reasoning": new_reasoning}))
     return {**state, "visions": enriched}
@@ -334,22 +341,22 @@ def _deterministic_reasoning(
 
     if philosophy is VisionPhilosophy.GATHERING and sofa:
         bullets.append(
-            f"Sofa anchors the long wall ({sofa.dimensions.width_mm}mm wide) so the whole family fits on movie nights."
+            "The sofa runs along the long wall — wide enough for the whole family on movie nights."
         )
     if philosophy is VisionPhilosophy.BREATH and sofa:
         bullets.append(
-            "Centre of the room stays clear — the gaze from the entrance reaches all the way to the far wall."
+            "The centre stays open so the view from the entrance reaches all the way to the far wall."
         )
     if philosophy is VisionPhilosophy.KEEPER and storage_count >= 2:
         bullets.append(
-            f"{storage_count} pieces of closed storage line the walls — toys, festival boxes, daily clutter all have a home."
+            "Closed storage lines the walls — toys, festival boxes, and daily clutter each have a home."
         )
     if tv:
-        bullets.append("TV unit is anchored to the back wall so the sofa faces across the full depth of the room.")
+        bullets.append("The TV sits on the far wall so the sofa faces comfortably across the room.")
     if brief.get("has_kids"):
-        bullets.append("Coffee table is small and rounded — clear floor space for a four-year-old to play.")
+        bullets.append("A smaller, rounded coffee table keeps the middle clear for little ones to play.")
     if brief.get("has_elderly"):
-        bullets.append("Sofa height is 850mm with arms on both sides — easy stand-up for older guests.")
+        bullets.append("Seating has arms on both sides — easier for older guests to sit and stand.")
 
     vastu_notes = []
     accessibility_notes = []
@@ -365,15 +372,17 @@ def _deterministic_reasoning(
         )
         vastu_notes = [a.bullet for a in applied[:2]]
     if brief.get("has_elderly"):
-        accessibility_notes.append("All seating is at least 450mm tall — easy on hips and knees for older family members.")
+        accessibility_notes.append("Seating is at a comfortable height — kinder on hips and knees for older family members.")
     if brief.get("has_kids"):
-        accessibility_notes.append("No sharp glass edges. The coffee table is rounded; the rug softens any falls.")
+        accessibility_notes.append("No sharp glass edges — the coffee table is rounded and the rug softens any tumbles.")
 
-    return Reasoning(
-        headline=headline_map[philosophy],
-        bullets=bullets or ["A balanced layout for this room — no items too close, walkways clear."],
-        vastu_notes=vastu_notes,
-        accessibility_notes=accessibility_notes,
+    return humanize_reasoning(
+        Reasoning(
+            headline=headline_map[philosophy],
+            bullets=bullets or ["A balanced layout — walkways stay clear and nothing feels cramped."],
+            vastu_notes=vastu_notes,
+            accessibility_notes=accessibility_notes,
+        )
     )
 
 
@@ -381,8 +390,7 @@ _JSON_BLOCK = re.compile(r"\{[\s\S]*\}", re.MULTILINE)
 
 
 def _author_reasoning(intake: Intake, vision: Vision) -> Reasoning:
-    """Use the LLM to author personal, opinionated copy. Falls back silently
-    on any error — the deterministic Reasoning is already attached."""
+    """LLM-authored copy when quota allows; otherwise keeps deterministic reasoning."""
     from langchain_core.messages import HumanMessage, SystemMessage
 
     from app.llm import get_llm
@@ -396,7 +404,9 @@ def _author_reasoning(intake: Intake, vision: Vision) -> Reasoning:
             )
         ),
     ]
-    raw = llm.invoke(msgs)
+    raw = safe_llm_invoke(llm, msgs, context=f"ranker:{vision.name}")
+    if raw is None:
+        return vision.reasoning
     text = raw.content if hasattr(raw, "content") else str(raw)
     if not isinstance(text, str):
         text = str(text)
@@ -413,11 +423,13 @@ def _author_reasoning(intake: Intake, vision: Vision) -> Reasoning:
     # notes on the reveal page — even though Vastu rules had produced them.
     llm_vastu = [str(b)[:200] for b in (data.get("vastu_notes") or [])][:2]
     llm_a11y = [str(b)[:200] for b in (data.get("accessibility_notes") or [])][:2]
-    return Reasoning(
-        headline=str(data.get("headline") or vision.reasoning.headline)[:200],
-        bullets=[str(b)[:300] for b in (data.get("bullets") or [])][:5] or vision.reasoning.bullets,
-        vastu_notes=llm_vastu or vision.reasoning.vastu_notes,
-        accessibility_notes=llm_a11y or vision.reasoning.accessibility_notes,
+    return humanize_reasoning(
+        Reasoning(
+            headline=str(data.get("headline") or vision.reasoning.headline)[:200],
+            bullets=[str(b)[:300] for b in (data.get("bullets") or [])][:5] or vision.reasoning.bullets,
+            vastu_notes=llm_vastu or vision.reasoning.vastu_notes,
+            accessibility_notes=llm_a11y or vision.reasoning.accessibility_notes,
+        )
     )
 
 
@@ -425,36 +437,40 @@ def _author_reasoning(intake: Intake, vision: Vision) -> Reasoning:
 
 
 def _llm_style(intake: Intake, philosophy: VisionPhilosophy) -> dict:
-    """Call LLM for palette + flooring + wall_finish + lighting_kelvin.
-    Falls back to hardcoded maps on any error."""
-    try:
-        from langchain_core.messages import HumanMessage, SystemMessage
-
-        from app.llm import get_llm
-
-        llm = get_llm(temperature=0.5)
-        raw = llm.invoke(
-            [
-                SystemMessage(content=STYLE_SYSTEM),
-                HumanMessage(content=build_style_prompt(intake=intake, philosophy=philosophy.value)),
-            ]
-        )
-        text = raw.content if hasattr(raw, "content") else str(raw)
-        if not isinstance(text, str):
-            text = str(text)
-        m = _JSON_BLOCK.search(text)
-        if m:
-            data = json.loads(m.group(0))
-            if isinstance(data, dict) and "palette" in data:
-                return data
-    except Exception:
-        log.warning("LLM style call failed for %s; using hardcoded fallback", philosophy, exc_info=True)
-    return {
+    """Palette / materials — hardcoded maps by default; optional LLM when enabled."""
+    fallback = {
         "palette": _palette_for_vibe_and_philosophy(intake.vibe.value, philosophy),
         "flooring": _flooring_for_vibe(intake.vibe.value),
         "wall_finish": _wall_finish_for_vibe(intake.vibe.value),
         "lighting_kelvin": 3200,
     }
+    if not settings.LLM_STYLE_ON_GENERATE or LlmQuotaGate.is_open():
+        return fallback
+
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    from app.llm import get_llm
+
+    llm = get_llm(temperature=0.5)
+    raw = safe_llm_invoke(
+        llm,
+        [
+            SystemMessage(content=STYLE_SYSTEM),
+            HumanMessage(content=build_style_prompt(intake=intake, philosophy=philosophy.value)),
+        ],
+        context=f"style:{philosophy.value}",
+    )
+    if raw is None:
+        return fallback
+    text = raw.content if hasattr(raw, "content") else str(raw)
+    if not isinstance(text, str):
+        text = str(text)
+    m = _JSON_BLOCK.search(text)
+    if m:
+        data = json.loads(m.group(0))
+        if isinstance(data, dict) and "palette" in data:
+            return data
+    return fallback
 
 
 def _name_and_tagline(p: VisionPhilosophy) -> tuple[str, str]:

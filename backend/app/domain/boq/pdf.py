@@ -41,7 +41,7 @@ from reportlab.platypus import (
 )
 
 from app.domain.boq.boq import BOQ
-from app.domain.boq.hindi import generate_hindi_section
+from app.domain.boq.local_lang import generate_local_section, lang_for_city
 from app.schemas.state import RoomState
 
 # ─── Palette — exact hex values from styles.css ───────────────────────────────
@@ -169,6 +169,19 @@ def _rate(n: int | float, unit: str) -> str:
     return f"{_money(n)}/{unit}"
 
 
+# A redacted placeholder for the Contractor PDF — visually obvious that a value
+# was intentionally suppressed (vs. a missing zero or a layout glitch).
+_HIDDEN_PRICE = "— — —"
+
+
+def _amount(n: int | float, hide: bool) -> str:
+    return _HIDDEN_PRICE if hide else _money(n)
+
+
+def _rate_or_hidden(n: int | float, unit: str, hide: bool) -> str:
+    return _HIDDEN_PRICE if hide else _rate(n, unit)
+
+
 # ─── Style factory ─────────────────────────────────────────────────────────────
 
 _base = getSampleStyleSheet()
@@ -240,12 +253,12 @@ def _header_block(
     return [tbl, hr]
 
 
-def _summary_grid(room: RoomState, boq: BOQ, philosophy: str | None, r: dict) -> list[Flowable]:
+def _summary_grid(room: RoomState, boq: BOQ, philosophy: str | None, r: dict, hide_prices: bool = False) -> list[Flowable]:
     """6-cell summary grid — Room / City / Vibe / Budget / Total / Remaining."""
     budget  = room.intake.budget_inr
     total   = boq.grand_total_inr
     rem     = budget - total
-    rem_str = f"{'+'  if rem >= 0 else '−'}{_money(abs(rem))}"
+    rem_str = _HIDDEN_PRICE if hide_prices else f"{'+'  if rem >= 0 else '−'}{_money(abs(rem))}"
 
     vibe_raw = philosophy or (room.intake.vibe.value if hasattr(room.intake, "vibe") else "")
     vibe_str = vibe_raw.replace("_", " ").title() if vibe_raw else "—"
@@ -263,8 +276,8 @@ def _summary_grid(room: RoomState, boq: BOQ, philosophy: str | None, r: dict) ->
             [_cell("Room",   room.intake.room_type.value.capitalize()),
              _cell("City",   boq.city or "—"),
              _cell("Vibe",   vibe_str)],
-            [_cell("Budget", _money(budget)),
-             _cell("Total",  _money(total), accent=True),
+            [_cell("Budget", _amount(budget, hide_prices)),
+             _cell("Total",  _amount(total, hide_prices), accent=True),
              _cell("Remaining", rem_str)],
         ],
         colWidths=[_CW / 3, _CW / 3, _CW / 3],
@@ -288,7 +301,7 @@ def _eyebrow(text: str, r: dict) -> Paragraph:
     )
 
 
-def _furniture_section(boq: BOQ, r: dict) -> list[Flowable]:
+def _furniture_section(boq: BOQ, r: dict, hide_prices: bool = False) -> list[Flowable]:
     """A — Furniture & Furnishings, grouped by description."""
     grouped: dict[str, dict] = {}
     for line in boq.furniture:
@@ -346,7 +359,7 @@ def _furniture_section(boq: BOQ, r: dict) -> list[Flowable]:
             Paragraph(str(it["qty"]),
                 _ps(f"fq_{it['idx']}", fontName=_fb(r), fontSize=10, leading=14, textColor=_INK2, alignment=1)),
             badge,
-            Paragraph(_money(it["amount_inr"]),
+            Paragraph(_amount(it["amount_inr"], hide_prices),
                 _ps(f"fa_{it['idx']}", fontName=_fdb(r), fontSize=11.5, leading=14, textColor=_INK, alignment=2)),
         ])
 
@@ -369,7 +382,7 @@ def _furniture_section(boq: BOQ, r: dict) -> list[Flowable]:
     return [_eyebrow("A — Furniture & Furnishings", r), t, Spacer(1, 22)]
 
 
-def _materials_section(boq: BOQ, r: dict) -> list[Flowable]:
+def _materials_section(boq: BOQ, r: dict, hide_prices: bool = False) -> list[Flowable]:
     if not boq.materials:
         return []
     col_w = [7 * mm, 83 * mm, 27 * mm, 27 * mm, 30 * mm]
@@ -385,15 +398,15 @@ def _materials_section(boq: BOQ, r: dict) -> list[Flowable]:
             Paragraph(str(m.sl_no).zfill(2), _ps(f"msl{m.sl_no}", fontName=_fm(r), fontSize=9, leading=11, textColor=_INK3)),
             Paragraph(m.description, _ps(f"md{m.sl_no}", fontName=_fbs(r), fontSize=10.5, leading=14, textColor=_INK)),
             Paragraph(f"{m.qty} {m.unit}", _ps(f"mq{m.sl_no}", fontName=_fb(r), fontSize=10, leading=13, textColor=_INK2, alignment=1)),
-            Paragraph(_rate(m.rate_inr, m.unit), _ps(f"mr{m.sl_no}", fontName=_fb(r), fontSize=10, leading=13, textColor=_INK2, alignment=2)),
-            Paragraph(_money(m.amount_inr), _ps(f"ma{m.sl_no}", fontName=_fdb(r), fontSize=11.5, leading=14, textColor=_INK, alignment=2)),
+            Paragraph(_rate_or_hidden(m.rate_inr, m.unit, hide_prices), _ps(f"mr{m.sl_no}", fontName=_fb(r), fontSize=10, leading=13, textColor=_INK2, alignment=2)),
+            Paragraph(_amount(m.amount_inr, hide_prices), _ps(f"ma{m.sl_no}", fontName=_fdb(r), fontSize=11.5, leading=14, textColor=_INK, alignment=2)),
         ])
     t = Table(rows, colWidths=col_w, repeatRows=1)
     t.setStyle(_data_style())
     return [_eyebrow("B — Materials & Finishing", r), t, Spacer(1, 22)]
 
 
-def _labor_section(boq: BOQ, r: dict) -> list[Flowable]:
+def _labor_section(boq: BOQ, r: dict, hide_prices: bool = False) -> list[Flowable]:
     if not boq.labor:
         return []
     col_w = [7 * mm, 83 * mm, 27 * mm, 27 * mm, 30 * mm]
@@ -409,8 +422,8 @@ def _labor_section(boq: BOQ, r: dict) -> list[Flowable]:
             Paragraph(str(l.sl_no).zfill(2), _ps(f"lsl{l.sl_no}", fontName=_fm(r), fontSize=9, leading=11, textColor=_INK3)),
             Paragraph(l.description, _ps(f"ld{l.sl_no}", fontName=_fbs(r), fontSize=10.5, leading=14, textColor=_INK)),
             Paragraph(f"{l.qty} {l.unit}", _ps(f"lq{l.sl_no}", fontName=_fb(r), fontSize=10, leading=13, textColor=_INK2, alignment=1)),
-            Paragraph(_rate(l.rate_inr, l.unit), _ps(f"lr{l.sl_no}", fontName=_fb(r), fontSize=10, leading=13, textColor=_INK2, alignment=2)),
-            Paragraph(_money(l.amount_inr), _ps(f"la{l.sl_no}", fontName=_fdb(r), fontSize=11.5, leading=14, textColor=_INK, alignment=2)),
+            Paragraph(_rate_or_hidden(l.rate_inr, l.unit, hide_prices), _ps(f"lr{l.sl_no}", fontName=_fb(r), fontSize=10, leading=13, textColor=_INK2, alignment=2)),
+            Paragraph(_amount(l.amount_inr, hide_prices), _ps(f"la{l.sl_no}", fontName=_fdb(r), fontSize=11.5, leading=14, textColor=_INK, alignment=2)),
         ])
     t = Table(rows, colWidths=col_w, repeatRows=1)
     t.setStyle(_data_style())
@@ -435,7 +448,7 @@ def _data_style() -> TableStyle:
     ])
 
 
-def _cost_summary_box(boq: BOQ, r: dict) -> list[Flowable]:
+def _cost_summary_box(boq: BOQ, r: dict, hide_prices: bool = False) -> list[Flowable]:
     """Boxed cost totals matching the web's paper-3 bordered section."""
     it = _ps("csi", fontName=_fdi(r), fontSize=12,  leading=15, textColor=_INK2)
     va = _ps("csv", fontName=_fb(r),  fontSize=13,  leading=16, textColor=_INK2)
@@ -446,11 +459,11 @@ def _cost_summary_box(boq: BOQ, r: dict) -> list[Flowable]:
         return [Paragraph(label, label_st), Paragraph(amount, val_st)]
 
     rows = [
-        _row("Subtotal (A + B + C)", _money(boq.subtotal_inr),    it, _ps("v1", fontName=_fb(r),  fontSize=13, leading=16, textColor=_INK2, alignment=2)),
-        _row("Contingency (10%)",    _money(boq.contingency_inr), it, _ps("v2", fontName=_fb(r),  fontSize=13, leading=16, textColor=_INK2, alignment=2)),
-        _row("GST",                  _money(boq.gst_inr),          it, _ps("v3", fontName=_fb(r),  fontSize=13, leading=16, textColor=_INK2, alignment=2)),
+        _row("Subtotal (A + B + C)", _amount(boq.subtotal_inr, hide_prices),    it, _ps("v1", fontName=_fb(r),  fontSize=13, leading=16, textColor=_INK2, alignment=2)),
+        _row("Contingency (10%)",    _amount(boq.contingency_inr, hide_prices), it, _ps("v2", fontName=_fb(r),  fontSize=13, leading=16, textColor=_INK2, alignment=2)),
+        _row("GST",                  _amount(boq.gst_inr, hide_prices),          it, _ps("v3", fontName=_fb(r),  fontSize=13, leading=16, textColor=_INK2, alignment=2)),
         ["", ""],   # spacer / divider row
-        _row("Grand Total",          _money(boq.grand_total_inr), gl, _ps("v4", fontName=_fdb(r), fontSize=20, leading=22, textColor=_INK, alignment=2)),
+        _row("Grand Total",          _amount(boq.grand_total_inr, hide_prices), gl, _ps("v4", fontName=_fdb(r), fontSize=20, leading=22, textColor=_INK, alignment=2)),
     ]
 
     t = Table(rows, colWidths=[_CW * 0.68, _CW * 0.32])
@@ -470,7 +483,7 @@ def _cost_summary_box(boq: BOQ, r: dict) -> list[Flowable]:
     return [t, Spacer(1, 26)]
 
 
-def _execution_section(boq: BOQ, r: dict) -> list[Flowable]:
+def _execution_section(boq: BOQ, r: dict, hide_prices: bool = False) -> list[Flowable]:
     out: list[Flowable] = [
         _eyebrow("Execution Sequence", r),
         Paragraph(
@@ -487,10 +500,14 @@ def _execution_section(boq: BOQ, r: dict) -> list[Flowable]:
             str(i + 1).zfill(2),
             _ps(f"en{i}", fontName=_fd(r), fontSize=20, leading=22, textColor=_INK3),
         )
+        phase_meta = (
+            f'~{phase["duration_days"]} DAYS'
+            if hide_prices
+            else f'~{phase["duration_days"]} DAYS  ·  {_money(phase["total_inr"]).upper()}'
+        )
         detail_p = Paragraph(
             f'<font name="{_fbs(r)}" size="13">{label}</font>'
-            f'<br/><font name="{_fm(r)}" size="8.5" color="#7D7367">'
-            f'~{phase["duration_days"]} DAYS  ·  {_money(phase["total_inr"]).upper()}</font>',
+            f'<br/><font name="{_fm(r)}" size="8.5" color="#7D7367">{phase_meta}</font>',
             _ps(f"ed{i}", fontName=_fbs(r), fontSize=13, leading=17, textColor=_INK, spaceBefore=2),
         )
 
@@ -508,29 +525,37 @@ def _execution_section(boq: BOQ, r: dict) -> list[Flowable]:
     return out
 
 
-def _hindi_block(boq: BOQ, r: dict) -> list[Flowable]:
-    text = generate_hindi_section(boq)
+def _local_block(boq: BOQ, city: str, r: dict, hide_prices: bool = False) -> list[Flowable]:
+    text = generate_local_section(boq, city=city)
     if not text:
         return []
-    dev      = _fh(r)
-    hi_intro = _ps("hint", fontName=_fdi(r), fontSize=11, leading=15, textColor=_INK2, spaceAfter=14)
-    hi_body  = _ps("hbd",  fontName=dev,      fontSize=13, leading=24, textColor=_INK)
+    pack     = lang_for_city(city)
+    dev      = _fh(r)  # Tiro Devanagari — also renders other Indian scripts adequately
+    intro_st = _ps("lint", fontName=_fdi(r), fontSize=11, leading=15, textColor=_INK2, spaceAfter=14)
+    body_st  = _ps("lbd",  fontName=dev,     fontSize=13, leading=24, textColor=_INK)
+    heading  = f"{pack.section_heading_en} · {pack.section_heading_native}"
 
     out: list[Flowable] = [
         HRFlowable(width="100%", thickness=0.5, color=_LINE, spaceBefore=8, spaceAfter=14),
-        _eyebrow("Hindi Specification · बजट और सामग्री", r),
+        _eyebrow(heading, r),
         Paragraph(
-            "The specification below is for your carpenter — "
-            "written in Hindi so there is no ambiguity on site.",
-            hi_intro,
+            f"The specification below is for your carpenter — written in "
+            f"{pack.name_en} so there is no ambiguity on site.",
+            intro_st,
         ),
     ]
+    # On the contractor variant we still ship the spec text — what we suppress
+    # is the per-item rupee line. The price label below the spec leaks the
+    # final amount, so strip those lines but keep the build instructions.
+    price_token = pack.price_label
     for line in text.splitlines():
+        if hide_prices and price_token and price_token in line:
+            continue
         if not line.strip():
             out.append(Spacer(1, 4))
         else:
             esc = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-            out.append(Paragraph(esc, hi_body))
+            out.append(Paragraph(esc, body_st))
     return out
 
 
@@ -592,7 +617,12 @@ def build_quotation_pdf(
     vision_name: str | None = None,
     vision_tagline: str | None = None,
     philosophy: str | None = None,
+    hide_prices: bool = False,
 ) -> bytes:
+    """Render the quotation PDF. With `hide_prices=True` the document still
+    contains every line item and the carpenter spec, but every rupee figure is
+    redacted — this is the Contractor PDF variant a homeowner hands out when
+    soliciting independent labour quotes."""
     from app.domain.boq.boq import build_boq
 
     boq = build_boq(room, city=city)
@@ -606,21 +636,21 @@ def build_quotation_pdf(
         rightMargin=_RM,
         topMargin=_TM,
         bottomMargin=_BM,
-        title="Nirmit Quotation",
+        title="Nirmit Contractor Spec" if hide_prices else "Nirmit Quotation",
         author="Nirmit",
     )
 
     flow: list[Flowable] = []
     flow.extend(_header_block(room, vision_name, vision_tagline, registered))
-    flow.extend(_summary_grid(room, boq, philosophy, registered))
-    flow.extend(_furniture_section(boq, registered))
-    flow.extend(_materials_section(boq, registered))
-    flow.extend(_labor_section(boq, registered))
-    flow.extend(_cost_summary_box(boq, registered))
+    flow.extend(_summary_grid(room, boq, philosophy, registered, hide_prices))
+    flow.extend(_furniture_section(boq, registered, hide_prices))
+    flow.extend(_materials_section(boq, registered, hide_prices))
+    flow.extend(_labor_section(boq, registered, hide_prices))
+    flow.extend(_cost_summary_box(boq, registered, hide_prices))
     flow.append(PageBreak())
-    flow.extend(_execution_section(boq, registered))
+    flow.extend(_execution_section(boq, registered, hide_prices))
     if any(l.procurement == "build" for l in boq.furniture):
-        flow.extend(_hindi_block(boq, registered))
+        flow.extend(_local_block(boq, city, registered, hide_prices))
     flow.extend(_footer_block(registered))
 
     doc.build(flow, onFirstPage=_on_page, onLaterPages=_on_page)

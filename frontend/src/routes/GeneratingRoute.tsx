@@ -3,11 +3,11 @@ import { TopNav } from "@/components/shell/TopNav";
 import { useAppStore } from "@/store/useAppStore";
 
 const STAGES = [
-  { label: "Reading the room",               t: 0    },
-  { label: "Placing the major pieces",        t: 2200 },
-  { label: "Arranging the smaller ones",      t: 4400 },
-  { label: "Honouring Vastu, lining up light", t: 6600 },
-  { label: "Materials, prices, totals",       t: 8800 },
+  { label: "Listening to your brief",        t: 0    },
+  { label: "Placing the big pieces",          t: 2200 },
+  { label: "Filling in the smaller details",  t: 4400 },
+  { label: "Respecting Vastu and daylight",   t: 6600 },
+  { label: "Pricing materials and labour",    t: 8800 },
 ];
 const TOTAL_MS = 11000;
 
@@ -54,7 +54,7 @@ export function GeneratingRoute() {
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "var(--paper)" }}>
 
       <TopNav stage="generating" hideTrail rightContent={
-        <span className="eyebrow" style={{ color: "var(--ink-3)" }}>Drafting your room…</span>
+        <span className="eyebrow" style={{ color: "var(--ink-3)" }}>Drawing your room…</span>
       } />
 
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "3fr 340px", minHeight: 0 }}>
@@ -103,13 +103,13 @@ export function GeneratingRoute() {
 
           <div>
             <span style={{ fontFamily: "var(--fm)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(242,235,221,.35)", display: "block", marginBottom: 20 }}>
-              The architect&apos;s notes
+              Notes as we draw
             </span>
 
             <div style={{ fontFamily: "var(--fd)", fontSize: 30, fontWeight: 600, lineHeight: 1.1, color: "rgba(242,235,221,.9)", minHeight: 88, transition: "opacity .4s ease" }}>
-              {stage === 0 && "Beginning to draw…"}
+              {stage === 0 && "Starting with your room…"}
               {current}
-              {animationDone && (visionsLoaded ? "Three rooms ready." : "Finalising…")}
+              {animationDone && (visionsLoaded ? "Three rooms are ready for you." : "Almost there…")}
             </div>
           </div>
 
@@ -194,19 +194,22 @@ function FloorPlan({ elapsed }: { elapsed: number }) {
     titleBlock: { start: 8800, duration: 700 },
   };
 
-  // Drawing animation: element starts invisible, dashoffset → 0
+  // Pen-on-paper: stroke progress from elapsed time (continuous, not CSS keyframes)
   const draw = (spec: AnimSpec, length: number) => {
     const p = lerp(elapsed, spec);
-    return { strokeDasharray: length, strokeDashoffset: length * (1 - p) };
+    return {
+      strokeDasharray: length,
+      strokeDashoffset: length * (1 - p),
+      strokeLinecap: "square" as const,
+    };
   };
-  // Fade animation: opacity 0 → 1 with slight rise
   const fade = (spec: AnimSpec) => {
     const p = lerp(elapsed, spec);
-    return { opacity: p, transform: `translateY(${(1 - p) * 4}px)` };
+    return { opacity: p, transform: `translateY(${(1 - p) * 3}px)` };
   };
 
   return (
-    <svg width="100%" viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible", maxHeight: 500 }} shapeRendering="geometricPrecision">
+    <svg className="pen-svg" width="100%" viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible", maxHeight: 500 }} shapeRendering="geometricPrecision">
       <defs>
         <pattern id="fp-hatch" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
           <line x1="0" y1="0" x2="0" y2="6" stroke="var(--ink)" strokeWidth="0.6" opacity="0.55" />

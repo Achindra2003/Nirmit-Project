@@ -10,7 +10,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse, Response
 
-from app.domain.boq import build_boq, build_quotation_pdf, generate_hindi_section
+from app.domain.boq import build_boq, build_quotation_pdf, generate_local_section, language_info
 from app.schemas.state import ExportRequest
 
 router = APIRouter()
@@ -26,17 +26,21 @@ async def export(req: ExportRequest):
             vision_name=req.vision_name,
             vision_tagline=req.vision_tagline,
             philosophy=req.philosophy,
+            hide_prices=req.hide_prices,
         )
+        # Filename varies by variant so two consecutive downloads don't overwrite.
+        fname = "nirmit-contractor-spec.pdf" if req.hide_prices else "nirmit-quotation.pdf"
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": 'attachment; filename="nirmit-quotation.pdf"',
+                "Content-Disposition": f'attachment; filename="{fname}"',
                 "Content-Length": str(len(pdf_bytes)),
             },
         )
 
     boq = build_boq(req.room_state, city=city)
+    local_text = generate_local_section(boq, city=city) if req.include_hindi_section else ""
     return JSONResponse(
         {
             "city": boq.city,
@@ -63,7 +67,11 @@ async def export(req: ExportRequest):
                 for l in boq.labor
             ],
             "execution_phases": boq.execution_phases,
-            "hindi_section": generate_hindi_section(boq) if req.include_hindi_section else "",
+            # `hindi_section` kept for backward compatibility; `local_section`
+            # is the city-aware text new clients should read.
+            "hindi_section": local_text,
+            "local_section": local_text,
+            "language": language_info(city),
             "valid_until": (date.today() + timedelta(days=30)).isoformat(),
         }
     )

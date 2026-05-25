@@ -40,7 +40,7 @@ export function TopNav({ stage, dark = false, rightContent, hideTrail = false, h
     <div
       style={{
         height: 64,
-        padding: "0 32px",
+        padding: "0 var(--s-6)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",

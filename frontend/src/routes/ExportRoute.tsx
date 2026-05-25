@@ -6,6 +6,14 @@ import { api } from "@/api/client";
 import { useAppStore } from "@/store/useAppStore";
 import { TopNav } from "@/components/shell/TopNav";
 
+interface LanguageInfo {
+  code: string;
+  name_en: string;
+  name_native: string;
+  heading_en: string;
+  heading_native: string;
+}
+
 interface BOQResponse {
   city: string;
   subtotal_inr: number;
@@ -37,10 +45,17 @@ interface BOQResponse {
   }>;
   execution_phases: Array<{ label: string; duration_days: number; total_inr: number }>;
   hindi_section: string;
+  local_section?: string;
+  language?: LanguageInfo;
   valid_until: string;
 }
 
 type ExportOption = "pdf" | "whatsapp" | "contractor";
+
+// Visual placeholder used wherever a rupee value would normally appear in the
+// Contractor PDF — keeps the document layout intact while making it obvious
+// that a figure was deliberately withheld.
+const REDACTED = "— — —";
 
 export function ExportRoute() {
   const { visions, selectedVisionId, reset } = useAppStore();
@@ -53,6 +68,7 @@ export function ExportRoute() {
   const [saving, setSaving]     = useState(false);
   const [savedId, setSavedId]   = useState<string | null>(null);
   const boqRef = useRef<HTMLDivElement>(null);
+  const waRef  = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!vision) return;
@@ -63,43 +79,76 @@ export function ExportRoute() {
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
   }, [vision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function downloadPdf() {
+  /** Render the visible BOQ preview to a multi-page A4 PDF.
+   * Used for both the Full Quotation and the Contractor variant — the only
+   * difference is the `hidePrices` flag flipped before capture, which the
+   * JSX below honours by emitting REDACTED in place of each rupee value. */
+  async function downloadPdf(filename: string) {
     if (!boqRef.current) {
       setError("Quotation preview not ready — please wait a moment and try again.");
       return;
     }
+    const canvas = await html2canvas(boqRef.current, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#F2EBDD",
+      logging: false,
+    });
+
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    if (pdfHeight <= pageHeight) {
+      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+    } else {
+      let yOffset = 0;
+      let remaining = pdfHeight;
+      while (remaining > 0) {
+        pdf.addImage(imgData, "JPEG", 0, -yOffset, pdfWidth, pdfHeight);
+        remaining -= pageHeight;
+        yOffset += pageHeight;
+        if (remaining > 0) pdf.addPage();
+      }
+    }
+    pdf.save(filename);
+  }
+
+  async function downloadWhatsAppImage() {
+    if (!waRef.current) {
+      setError("Share card not ready — please wait a moment and try again.");
+      return;
+    }
+    const canvas = await html2canvas(waRef.current, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#F2EBDD",
+      logging: false,
+    });
+    const dataUrl = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = "nirmit-design.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  async function handleDownload() {
     setDl(true);
     setError(null);
     try {
-      const canvas = await html2canvas(boqRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#F2EBDD",
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      if (pdfHeight <= pageHeight) {
-        pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+      if (selected === "pdf") {
+        await downloadPdf("nirmit-quotation.pdf");
+      } else if (selected === "contractor") {
+        await downloadPdf("nirmit-contractor-spec.pdf");
       } else {
-        let yOffset = 0;
-        let remaining = pdfHeight;
-        while (remaining > 0) {
-          pdf.addImage(imgData, "JPEG", 0, -yOffset, pdfWidth, pdfHeight);
-          remaining -= pageHeight;
-          yOffset += pageHeight;
-          if (remaining > 0) pdf.addPage();
-        }
+        await downloadWhatsAppImage();
       }
-
-      pdf.save("nirmit-quotation.pdf");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "PDF export failed");
+      setError(e instanceof Error ? e.message : "Export failed");
     } finally {
       setDl(false);
     }
@@ -130,29 +179,44 @@ export function ExportRoute() {
   const wFt = (roomDims.width_mm / 304.8).toFixed(0);
   const dFt = (roomDims.depth_mm / 304.8).toFixed(0);
 
-  const EXPORT_OPTIONS: Array<{ id: ExportOption; label: string; sublabel: string; desc: string; recommended?: boolean; disabled?: boolean }> = [
+  const hidePrices = selected === "contractor";
+  const language = boq?.language;
+  // The /export endpoint returns both `local_section` (city-aware) and
+  // `hindi_section` (legacy). Prefer the new field; fall back for any
+  // response that pre-dates the upgrade.
+  const carpenterText = boq?.local_section || boq?.hindi_section || "";
+  const carpenterHeading = language
+    ? `${language.heading_en} · ${language.heading_native}`
+    : "Hindi Specification · बजट और सामग्री";
+  const carpenterIntro = language
+    ? `The specification below is for your carpenter — written in ${language.name_en} so there is no ambiguity on site.`
+    : "The specification below is for your carpenter — written in Hindi so there is no ambiguity on site.";
+
+  const EXPORT_OPTIONS: Array<{ id: ExportOption; label: string; sublabel: string; desc: string; recommended?: boolean }> = [
     {
       id: "pdf",
       label: "Full Quotation PDF",
       sublabel: "For your carpenter",
-      desc: "Complete BOQ, Hindi specification, floor sketch. Print and hand directly to Suresh.",
+      desc: `Complete BOQ, ${language?.name_en ?? "Hindi"} specification, floor sketch. Print and hand directly to your carpenter.`,
       recommended: true,
     },
     {
       id: "whatsapp",
       label: "WhatsApp Image",
       sublabel: "Share with family",
-      desc: "Room render with cost summary — one image you can share on any platform.",
-      disabled: true,
+      desc: "A shareable card with your room name, vibe, and grand total — clean enough for WhatsApp or Instagram.",
     },
     {
       id: "contractor",
       label: "Contractor PDF",
-      sublabel: "Materials & specs only",
-      desc: "Item list and specifications without pricing — useful for separate labour quotes.",
-      disabled: true,
+      sublabel: "Specs without pricing",
+      desc: "Same layout, every rupee figure redacted. Hand it to independent contractors so their quote isn't anchored to yours.",
     },
   ];
+
+  const downloadLabel = selected === "whatsapp" ? "Download Image →"
+                     : selected === "contractor" ? "Download Contractor PDF →"
+                     : "Download PDF →";
 
   return (
     <div className="paper" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
@@ -164,11 +228,11 @@ export function ExportRoute() {
         rightContent={
           <button
             className="btn-primary"
-            onClick={() => void downloadPdf()}
+            onClick={() => void handleDownload()}
             disabled={downloading || !boq}
             style={{ padding: "8px 20px" }}
           >
-            {downloading ? "Preparing…" : !boq ? "Loading…" : "Download PDF →"}
+            {downloading ? "Preparing…" : !boq ? "Loading…" : downloadLabel}
           </button>
         }
       />
@@ -195,27 +259,21 @@ export function ExportRoute() {
               return (
                 <div
                   key={opt.id}
-                  onClick={() => { if (!opt.disabled) setSelected(opt.id); }}
+                  onClick={() => setSelected(opt.id)}
                   style={{
                     padding: "16px 18px",
                     border: isSel ? "2px solid var(--terra)" : "1px solid var(--line)",
                     background: isSel ? "var(--paper-3)" : "transparent",
-                    cursor: opt.disabled ? "default" : "pointer",
-                    opacity: opt.disabled ? 0.42 : 1,
+                    cursor: "pointer",
                     transition: "all .2s ease",
                     position: "relative" as const,
                   }}
-                  onMouseEnter={(e) => { if (!opt.disabled && !isSel) { e.currentTarget.style.borderColor = "var(--line-2)"; e.currentTarget.style.background = "rgba(242,235,221,.5)"; } }}
-                  onMouseLeave={(e) => { if (!opt.disabled && !isSel) { e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.background = "transparent"; } }}
+                  onMouseEnter={(e) => { if (!isSel) { e.currentTarget.style.borderColor = "var(--line-2)"; e.currentTarget.style.background = "rgba(242,235,221,.5)"; } }}
+                  onMouseLeave={(e) => { if (!isSel) { e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.background = "transparent"; } }}
                 >
                   {opt.recommended && (
                     <div style={{ position: "absolute" as const, top: -1, right: 14, background: "var(--terra)", color: "var(--paper)", fontFamily: "var(--fm)", fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", padding: "3px 8px" }}>
                       RECOMMENDED
-                    </div>
-                  )}
-                  {opt.disabled && (
-                    <div style={{ position: "absolute" as const, top: -1, right: 14, background: "var(--line-2)", color: "var(--ink-3)", fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.1em", padding: "3px 8px" }}>
-                      COMING SOON
                     </div>
                   )}
                   <div style={{ fontFamily: "var(--fd)", fontSize: 17, fontWeight: 500, color: "var(--ink)", marginBottom: 2 }}>{opt.label}</div>
@@ -227,17 +285,30 @@ export function ExportRoute() {
           </div>
 
           {error && (
-            <p style={{ padding: "0 32px 16px", fontFamily: "var(--fd)", fontStyle: "italic", color: "var(--terra-dk)", fontSize: 14 }}>{error}</p>
+            <p style={{ padding: "16px 32px 0", fontFamily: "var(--fd)", fontStyle: "italic", color: "var(--terra-dk)", fontSize: 14 }}>{error}</p>
           )}
         </div>
 
-        {/* RIGHT — PDF preview / BOQ content */}
+        {/* RIGHT — preview pane: BOQ document, or WhatsApp share card */}
         <div style={{ overflow: "auto", padding: "40px 48px" }}>
           {!boq ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 16 }}>
               <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 20, color: "var(--ink-3)" }}>Computing quotation…</div>
               <div style={{ width: 32, height: 32, border: "2px solid var(--line)", borderTopColor: "var(--terra)", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
             </div>
+          ) : selected === "whatsapp" ? (
+            <WhatsAppCard
+              outerRef={waRef}
+              roomName={vision.name}
+              tagline={vision.tagline}
+              philosophy={vision.philosophy}
+              roomType={vision.room_state.intake.room_type}
+              city={boq.city}
+              grandTotal={boq.grand_total_inr}
+              wFt={wFt}
+              dFt={dFt}
+              furnitureCount={boq.furniture.length}
+            />
           ) : (
             <div ref={boqRef} className="card-inset" style={{ maxWidth: 740, margin: "0 auto", background: "var(--paper)" }}>
 
@@ -248,7 +319,7 @@ export function ExportRoute() {
                     <span style={{ fontFamily: "var(--fd)", fontSize: 26, fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.01em", lineHeight: 1 }}>Nirmit</span>
                     <span style={{ fontFamily: "var(--fh)", fontSize: 16, color: "var(--ink)", opacity: 0.5, lineHeight: 1 }}>निर्मित</span>
                     <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "var(--terra)", margin: "0 4px 2px" }} />
-                    <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, letterSpacing: "0.18em", color: "var(--ink-3)", textTransform: "uppercase" as const, lineHeight: 1 }}>Room Quotation</span>
+                    <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, letterSpacing: "0.18em", color: "var(--ink-3)", textTransform: "uppercase" as const, lineHeight: 1 }}>{hidePrices ? "Contractor Spec" : "Room Quotation"}</span>
                   </div>
                   <div style={{ fontFamily: "var(--fd)", fontSize: 28, fontWeight: 500, color: "var(--ink)" }}>{vision.name}</div>
                   <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)", marginTop: 4 }}>{vision.tagline}</div>
@@ -264,9 +335,9 @@ export function ExportRoute() {
                 <SummaryCell label="Room" value={vision.room_state.intake.room_type.charAt(0).toUpperCase() + vision.room_state.intake.room_type.slice(1)} />
                 <SummaryCell label="City" value={boq.city || "—"} />
                 <SummaryCell label="Vibe" value={vision.philosophy.replace("_", " ").replace(/\b\w/g, c => c.toUpperCase())} />
-                <SummaryCell label="Budget" value={`₹${(vision.room_state.intake.budget_inr / 100000).toFixed(1)}L`} />
-                <SummaryCell label="Total" value={`₹${(boq.grand_total_inr / 100000).toFixed(2)}L`} accent />
-                <SummaryCell label="Remaining" value={(() => { const r = vision.room_state.intake.budget_inr - boq.grand_total_inr; return `${r >= 0 ? "+" : "−"}${formatAmount(Math.abs(r))}`; })()} />
+                <SummaryCell label="Budget" value={hidePrices ? REDACTED : `₹${(vision.room_state.intake.budget_inr / 100000).toFixed(1)}L`} />
+                <SummaryCell label="Total" value={hidePrices ? REDACTED : `₹${(boq.grand_total_inr / 100000).toFixed(2)}L`} accent />
+                <SummaryCell label="Remaining" value={hidePrices ? REDACTED : (() => { const r = vision.room_state.intake.budget_inr - boq.grand_total_inr; return `${r >= 0 ? "+" : "−"}${formatAmount(Math.abs(r))}`; })()} />
               </div>
 
               {/* Furniture BOQ */}
@@ -297,8 +368,7 @@ export function ExportRoute() {
                         }
                       });
                       return Array.from(grouped.values()).map((it, idx) => {
-                        const pepperQuery = encodeURIComponent(it.description.replace(/\s+/g, "+"));
-                        const pepperUrl = `https://www.pepperfry.com/search?q=${pepperQuery}`;
+                        const pepperUrl = `https://www.pepperfry.com/site_product/search?q=${encodeURIComponent(it.description)}`;
                         return (
                           <tr key={it.sl_no} style={{ borderBottom: "1px solid var(--line)" }}>
                             <td style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", padding: "12px 12px 12px 0", verticalAlign: "top" as const }}>{String(idx + 1).padStart(2, "0")}</td>
@@ -324,7 +394,7 @@ export function ExportRoute() {
                               )}
                             </td>
                             <td style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink)", textAlign: "right" as const, verticalAlign: "top" as const, padding: "12px 0 12px 8px" }}>
-                              {formatAmount(it.amount_inr)}
+                              {hidePrices ? REDACTED : formatAmount(it.amount_inr)}
                             </td>
                           </tr>
                         );
@@ -354,8 +424,8 @@ export function ExportRoute() {
                           <td style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", padding: "10px 12px 10px 0", verticalAlign: "top" as const }}>{String(m.sl_no).padStart(2, "0")}</td>
                           <td style={{ fontFamily: "var(--fd)", fontSize: 15, fontWeight: 500, color: "var(--ink)", padding: "10px 12px", verticalAlign: "top" as const }}>{m.description}</td>
                           <td style={{ fontFamily: "var(--fm)", fontSize: 11, color: "var(--ink-2)", textAlign: "center" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{m.qty} {m.unit}</td>
-                          <td style={{ fontFamily: "var(--fd)", fontSize: 14, color: "var(--ink-2)", textAlign: "right" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{formatRate(m.rate_inr, m.unit)}</td>
-                          <td style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink)", textAlign: "right" as const, padding: "10px 0 10px 8px", verticalAlign: "top" as const }}>{formatAmount(m.amount_inr)}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 14, color: "var(--ink-2)", textAlign: "right" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{hidePrices ? REDACTED : formatRate(m.rate_inr, m.unit)}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink)", textAlign: "right" as const, padding: "10px 0 10px 8px", verticalAlign: "top" as const }}>{hidePrices ? REDACTED : formatAmount(m.amount_inr)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -383,8 +453,8 @@ export function ExportRoute() {
                           <td style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", padding: "10px 12px 10px 0", verticalAlign: "top" as const }}>{String(l.sl_no).padStart(2, "0")}</td>
                           <td style={{ fontFamily: "var(--fd)", fontSize: 15, fontWeight: 500, color: "var(--ink)", padding: "10px 12px", verticalAlign: "top" as const }}>{l.description}</td>
                           <td style={{ fontFamily: "var(--fm)", fontSize: 11, color: "var(--ink-2)", textAlign: "center" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{l.qty} {l.unit}</td>
-                          <td style={{ fontFamily: "var(--fd)", fontSize: 14, color: "var(--ink-2)", textAlign: "right" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{formatRate(l.rate_inr, l.unit)}</td>
-                          <td style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink)", textAlign: "right" as const, padding: "10px 0 10px 8px", verticalAlign: "top" as const }}>{formatAmount(l.amount_inr)}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 14, color: "var(--ink-2)", textAlign: "right" as const, padding: "10px 8px", verticalAlign: "top" as const }}>{hidePrices ? REDACTED : formatRate(l.rate_inr, l.unit)}</td>
+                          <td style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink)", textAlign: "right" as const, padding: "10px 0 10px 8px", verticalAlign: "top" as const }}>{hidePrices ? REDACTED : formatAmount(l.amount_inr)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -397,20 +467,20 @@ export function ExportRoute() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                     <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)" }}>Subtotal (A + B + C)</span>
-                    <span style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink-2)" }}>{formatAmount(boq.subtotal_inr)}</span>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink-2)" }}>{hidePrices ? REDACTED : formatAmount(boq.subtotal_inr)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                     <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)" }}>Contingency (10%)</span>
-                    <span style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink-2)" }}>{formatAmount(boq.contingency_inr)}</span>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink-2)" }}>{hidePrices ? REDACTED : formatAmount(boq.contingency_inr)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                     <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)" }}>GST</span>
-                    <span style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink-2)" }}>{formatAmount(boq.gst_inr)}</span>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 15, color: "var(--ink-2)" }}>{hidePrices ? REDACTED : formatAmount(boq.gst_inr)}</span>
                   </div>
                   <div style={{ height: "0.5px", background: "var(--line-2)", margin: "4px 0" }} />
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                     <span style={{ fontFamily: "var(--fd)", fontSize: 17, fontWeight: 600, color: "var(--ink)" }}>Grand Total</span>
-                    <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 600, color: "var(--ink)" }}>₹{(boq.grand_total_inr / 100000).toFixed(2)}L</span>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 600, color: "var(--ink)" }}>{hidePrices ? REDACTED : `₹${(boq.grand_total_inr / 100000).toFixed(2)}L`}</span>
                   </div>
                 </div>
               </div>
@@ -430,7 +500,9 @@ export function ExportRoute() {
                           <div style={{ fontFamily: "var(--fd)", fontSize: 16, fontWeight: 500, color: "var(--ink)" }}>{p.label.replace(/^\d+\.\s*/, "")}</div>
                           <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
                             <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>~{p.duration_days} DAYS</span>
-                            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>{formatAmount(p.total_inr).toUpperCase()}</span>
+                            {!hidePrices && (
+                              <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>{formatAmount(p.total_inr).toUpperCase()}</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -439,15 +511,15 @@ export function ExportRoute() {
                 </div>
               )}
 
-              {/* Hindi specification */}
-              {boq.hindi_section && (
+              {/* Carpenter specification — city-aware language */}
+              {carpenterText && (
                 <div>
-                  <span className="eyebrow" style={{ display: "block", marginBottom: 12 }}>Hindi Specification · बजट और सामग्री</span>
+                  <span className="eyebrow" style={{ display: "block", marginBottom: 12 }}>{carpenterHeading}</span>
                   <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 13, color: "var(--ink-2)", marginBottom: 14, lineHeight: 1.5 }}>
-                    The specification below is for your carpenter — written in Hindi so there is no ambiguity on site.
+                    {carpenterIntro}
                   </p>
                   <div style={{ fontFamily: "var(--fh)", fontSize: 17, lineHeight: 2.1, color: "var(--ink)", whiteSpace: "pre-wrap" as const, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
-                    {boq.hindi_section}
+                    {hidePrices ? stripPriceLines(carpenterText, language) : carpenterText}
                   </div>
                 </div>
               )}
@@ -471,7 +543,7 @@ export function ExportRoute() {
             disabled={saving}
             style={{ padding: "8px 18px" }}
           >
-            {saving ? "Saving…" : savedId ? "Saved ✓" : "← Save design"}
+            {saving ? "Saving…" : savedId ? "Saved ✓" : "Save design"}
           </button>
           <button
             onClick={reset}
@@ -481,7 +553,7 @@ export function ExportRoute() {
             Start a new room →
           </button>
         </div>
-        {boq && (
+        {boq && !hidePrices && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
             <span className="eyebrow">Grand total</span>
             <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 500, color: "var(--ink)" }}>
@@ -512,12 +584,121 @@ function formatRate(rate: number, unit: string): string {
   return `${formatAmount(rate)}/${unit}`;
 }
 
+/** Remove the per-item price lines from the carpenter spec for the Contractor
+ *  PDF variant. The spec body uses a "<price label> <amount>" line right
+ *  below each item; we drop those lines and keep everything else.
+ */
+function stripPriceLines(text: string, lang?: LanguageInfo): string {
+  if (!lang) {
+    // Hindi default — matches the legacy "कीमत:" line
+    return text.split("\n").filter((l) => !/कीमत|किंमत|मूल्य|விலை|ధర|ಬೆಲೆ/.test(l)).join("\n");
+  }
+  // Drop any line containing a numeric figure followed by a digit grouping —
+  // those are the only price lines in the generated spec.
+  return text.split("\n").filter((l) => !/\d{1,3}(?:,\d{3})+/.test(l)).join("\n");
+}
+
 
 function SummaryCell({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div>
       <div style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)", textTransform: "uppercase" as const, marginBottom: 5 }}>{label}</div>
       <div style={{ fontFamily: "var(--fd)", fontSize: 18, fontWeight: 500, color: accent ? "var(--terra)" : "var(--ink)" }}>{value}</div>
+    </div>
+  );
+}
+
+
+/* ── WhatsApp / share card ───────────────────────────────────────────────
+ * Portrait Instagram/WhatsApp-friendly aspect (~4:5). Captured at 2x so the
+ * downloaded PNG is sharp on mobile. Keep it visually quiet — this is the
+ * artefact a user forwards to their family group, so it should feel like a
+ * Nirmit-branded keepsake, not a marketing flyer.
+ */
+function WhatsAppCard({
+  outerRef, roomName, tagline, philosophy, roomType, city, grandTotal, wFt, dFt, furnitureCount,
+}: {
+  outerRef: React.RefObject<HTMLDivElement>;
+  roomName: string;
+  tagline: string;
+  philosophy: string;
+  roomType: string;
+  city: string;
+  grandTotal: number;
+  wFt: string;
+  dFt: string;
+  furnitureCount: number;
+}) {
+  const philosophyLabel = philosophy.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const roomLabel = roomType.charAt(0).toUpperCase() + roomType.slice(1);
+  return (
+    <div style={{ maxWidth: 520, margin: "0 auto" }}>
+      <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 13, color: "var(--ink-3)", textAlign: "center", marginBottom: 18 }}>
+        A clean image you can forward — designed for WhatsApp, Instagram, anywhere.
+      </p>
+      <div
+        ref={outerRef}
+        style={{
+          width: 520,
+          aspectRatio: "4 / 5",
+          background: "var(--paper)",
+          border: "1px solid var(--line)",
+          padding: "44px 44px 38px",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          boxShadow: "0 4px 18px rgba(0,0,0,.08)",
+        }}
+      >
+        {/* Logotype */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 32 }}>
+          <span style={{ fontFamily: "var(--fd)", fontSize: 24, fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.01em", lineHeight: 1 }}>Nirmit</span>
+          <span style={{ fontFamily: "var(--fh)", fontSize: 14, color: "var(--ink)", opacity: 0.5, lineHeight: 1 }}>निर्मित</span>
+        </div>
+
+        {/* Centre block */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <span className="eyebrow" style={{ marginBottom: 14 }}>Designed for our home</span>
+          <h2 style={{ fontFamily: "var(--fd)", fontSize: 44, fontWeight: 500, lineHeight: 1.05, color: "var(--ink)", letterSpacing: "-0.02em", marginBottom: 8 }}>
+            {roomName}
+          </h2>
+          <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 16, color: "var(--ink-2)", marginBottom: 28, lineHeight: 1.4 }}>
+            {tagline}
+          </p>
+
+          <div style={{ display: "flex", gap: 24, marginBottom: 24 }}>
+            <ShareStat label="Room" value={`${roomLabel} · ${wFt}×${dFt} ft`} />
+            <ShareStat label="Vibe" value={philosophyLabel} />
+          </div>
+          <div style={{ display: "flex", gap: 24 }}>
+            <ShareStat label="City" value={city} />
+            <ShareStat label="Pieces" value={String(furnitureCount)} />
+          </div>
+        </div>
+
+        {/* Footer: grand total + tagline */}
+        <div style={{ marginTop: 28, borderTop: "1px solid var(--line)", paddingTop: 18, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <div>
+            <div style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.18em", color: "var(--ink-3)", textTransform: "uppercase" as const, marginBottom: 4 }}>Grand total</div>
+            <div style={{ fontFamily: "var(--fd)", fontSize: 28, fontWeight: 600, color: "var(--terra)", lineHeight: 1 }}>
+              ₹{(grandTotal / 100000).toFixed(2)}L
+            </div>
+          </div>
+          <div style={{ textAlign: "right" as const }}>
+            <div style={{ fontFamily: "var(--fm)", fontSize: 8.5, color: "var(--ink-3)", letterSpacing: "0.14em" }}>BUILT FOR INDIAN HOMES</div>
+            <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 11, color: "var(--ink-3)", marginTop: 3 }}>nirmit.design</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShareStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ flex: 1 }}>
+      <div style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.16em", color: "var(--ink-3)", textTransform: "uppercase" as const, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontFamily: "var(--fd)", fontSize: 16, fontWeight: 500, color: "var(--ink)" }}>{value}</div>
     </div>
   );
 }

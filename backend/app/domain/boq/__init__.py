@@ -7,6 +7,15 @@ Product in Itself").
 """
 from app.domain.boq.boq import BOQ, BOQLine, build_boq
 from app.domain.boq.hindi import generate_hindi_section
+from app.domain.boq.local_lang import generate_local_section, language_info
 from app.domain.boq.pdf import build_quotation_pdf
 
-__all__ = ["BOQ", "BOQLine", "build_boq", "build_quotation_pdf", "generate_hindi_section"]
+__all__ = [
+    "BOQ",
+    "BOQLine",
+    "build_boq",
+    "build_quotation_pdf",
+    "generate_hindi_section",
+    "generate_local_section",
+    "language_info",
+]
