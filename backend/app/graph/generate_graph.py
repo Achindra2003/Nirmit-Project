@@ -407,11 +407,17 @@ def _author_reasoning(intake: Intake, vision: Vision) -> Reasoning:
         data = json.loads(m.group(0))
     except json.JSONDecodeError:
         return vision.reasoning
+    # Vastu / accessibility notes fall back to the deterministic baseline when
+    # the LLM omits them. Previously the LLM's empty list silently replaced the
+    # deterministic notes, so a user who opted into Vastu could see zero Vastu
+    # notes on the reveal page — even though Vastu rules had produced them.
+    llm_vastu = [str(b)[:200] for b in (data.get("vastu_notes") or [])][:2]
+    llm_a11y = [str(b)[:200] for b in (data.get("accessibility_notes") or [])][:2]
     return Reasoning(
         headline=str(data.get("headline") or vision.reasoning.headline)[:200],
         bullets=[str(b)[:300] for b in (data.get("bullets") or [])][:5] or vision.reasoning.bullets,
-        vastu_notes=[str(b)[:200] for b in (data.get("vastu_notes") or [])][:2],
-        accessibility_notes=[str(b)[:200] for b in (data.get("accessibility_notes") or [])][:2],
+        vastu_notes=llm_vastu or vision.reasoning.vastu_notes,
+        accessibility_notes=llm_a11y or vision.reasoning.accessibility_notes,
     )
 
 

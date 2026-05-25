@@ -4,6 +4,86 @@ import { RoomScene, type CameraView } from "@/three/RoomScene";
 import { useAppStore } from "@/store/useAppStore";
 import { TopNav } from "@/components/shell/TopNav";
 
+/**
+ * Reasoning card on the visions page. Two tabs (Thinking / Vastu) keep the
+ * default height compact — previously the design-thinking block + Vastu sub-
+ * section stacked vertically and pushed the price + CTA below the fold. Tab
+ * defaults to Thinking; Vastu tab is hidden entirely when there are no notes.
+ */
+function ReasoningCard({ headline, bullets, vastuNotes }: { headline: string; bullets: string[]; vastuNotes: string[] }) {
+  const hasVastu = vastuNotes.length > 0;
+  const [tab, setTab] = useState<"think" | "vastu">("think");
+
+  return (
+    <div style={{ background: "var(--paper-3)", border: "1px solid var(--line)" }}>
+      {/* Tab strip — hidden when there's only one tab to choose from */}
+      {hasVastu && (
+        <div style={{ display: "flex", borderBottom: "1px solid var(--line)" }}>
+          {([
+            { id: "think" as const, label: "Design thinking" },
+            { id: "vastu" as const, label: `Vastu · ${vastuNotes.length}` },
+          ]).map((t) => {
+            const sel = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                style={{
+                  flex: 1,
+                  padding: "11px 12px",
+                  background: sel ? "var(--paper)" : "transparent",
+                  border: "none",
+                  borderBottom: sel ? "2px solid var(--terra)" : "2px solid transparent",
+                  cursor: "pointer",
+                  fontFamily: "var(--fm)",
+                  fontSize: 10,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase" as const,
+                  color: sel ? "var(--terra)" : "var(--ink-3)",
+                  fontWeight: sel ? 600 : 500,
+                  transition: "all .18s",
+                }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{ padding: "16px 18px" }}>
+        {tab === "think" ? (
+          <>
+            {!hasVastu && (
+              <span className="eyebrow" style={{ display: "block", marginBottom: 10 }}>The design thinking</span>
+            )}
+            <p style={{ fontFamily: "var(--fb)", fontSize: 14.5, fontWeight: 500, lineHeight: 1.55, color: "var(--ink)", marginBottom: 12 }}>
+              {headline}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {bullets.map((b, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--terra)", flexShrink: 0, marginTop: 6 }} />
+                  <p style={{ fontFamily: "var(--fb)", fontSize: 13.5, lineHeight: 1.55, color: "var(--ink-2)" }}>{b}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {vastuNotes.map((n, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--ink-3)", flexShrink: 0, marginTop: 6 }} />
+                <p style={{ fontFamily: "var(--fb)", fontSize: 13.5, lineHeight: 1.55, color: "var(--ink-2)" }}>{n}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function RevealRoute() {
   const { visions, selectedVisionId, selectVision, setStage } = useAppStore();
   const idx    = Math.max(0, visions.findIndex((v) => v.id === selectedVisionId));
@@ -108,97 +188,84 @@ export function RevealRoute() {
           </div>
         </div>
 
-        {/* RIGHT — info panel */}
-        <div style={{ borderLeft: "1px solid var(--line)", display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--paper)" }}>
+        {/* RIGHT — info panel.
+            Three vertical regions so the design thinking can grow without
+            ever pushing the price and CTA off-screen:
+              · TOP (fixed)     dot nav + vision name + tagline
+              · MIDDLE (scrolls) design thinking + Vastu (in a scroll region)
+              · BOTTOM (fixed)  price + "Start with this room" CTA
+            The previous layout put everything in a single scroll column with
+            `marginTop:auto` on the CTA, so a long reasoning block would push
+            the CTA into the overflow and the user wouldn't see it. */}
+        <div style={{ borderLeft: "1px solid var(--line)", display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--paper)", minHeight: 0 }}>
           <motion.div
             key={`main-${vision.id}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: show ? 1 : 0, y: show ? 0 : 10 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", padding: "28px 36px 28px 32px" }}
+            style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
           >
-            {/* Dot navigation */}
-            {visions.length > 1 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
-                {visions.map((v, i) => {
-                  const sel = i === idx;
-                  return (
-                    <div
-                      key={v.id}
-                      onClick={() => selectVision(v.id)}
-                      title={v.name}
-                      style={{
-                        height: 8,
-                        width: sel ? 28 : 8,
-                        borderRadius: 4,
-                        background: sel ? "var(--terra)" : "var(--line-2)",
-                        cursor: "pointer",
-                        transition: "width .28s ease, background .28s ease",
-                        flexShrink: 0,
-                      }}
-                    />
-                  );
-                })}
-                <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em", marginLeft: 6 }}>
-                  {String(idx + 1).padStart(2, "0")} / {String(visions.length).padStart(2, "0")}
-                </span>
-              </div>
-            )}
-
-            {/* Vision name */}
-            <h2 style={{ fontFamily: "var(--fd)", fontSize: "clamp(28px, 2.8vw, 38px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.015em", color: "var(--ink)", marginBottom: 8 }}>
-              {vision.name}
-            </h2>
-
-            {/* Tagline */}
-            <div className="pull-note" style={{ marginBottom: 24 }}>
-              {vision.tagline}
-            </div>
-
-            {/* Insight card */}
-            <div style={{ background: "var(--paper-3)", border: "1px solid var(--line)", padding: "18px 20px", marginBottom: 24 }}>
-              <span className="eyebrow" style={{ display: "block", marginBottom: 10 }}>The design thinking</span>
-              <p style={{ fontFamily: "var(--fb)", fontSize: 15, fontWeight: 500, lineHeight: 1.6, color: "var(--ink)", marginBottom: 10 }}>
-                {vision.reasoning.headline}
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {vision.reasoning.bullets.map((b, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--terra)", flexShrink: 0, marginTop: 7 }} />
-                    <p style={{ fontFamily: "var(--fb)", fontSize: 14, lineHeight: 1.6, color: "var(--ink-2)" }}>{b}</p>
-                  </div>
-                ))}
-              </div>
-
-              {vision.reasoning.vastu_notes.length > 0 && (
-                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed var(--line)" }}>
-                  <span className="eyebrow" style={{ display: "block", marginBottom: 10, color: "var(--ink)" }}>Vastu Considerations</span>
-                  {vision.reasoning.vastu_notes.map((n, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
-                      <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--ink-3)", flexShrink: 0, marginTop: 7 }} />
-                      <p style={{ fontFamily: "var(--fb)", fontSize: 14, color: "var(--ink-2)", lineHeight: 1.55 }}>{n}</p>
-                    </div>
-                  ))}
+            {/* ── TOP (fixed) ───────────────────────────────────────── */}
+            <div style={{ padding: "24px 32px 16px", flexShrink: 0 }}>
+              {visions.length > 1 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
+                  {visions.map((v, i) => {
+                    const sel = i === idx;
+                    return (
+                      <div
+                        key={v.id}
+                        onClick={() => selectVision(v.id)}
+                        title={v.name}
+                        style={{
+                          height: 8,
+                          width: sel ? 28 : 8,
+                          borderRadius: 4,
+                          background: sel ? "var(--terra)" : "var(--line-2)",
+                          cursor: "pointer",
+                          transition: "width .28s ease, background .28s ease",
+                          flexShrink: 0,
+                        }}
+                      />
+                    );
+                  })}
+                  <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em", marginLeft: 6 }}>
+                    {String(idx + 1).padStart(2, "0")} / {String(visions.length).padStart(2, "0")}
+                  </span>
                 </div>
               )}
+
+              <h2 style={{ fontFamily: "var(--fd)", fontSize: "clamp(26px, 2.6vw, 34px)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.015em", color: "var(--ink)", marginBottom: 6 }}>
+                {vision.name}
+              </h2>
+              <div className="pull-note" style={{ marginBottom: 0 }}>
+                {vision.tagline}
+              </div>
             </div>
 
-            {/* Cost */}
-            <div style={{ marginBottom: 24 }}>
-              <div className="rule-ornamental" style={{ marginBottom: 16 }}>
-                <span className="rule-ornamental-glyph">◆</span>
-              </div>
-              <span className="eyebrow" style={{ display: "block", marginBottom: 8 }}>Total estimate</span>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                <span style={{ fontFamily: "var(--fd)", fontSize: "clamp(32px, 3.5vw, 44px)", fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.02em" }}>{totalFmt}</span>
-                <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>OF {budgetFmt}</span>
-              </div>
-              <div style={{ fontFamily: "var(--fb)", fontSize: 13, color: remainColor, marginTop: 4, fontWeight: 500 }}>{remainFmt}</div>
+            {/* ── MIDDLE (scrolls) ──────────────────────────────────── */}
+            <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "8px 32px 16px" }}>
+              {/* Headline + bullets — single integrated card. Vastu becomes a
+                  tab-toggle so it doesn't double the card height by default. */}
+              <ReasoningCard
+                headline={vision.reasoning.headline}
+                bullets={vision.reasoning.bullets}
+                vastuNotes={vision.reasoning.vastu_notes}
+              />
             </div>
 
-            {/* CTAs */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: "auto" }}>
+            {/* ── BOTTOM (fixed) ────────────────────────────────────── */}
+            <div style={{ flexShrink: 0, padding: "16px 32px 22px", borderTop: "1px solid var(--line)", background: "var(--paper)" }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span className="eyebrow">Total estimate</span>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span style={{ fontFamily: "var(--fd)", fontSize: "clamp(26px, 2.6vw, 32px)", fontWeight: 500, color: "var(--ink)", letterSpacing: "-0.02em", lineHeight: 1 }}>{totalFmt}</span>
+                    <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--ink-3)", letterSpacing: "0.1em" }}>OF {budgetFmt}</span>
+                  </div>
+                </div>
+                <span style={{ fontFamily: "var(--fb)", fontSize: 12, color: remainColor, fontWeight: 500, textAlign: "right" as const }}>{remainFmt}</span>
+              </div>
               <button
                 className="btn-primary"
                 onClick={() => setStage("planner")}

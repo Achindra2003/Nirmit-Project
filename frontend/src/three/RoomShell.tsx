@@ -44,11 +44,24 @@ export function RoomShell({ room, wallRefs }: Props) {
   const wallFinish = room.wall_finish ?? "off-white limewash";
 
   const floorMat = useMemo(() => makeFloorMaterial(flooring, palette.floor ?? "#B89B7A"), [flooring, palette.floor]);
-  // Single material shared by all four walls so palette changes apply uniformly.
-  // (Previously side walls were lighten(wallColor, 0.06), which left W/E walls
-  // visually unchanged when the user re-coloured the room.)
-  const wallMatBack = useMemo(() => makeWallMaterial(wallColor, wallFinish), [wallColor, wallFinish]);
-  const wallMatSide = wallMatBack;
+  // Each wall gets its OWN material instance, even though the paint colour /
+  // finish is identical. Two reasons:
+  //   1. WallFader mutates `material.opacity` per-wall every frame to fade the
+  //      camera-side walls. With a single shared material, only the last wall
+  //      iterated wins — every other wall ended up at whatever opacity E
+  //      happened to compute that frame, producing the "only one wall changes"
+  //      bug the user reported when picking a new paint.
+  //   2. A new paint pick rebuilds all four via useMemo, so colour swaps still
+  //      propagate uniformly.
+  const wallMats = useMemo(
+    () => ({
+      S: makeWallMaterial(wallColor, wallFinish),
+      N: makeWallMaterial(wallColor, wallFinish),
+      W: makeWallMaterial(wallColor, wallFinish),
+      E: makeWallMaterial(wallColor, wallFinish),
+    }),
+    [wallColor, wallFinish],
+  );
   const ceilMat = useMemo(
     () => new THREE.MeshStandardMaterial({
       map: makeWallTexture("#F8F4ED", "matte"),
@@ -115,10 +128,10 @@ export function RoomShell({ room, wallRefs }: Props) {
         decay={1.5}
       />
 
-      {wallOrDoor("S", [0, h / 2, -d / 2 + WALL_T / 2], [w + WALL_T, h, WALL_T], wallMatBack, "S")}
-      {wallOrDoor("N", [0, h / 2, d / 2 - WALL_T / 2], [w + WALL_T, h, WALL_T], wallMatBack, "N")}
-      {wallOrDoor("W", [-w / 2 + WALL_T / 2, h / 2, 0], [WALL_T, h, d + WALL_T], wallMatSide, "W")}
-      {wallOrDoor("E", [w / 2 - WALL_T / 2, h / 2, 0], [WALL_T, h, d + WALL_T], wallMatSide, "E")}
+      {wallOrDoor("S", [0, h / 2, -d / 2 + WALL_T / 2], [w + WALL_T, h, WALL_T], wallMats.S, "S")}
+      {wallOrDoor("N", [0, h / 2, d / 2 - WALL_T / 2], [w + WALL_T, h, WALL_T], wallMats.N, "N")}
+      {wallOrDoor("W", [-w / 2 + WALL_T / 2, h / 2, 0], [WALL_T, h, d + WALL_T], wallMats.W, "W")}
+      {wallOrDoor("E", [w / 2 - WALL_T / 2, h / 2, 0], [WALL_T, h, d + WALL_T], wallMats.E, "E")}
 
       <mesh position={[0, BASE_H / 2, -d / 2 + WALL_T + BASE_D / 2]}><boxGeometry args={[w, BASE_H, BASE_D]} /><primitive object={baseMat} attach="material" /></mesh>
       <mesh position={[0, BASE_H / 2, d / 2 - WALL_T - BASE_D / 2]}><boxGeometry args={[w, BASE_H, BASE_D]} /><primitive object={baseMat} attach="material" /></mesh>

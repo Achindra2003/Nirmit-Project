@@ -79,15 +79,41 @@ const INTENT_VERB: Record<string, string> = {
   free_text:       "Adjust",
 };
 
-function humanLabel(intent: import("@/api/types").Intent, items: import("@/api/types").PlacedItem[]): string {
+// Last-ditch noun from a SKU string. SKUs look like "blendswap_cc_0_couch" or
+// "sh3d/foo_bar_chair" — strip path / dataset prefixes and surface the trailing
+// noun. Result is always lower-case English, no underscores, no slashes.
+function nounFromSku(sku: string): string {
+  const tail = sku.split("/").pop() ?? sku;
+  const noNoise = tail
+    .replace(/\.(glb|gltf|obj|fbx)$/i, "")
+    .replace(/^(blendswap|sh3d|threedfront|3dfront|cgaxis|polyhaven|polypizza)_?/i, "")
+    .replace(/^(cc|by|nc)_/i, "")
+    .replace(/^\d+_/, "");
+  const tokens = noNoise.split(/[_\-]+/).filter(Boolean);
+  return (tokens[tokens.length - 1] ?? "piece").toLowerCase();
+}
+
+function humanLabel(
+  intent: import("@/api/types").Intent,
+  items: import("@/api/types").PlacedItem[],
+  skuName: Map<string, string>,
+): string {
   const sub  = typeof intent.parameters.sub_category === "string" ? intent.parameters.sub_category : null;
   const sku  = typeof intent.parameters.sku === "string" ? intent.parameters.sku : null;
   const verb = INTENT_VERB[intent.kind] ?? intent.kind.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   if (intent.kind === "add") {
-    // Catalog noun beats sub_category slug beats SKU slug. SKUs look like
-    // "blendswap_cc_0_couch" — we never want those in user-facing copy.
-    const noun = (sub && ITEM_LABEL[sub]) || (sub ? `a ${sub.replace(/_/g, " ")}` : null) || (sku ? "a piece" : "something");
-    return `Add ${noun}`;
+    // Preference order:
+    //   1. Real catalog name_en for the SKU (fetched once per room from /api/catalog).
+    //   2. Friendly noun from the sub_category map (covers AI's slug-only intents).
+    //   3. Title-cased sub_category as a last-readable fallback.
+    //   4. SKU-derived noun (strips file/dataset prefixes — never shows raw SKU).
+    const catalogName = sku ? skuName.get(sku) : null;
+    if (catalogName) return `Add ${catalogName.toLowerCase().startsWith("a ") || catalogName.toLowerCase().startsWith("an ") ? catalogName : `a ${catalogName}`}`;
+    const fromSub = sub ? ITEM_LABEL[sub] : null;
+    if (fromSub) return `Add ${fromSub}`;
+    if (sub) return `Add a ${sub.replace(/_/g, " ")}`;
+    if (sku) return `Add a ${nounFromSku(sku)}`;
+    return "Add something";
   }
   if (intent.target_item_id) {
     const target = items.find((i) => i.id === intent.target_item_id);
@@ -132,8 +158,16 @@ export function PlannerRoute() {
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<number>>(new Set());
   const [showRoomEdit, setShowRoomEdit] = useState(false);
   const [showCatalogue, setShowCatalogue] = useState(false);
+  // AI collaborator panel is collapsible to the right edge so the canvas can
+  // breathe when the user wants to focus on the room itself.
+  const [aiOpen, setAiOpen] = useState(true);
   const [roomW, setRoomW] = useState(baseVision?.room_state.intake.room_dimensions.width_mm ?? 3600);
   const [roomD, setRoomD] = useState(baseVision?.room_state.intake.room_dimensions.depth_mm ?? 4200);
+  // sku → human name_en, populated from /api/catalog so the AI's suggested
+  // actions can show real catalog names ("Add a Hand-Knotted Rug") instead of
+  // dataset-prefixed SKU slugs ("blendswap_cc_0_couch") when the AI omits
+  // sub_category.
+  const [skuName, setSkuName] = useState<Map<string, string>>(new Map());
   const scrollRef               = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -160,6 +194,26 @@ export function PlannerRoute() {
   useEffect(() => {
     fetch("/health").then((r) => setBackendUp(r.ok)).catch(() => setBackendUp(false));
   }, []);
+
+  // Build the sku → name_en cache from the same curated menu the catalogue
+  // drawer uses. Fires when room_type/vibe/philosophy change. Suggested-action
+  // cards rely on this map to avoid showing raw SKU slugs.
+  useEffect(() => {
+    if (!room) return;
+    const params = new URLSearchParams({ room_type: room.intake.room_type, limit: "120" });
+    if (room.intake.vibe) params.set("vibe", room.intake.vibe);
+    if (baseVision?.philosophy) params.set("philosophy", baseVision.philosophy);
+    fetch(`/api/catalog?${params}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const m = new Map<string, string>();
+        for (const it of data.items ?? []) {
+          if (it.sku && it.name_en) m.set(it.sku, it.name_en);
+        }
+        setSkuName(m);
+      })
+      .catch(() => {});
+  }, [room?.intake.room_type, room?.intake.vibe, baseVision?.philosophy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // First-look proactive suggestions — fire once when a room loads
   useEffect(() => {
@@ -269,7 +323,7 @@ export function PlannerRoute() {
 
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", width: "100%", height: "100vh", background: "var(--basalt)" }}>
+    <div style={{ display: "grid", gridTemplateColumns: aiOpen ? "1fr 380px" : "1fr 44px", width: "100%", height: "100vh", background: "var(--basalt)", transition: "grid-template-columns .28s ease" }}>
 
       {/* ── LEFT: canvas ── */}
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -286,28 +340,10 @@ export function PlannerRoute() {
             />
           </div>
 
-          {/* Centre — room name + dims. Room-size chip bumped from 10px/35%
-              opacity to 12px/65% with a subtle paper pill background so it's
-              legible at a glance. */}
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, minWidth: 0, overflow: "hidden" }}>
-            <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 17, fontWeight: 500, color: "var(--paper)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{baseVision.name}</span>
-            <span
-              style={{
-                fontFamily: "var(--fm)",
-                fontSize: 12,
-                fontWeight: 500,
-                color: "rgba(242,235,221,.82)",
-                letterSpacing: "0.06em",
-                flexShrink: 0,
-                padding: "3px 10px",
-                background: "rgba(242,235,221,.08)",
-                border: "1px solid rgba(242,235,221,.18)",
-                borderRadius: 2,
-              }}
-            >
-              {wFt}′ × {dFt}′
-            </span>
-          </div>
+          {/* Centre — spacer. Room name + dims were moved to the footer
+              (next to the estimate) because the Edit / + Furniture / Size
+              cluster on the right was hiding them in narrow viewports. */}
+          <div style={{ flex: 1, minWidth: 0 }} />
 
           {/* Right — 2D/3D toggle + controls */}
           <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
@@ -451,35 +487,9 @@ export function PlannerRoute() {
           <div className="canvas-viewport-container" style={{ flex: 1, height: "100%", position: "relative" }}>
             <div className="canvas-corner-mark mark-tl">+</div>
             <div className="canvas-corner-mark mark-tr">+</div>
-            {/* EDIT MODE banner — small but unmistakable. Sits above the
-                canvas at the top centre while edit is active so the user
-                always knows whether their drags will register. */}
-            {layoutEditMode && (
-              <div
-                style={{
-                  position: "absolute" as const,
-                  top: 12,
-                  left: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "5px 12px 5px 8px",
-                  background: "var(--leaf)",
-                  color: "var(--paper)",
-                  fontFamily: "var(--fm)",
-                  fontSize: 10,
-                  fontWeight: 600,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase" as const,
-                  zIndex: 10,
-                  borderRadius: 2,
-                  boxShadow: "0 2px 8px rgba(0,0,0,.25)",
-                }}
-              >
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--paper)" }} />
-                Edit mode · drag to move · double-click to rotate
-              </div>
-            )}
+            {/* Edit-mode hint banner removed 2026-05-25 — the active state of
+                the Edit button in the header is signal enough; floating the
+                instruction over the canvas competed with the room itself. */}
           {viewMode === "3d" ? (
             <RoomScene
               room={room}
@@ -602,23 +612,38 @@ export function PlannerRoute() {
           )}
         </div>
 
-        {/* Canvas footer — live cost. Reads structured cost.story directly
-            (not a parse of the headline string) so the number is always
-            current after a drag, intent, AI proposal, or material change. */}
-        <div style={{ height: 56, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "rgba(242,235,221,.28)", letterSpacing: "0.12em" }}>ESTIMATE</span>
-            <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 600, color: "var(--terra)" }}>
-              ₹{Math.round((baseVision.cost.story.total_inr || 0) / 1000)}k
-            </span>
-            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "rgba(242,235,221,.45)", letterSpacing: "0.08em" }}>
-              of ₹{Math.round((baseVision.cost.story.budget_inr || 0) / 1000)}k
-            </span>
-            {baseVision.cost.story.remaining_inr < 0 && (
-              <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "#E07A5F", letterSpacing: "0.08em" }}>
-                · ₹{Math.round(Math.abs(baseVision.cost.story.remaining_inr) / 1000)}k OVER
+        {/* Canvas footer — room identity + live cost + next-stage CTA.
+            Reads structured cost.story directly (not a parse of the headline
+            string) so the number is always current after a drag, intent, AI
+            proposal, or material change. Room name + size moved here from
+            the canvas header so the Edit / Furniture / Size button cluster
+            never crowds them out. */}
+        <div style={{ height: 56, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)", gap: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 28, minWidth: 0, flex: 1 }}>
+            {/* Room identity */}
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+              <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 16, fontWeight: 500, color: "var(--paper)", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>
+                {baseVision.name}
               </span>
-            )}
+              <span style={{ fontFamily: "var(--fm)", fontSize: 11, fontWeight: 500, color: "rgba(242,235,221,.55)", letterSpacing: "0.08em", flexShrink: 0 }}>
+                {wFt}′ × {dFt}′
+              </span>
+            </div>
+            {/* Estimate */}
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, paddingLeft: 24, borderLeft: "1px solid rgba(242,235,221,.10)" }}>
+              <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "rgba(242,235,221,.28)", letterSpacing: "0.12em" }}>ESTIMATE</span>
+              <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 600, color: "var(--terra)" }}>
+                ₹{Math.round((baseVision.cost.story.total_inr || 0) / 1000)}k
+              </span>
+              <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "rgba(242,235,221,.45)", letterSpacing: "0.08em" }}>
+                of ₹{Math.round((baseVision.cost.story.budget_inr || 0) / 1000)}k
+              </span>
+              {baseVision.cost.story.remaining_inr < 0 && (
+                <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "#E07A5F", letterSpacing: "0.08em" }}>
+                  · ₹{Math.round(Math.abs(baseVision.cost.story.remaining_inr) / 1000)}k OVER
+                </span>
+              )}
+            </div>
           </div>
           <button
             className="btn-primary-dark"
@@ -630,18 +655,73 @@ export function PlannerRoute() {
         </div>
       </div>
 
-      {/* ── RIGHT: AI chat (light paper panel) ── */}
+      {/* ── RIGHT: AI chat (light paper panel) ──
+          Collapsible. When closed, the panel becomes a thin rail with a vertical
+          handle so the canvas takes the full width. When open, normal 380px chat
+          experience. The grid-template-columns transition above animates the
+          width change. */}
+      {!aiOpen ? (
+        <button
+          onClick={() => setAiOpen(true)}
+          title="Open collaborator"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            gap: 12,
+            padding: "16px 0",
+            borderLeft: "1px solid var(--line)",
+            background: "var(--paper)",
+            cursor: "pointer",
+            overflow: "hidden",
+          }}
+        >
+          <span style={{ fontFamily: "var(--fm)", fontSize: 14, color: "var(--terra)", lineHeight: 1 }}>‹</span>
+          <span style={{
+            fontFamily: "var(--fm)",
+            fontSize: 9.5,
+            letterSpacing: "0.22em",
+            color: "var(--ink-3)",
+            textTransform: "uppercase" as const,
+            writingMode: "vertical-rl" as const,
+            transform: "rotate(180deg)",
+            marginTop: 10,
+          }}>
+            Collaborator
+          </span>
+          <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--terra)", animation: "pulse 2s ease infinite", marginTop: 10 }} />
+        </button>
+      ) : (
       <div style={{ display: "flex", flexDirection: "column", borderLeft: "1px solid var(--line)", background: "var(--paper)", overflow: "hidden" }}>
 
         {/* Chat header */}
-        <div style={{ padding: "16px 24px 16px", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
-          <span className="eyebrow">Collaborator</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 10 }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--terra)", animation: "pulse 2s ease infinite", flexShrink: 0 }} />
-            <span style={{ fontFamily: "var(--fb)", fontSize: 13, fontWeight: 500, color: "var(--terra)", lineHeight: 1.4 }}>
-              {budgetHeadline || "Calculating…"}
-            </span>
+        <div style={{ padding: "16px 24px 16px", borderBottom: "1px solid var(--line)", flexShrink: 0, display: "flex", alignItems: "flex-start", gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span className="eyebrow">Collaborator</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 10 }}>
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--terra)", animation: "pulse 2s ease infinite", flexShrink: 0 }} />
+              <span style={{ fontFamily: "var(--fb)", fontSize: 13, fontWeight: 500, color: "var(--terra)", lineHeight: 1.4 }}>
+                {budgetHeadline || "Calculating…"}
+              </span>
+            </div>
           </div>
+          <button
+            onClick={() => setAiOpen(false)}
+            title="Collapse collaborator — give the room more room"
+            aria-label="Collapse collaborator panel"
+            style={{
+              background: "transparent",
+              border: "1px solid var(--line)",
+              color: "var(--ink-3)",
+              cursor: "pointer",
+              padding: "4px 8px",
+              fontSize: 13,
+              lineHeight: 1,
+              borderRadius: 2,
+              flexShrink: 0,
+            }}
+          >›</button>
         </div>
 
         {/* Chat messages */}
@@ -718,8 +798,9 @@ export function PlannerRoute() {
               if (dismissedSuggestions.has(i)) return null;
               // humanLabel: catalog-aware label so suggestions read like
               // "Add a bookshelf" instead of "Add bookshelf" or worse the
-              // raw SKU "blendswap_cc_0_bookcase".
-              const label = humanLabel(intent, room.items);
+              // raw SKU "blendswap_cc_0_bookcase". skuName resolves SKUs to
+              // their human name_en when the AI omits sub_category.
+              const label = humanLabel(intent, room.items, skuName);
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "var(--paper-3)", border: "1px solid var(--line)", borderLeft: "3px solid var(--terra)" }}>
                   <span style={{ flex: 1, fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.4 }}>{label}</span>
@@ -785,6 +866,7 @@ export function PlannerRoute() {
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

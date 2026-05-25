@@ -63,14 +63,23 @@ export function RoomScene({
     [w, h, d],
   );
 
+  // Tone-mapping exposure tracks warmth so a daylit room reads visibly
+  // brighter than a candlelit one. Without this, kelvin only shifted hue —
+  // the materials-page lighting picker felt subtle.
+  const exposure = useMemo(() => {
+    const t = Math.max(0, Math.min(1, (warmthK - 2400) / 1600));
+    return 0.88 + t * 0.48; // 0.88 (candle) → 1.36 (daylight)
+  }, [warmthK]);
+
   return (
     <Canvas
       shadows
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.12, outputColorSpace: THREE.SRGBColorSpace }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: exposure, outputColorSpace: THREE.SRGBColorSpace }}
       camera={{ position: initialCam, fov: 52 }}
       style={{ width: "100%", height: "100%" }}
       onPointerMissed={() => onSelectItem?.(null)}
     >
+      <ExposureController exposure={exposure} />
       {/* Warm off-white background — visible through window + faded walls instead of a black void */}
       <color attach="background" args={["#e8e0d5"]} />
 
@@ -188,6 +197,19 @@ function WallFader({ wallRefs, roomW, roomD, openings }: {
       }
     }
   });
+  return null;
+}
+
+// ---------- Tone-mapping exposure live updater ----------
+// Mutates the renderer's `toneMappingExposure` whenever the prop changes so
+// warmth picks in the materials page take effect immediately without
+// recreating the WebGL context (which would destroy GLBs, env maps, and the
+// orbit camera state).
+function ExposureController({ exposure }: { exposure: number }) {
+  const { gl } = useThree();
+  useEffect(() => {
+    gl.toneMappingExposure = exposure;
+  }, [gl, exposure]);
   return null;
 }
 

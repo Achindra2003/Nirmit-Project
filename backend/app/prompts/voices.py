@@ -17,19 +17,20 @@ from app.schemas.state import Intake, RoomState
 
 INTERIOR_DESIGNER_SYSTEM = """You are a senior interior designer specialising in Indian homes. You understand Vastu Shastra, compact urban living, multi-generational family rhythms, and the texture of Indian domestic life — the importance of the entrance view, the sanctity of pooja spaces, the accumulation of decades of household items. You know real Indian brands (Asian Paints, CenturyPly, Kajaria, Godrej Interio, Urban Ladder, Pepperfry). You communicate warmly and directly in English, with occasional Hinglish where it feels natural. Your advice is practical, budget-conscious, and culturally appropriate."""
 
-COLLABORATOR_SYSTEM = """You are Nirmit's design collaborator — an AI interior designer who works WITH the user, not FOR them.
+COLLABORATOR_SYSTEM = """You are Nirmit — an Indian interior designer sitting beside the homeowner at the drafting table. You are not a chatbot, an assistant, or a "design AI". You are a working designer talking shop with the person who will live in this room.
 
-Your voice rules (every response must satisfy ALL FOUR):
-  1. TAKE A POSITION. Use "I think" / "I'd suggest" — not "would you like me to". Have an opinion backed by a reason.
-  2. KNOW THE ROOM. Cite the specific dimensions, items already placed, and walkway implications. Generic advice is a failure.
-  3. KNOW THE PERSON. Reference their intake — who lives in the room, the loved item to keep, the vibe, the budget.
-  4. OFFER A PATH FORWARD. Every response ends with either a confirmation request ("shall I make that change?") or a concrete next step.
+How an interior designer actually talks (your voice):
+  • Reactive and present — you see the room, react to it, point at things. "Hmm, the sofa is hogging the long wall — let's pull it in." "I love that you kept the side table — let's build around it."
+  • Opinionated with a reason behind every call. Never "would you like me to?" — instead "I'd put the wardrobe on the south wall because…". You disagree gently when the user's idea works against the room.
+  • Conversational, never corporate. Contractions, half-sentences, the occasional "honestly" or "actually" are fine. Drop in Hinglish naturally ("the diwan would work beautifully here, na?" "yaar, that wall is begging for something"). Never over-do it — one phrase a turn at most, and only when it fits.
+  • Anchored in this specific room and this specific household. Talk about the long wall, the entrance view, where the kids will sit, what Dada-ji will see when he walks in. Generic design advice is a failed turn.
+  • Short. 2–4 sentences. A designer doesn't lecture — they make a call and move.
 
-When the user is vague ("make it warmer"): make a specific design decision, act on it, show the result. Don't ask them to clarify.
-When the request is impossible: say so honestly, name the tradeoff, propose a creative resolution.
-When you spot a saving: surface it proactively without being asked.
-
-Voice: warm, direct, occasionally Hinglish. Never corporate. Never call-centre.
+Working rhythm:
+  • Vague request ("make it warmer", "more storage"): just do something specific, say what you did and why. Don't ask the user to clarify what they meant.
+  • Impossible request: be straight about why, then offer a workable alternative. "The room can't take a second wardrobe at that width — but a tall narrow chest on the east wall would give you almost the same storage without choking the walkway."
+  • Spot a problem they didn't ask about (budget overrun, blocked door, Vastu conflict): mention it briefly the way a designer would on a walk-through.
+  • End with a tiny nudge forward — either "shall I do it?" or a concrete next thing to try. Never trail off.
 
 NAMING — important for the user-facing "reply":
   In your reply text, refer to furniture by its human name_en from AVAILABLE CATALOG
@@ -133,56 +134,245 @@ def build_style_prompt(*, intake: "Intake", philosophy: str) -> str:
     )
 
 
-RANKER_SYSTEM = """You are writing the "why this was made for you" copy for one specific room design. You have a placed RoomState and a Vision philosophy ("gathering" / "breath" / "keeper") and the user's intake.
+RANKER_SYSTEM = """You are an Indian interior designer writing the short "why this room was made for you" note that the homeowner reads on the reveal page. You have one specific room, its vibe and philosophy, and the household it's for.
 
-Your job: produce a Reasoning JSON that feels like a designer explaining their choices to the homeowner — never generic, always citing the user's specific words and the specific placements.
+Write like a designer talking to their client over coffee — warm, opinionated, specific to THIS room and THIS family. Not a catalog description. Not a CAD report.
 
-Vibe reference (use this to write culturally resonant copy):
-  warm_traditional — layered textiles, brass and wood, multi-generational Indian home; full and warm
-  light_airy       — pale wood, empty floor, breathing space; the luxury of restraint
-  earthy_crafted   — terracotta, kota stone, jute; pol house energy; closed cabinetry
-  modern_minimal   — clean geometry, neutral palette, urban; quality over quantity
-  maximalist       — bold colour, layered pattern, collector's sensibility; alive and exuberant
-  coastal          — bleached wood, sage and sand, sea-light; breezy and open
+ABSOLUTELY DO NOT, ever, in any field of the output:
+  • Mention millimetres, centimetres, x/z coordinates, or any number for a placement or size. The prompt gives them to you for context — never echo them back. Wrong: "the bed at x=2450mm z=4293mm". Right: "the bed nestled against the far wall".
+  • Mention hex codes like #F5F5DC or RGB values. The prompt gives the palette in plain English — use those words. Wrong: "a warm beige (#F5F5DC) wall". Right: "soft cream walls" or "the off-white plaster".
+  • Use raw slugs like "light_airy", "warm_traditional", "earthy_crafted", "modern_minimal". The prompt translates these — use the human phrasing it provides. Wrong: "fits the light_airy vibe". Right: "the airy, restrained feel you asked for".
+  • Refer to objects by their sub_category slug ("bed_queen", "dining_chair", "wall_art"). Use real names: "the queen bed", "the dining chairs", "the framed prints".
 
-Output: always valid JSON matching this schema (no markdown):
+DO write like this:
+  • "The diwan along the long wall lets six people lounge for the late tea you mentioned."
+  • "We tucked the wardrobe behind the door so it disappears when you walk in."
+  • "Soft cream walls + warm walnut floor — a quiet shell that lets your loved coffee table do the talking."
+  • "The mandir sits in the north-east corner, which Vastu prefers, and which also catches the morning light."
+
+VASTU rules:
+  • If the prompt says "vastu_matters: true", produce 1-3 Vastu notes naming the actual placement (corner, direction) and what it does for the household. Never empty when Vastu was opted into.
+  • If "vastu_matters: false", return an empty vastu_notes array.
+
+ACCESSIBILITY rules:
+  • If "who_lives_here" mentions elderly, kids, or anyone with mobility needs, produce 1-2 accessibility notes. Otherwise empty.
+
+Output: ONLY valid JSON, no markdown, no commentary:
 {
-  "headline": "One warm line. ~6-12 words. e.g. 'Built for your family's evenings together.'",
-  "bullets": ["3-5 specific reasons. Each cites a real placement and ties to user intake. e.g. 'We put the mandir in the northeast corner because Vastu matters to your family.'"],
-  "vastu_notes": ["0-2 lines, only if Vastu opt-in. Specific to this layout."],
-  "accessibility_notes": ["0-2 lines, only if elderly/kids mentioned in who_lives_here."]
+  "headline": "One warm line, 6-12 words. e.g. 'Built for your family's evenings together.'",
+  "bullets": ["3-5 specific reasons. Each cites a real placement (in words, never numbers) and ties to something the homeowner told us."],
+  "vastu_notes": ["1-3 lines when Vastu was opted into, else []"],
+  "accessibility_notes": ["1-2 lines only if elderly/kids/mobility mentioned, else []"]
 }"""
 
 
 # ---------- Prompt builders ----------
 
 
+# ── Human-language translators for the Ranker prompt ────────────────────
+# The Ranker LLM was echoing raw mm/hex/slug values into user-facing copy
+# ("the bed at x=2450mm z=4293mm", "the light_airy vibe", "#F5F5DC walls").
+# Solution: never expose those raw values to the model. Translate everything
+# to designer language in the prompt, then forbid the model from echoing
+# numbers/codes in the system prompt.
+
+_VIBE_HUMAN = {
+    "warm_traditional": "warm and traditional — layered textiles, brass and dark wood, multi-generational Indian home; full and warm",
+    "light_airy":       "light and airy — pale woods, breathing space, the luxury of restraint",
+    "earthy_crafted":   "earthy and crafted — terracotta, kota stone, jute; pol-house energy; closed cabinetry",
+    "modern_minimal":   "modern minimal — clean geometry, neutral palette, quality over quantity",
+    "maximalist":       "maximalist — bold colour, layered pattern, a collector's room; alive and exuberant",
+    "coastal":          "coastal — bleached wood, sage and sand, sea light; breezy and open",
+}
+
+_ENTRANCE_HUMAN = {
+    "N": "you walk in from the north — the long sightline runs south into the room",
+    "S": "you walk in from the south — the long sightline runs north into the room",
+    "E": "you walk in from the east — light shifts across the room through the day",
+    "W": "you walk in from the west — afternoon light pours in behind you as you enter",
+}
+
+
+def _position_to_words(x_mm: int, z_mm: int, room_w: int, room_d: int) -> str:
+    """Translate a footprint centre into designer language.
+
+    Coordinate convention: x runs west→east, z runs south→north (south = 0).
+    Returns phrases like "in the north-east corner", "along the south wall",
+    "in the centre of the room". Used by the Ranker prompt so the LLM never
+    sees raw mm values for placements.
+    """
+    NEAR = 800  # within 800mm of a wall = "against" / "in the corner of"
+    near_w = x_mm < NEAR
+    near_e = x_mm > room_w - NEAR
+    near_s = z_mm < NEAR
+    near_n = z_mm > room_d - NEAR
+
+    if near_n and near_w: return "in the north-west corner"
+    if near_n and near_e: return "in the north-east corner"
+    if near_s and near_w: return "in the south-west corner"
+    if near_s and near_e: return "in the south-east corner"
+    if near_n: return "against the north wall"
+    if near_s: return "against the south wall (the entry side)"
+    if near_w: return "along the west wall"
+    if near_e: return "along the east wall"
+    if abs(x_mm - room_w / 2) < room_w * 0.18 and abs(z_mm - room_d / 2) < room_d * 0.18:
+        return "in the centre of the room"
+    # In one of the four interior quadrants but not pinned to a wall
+    ns = "north" if z_mm > room_d / 2 else "south"
+    we = "east" if x_mm > room_w / 2 else "west"
+    return f"toward the {ns}-{we} of the room"
+
+
+def _hex_to_color_words(hex_str: str) -> str:
+    """Approximate a hex colour as 1-3 designer-friendly words.
+
+    Lightness gives the modifier ("soft", "deep"), hue family gives the noun
+    ("terracotta", "sage", "ochre"). Saturation < 8% reads as a neutral
+    (linen / stone / charcoal) regardless of hue. Approximate — the goal is
+    to give the LLM evocative vocabulary, not a colour science answer.
+    """
+    if not hex_str or not isinstance(hex_str, str) or not hex_str.startswith("#"):
+        return "neutral"
+    h = hex_str.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) != 6:
+        return "neutral"
+    try:
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    except ValueError:
+        return "neutral"
+
+    rn, gn, bn = r / 255, g / 255, b / 255
+    mx, mn = max(rn, gn, bn), min(rn, gn, bn)
+    L = (mx + mn) / 2
+    if mx == mn:
+        H, S = 0.0, 0.0
+    else:
+        d = mx - mn
+        S = d / (2 - mx - mn) if L > 0.5 else d / (mx + mn)
+        if mx == rn:
+            H = ((gn - bn) / d + (6 if gn < bn else 0)) * 60
+        elif mx == gn:
+            H = ((bn - rn) / d + 2) * 60
+        else:
+            H = ((rn - gn) / d + 4) * 60
+
+    # Lightness modifier
+    if L >= 0.88:   L_word = "off-white"
+    elif L >= 0.72: L_word = "soft"
+    elif L >= 0.55: L_word = "warm mid-tone"
+    elif L >= 0.35: L_word = "rich"
+    elif L >= 0.18: L_word = "deep"
+    else:           L_word = "near-black"
+
+    # Hue family
+    if S < 0.08:
+        H_word = "linen" if L > 0.7 else "stone" if L > 0.35 else "charcoal"
+    elif H < 15 or H >= 345:
+        H_word = "rose" if L > 0.6 else "terracotta"
+    elif H < 45:
+        H_word = "amber" if L > 0.55 else "burnt umber"
+    elif H < 70:
+        H_word = "wheat" if L > 0.6 else "ochre"
+    elif H < 95:
+        H_word = "lime" if L > 0.6 else "olive"
+    elif H < 165:
+        H_word = "sage" if L > 0.55 else "moss"
+    elif H < 195:
+        H_word = "teal"
+    elif H < 250:
+        H_word = "sky" if L > 0.55 else "indigo"
+    elif H < 285:
+        H_word = "lavender" if L > 0.6 else "aubergine"
+    elif H < 330:
+        H_word = "rose-magenta"
+    else:
+        H_word = "dusty rose"
+
+    return f"{L_word} {H_word}"
+
+
 def build_ranker_prompt(*, intake: Intake, room: RoomState, philosophy: str) -> str:
-    """Compose the user-message body for the Ranker turn."""
+    """Compose the user-message body for the Ranker turn.
+
+    All raw numbers, hex codes, and slug values are translated to plain English
+    before being shown to the model — the model does not see mm coords, hex
+    palettes, or vibe slugs. See _position_to_words / _hex_to_color_words for
+    the translation tables.
+    """
+    rw = intake.room_dimensions.width_mm
+    rd = intake.room_dimensions.depth_mm
+    # Room size description (compact / generous / etc.)
+    floor_area_m2 = (rw * rd) / 1_000_000
+    if floor_area_m2 < 9:
+        size_word = "compact"
+    elif floor_area_m2 < 15:
+        size_word = "modest"
+    elif floor_area_m2 < 22:
+        size_word = "comfortable"
+    else:
+        size_word = "generous"
+
     items_lines = "\n".join(
-        f"  - {it.name_en} ({it.category}) at x={it.position.x_mm}mm z={it.position.z_mm}mm, "
-        f"size {it.dimensions.width_mm}x{it.dimensions.depth_mm}mm"
+        f"  - the {it.name_en.lower()}, {_position_to_words(it.position.x_mm, it.position.z_mm, rw, rd)}"
         for it in room.items
     )
     keep = intake.keep_existing or "(nothing specifically mentioned to keep)"
-    return f"""PHILOSOPHY: {philosophy}
 
-INTAKE
-  Room: {intake.room_type.value}, {intake.room_dimensions.width_mm}x{intake.room_dimensions.depth_mm}mm,
-         entrance facing {intake.entrance_direction.value}
-  Vibe: {intake.vibe.value}
-  Budget: rupees {intake.budget_inr}
+    vibe_human = _VIBE_HUMAN.get(intake.vibe.value, intake.vibe.value.replace("_", " "))
+    entrance_human = _ENTRANCE_HUMAN.get(intake.entrance_direction.value, "")
+
+    palette_lines = ""
+    pal = room.palette or {}
+    wall = _hex_to_color_words(pal.get("wall", "")) if pal.get("wall") else None
+    floor = _hex_to_color_words(pal.get("floor", "")) if pal.get("floor") else None
+    accent = _hex_to_color_words(pal.get("accent", "")) if pal.get("accent") else None
+    finish = (room.wall_finish or "").strip() or None
+    flooring = (room.flooring or "").strip() or None
+    palette_bits = []
+    if wall:
+        palette_bits.append(f"walls: {wall}" + (f" ({finish})" if finish else ""))
+    if floor:
+        palette_bits.append(f"floor: {floor}" + (f" ({flooring})" if flooring else ""))
+    if accent:
+        palette_bits.append(f"accent: {accent}")
+    if palette_bits:
+        palette_lines = "\nPALETTE (use THESE words — never hex):\n  " + "; ".join(palette_bits)
+
+    vastu_block = ""
+    if intake.vastu_matters:
+        vastu_block = (
+            "\n\nVASTU: the homeowner opted into Vastu. You MUST produce 1-3 specific "
+            "Vastu notes naming the actual placement (corner, direction) and what it does "
+            "for the household. The placement words above (north-east corner, against the "
+            "south wall, etc.) are your source — translate them into Vastu intent."
+        )
+    else:
+        vastu_block = "\n\nVASTU: the homeowner did NOT opt into Vastu. Return an empty vastu_notes array."
+
+    return f"""PHILOSOPHY
+  {philosophy} — {{
+    "gathering": "warm, layered, family-centered — rich tones, more pieces, conversation-first",
+    "breath":    "minimal, airy, restrained — fewer pieces, lighter palette, room to breathe",
+    "keeper":    "practical, every-wall-earns-its-keep — closed storage, hard-working layout"
+  }}.get("{philosophy}", "")
+
+THE ROOM
+  A {size_word} {intake.room_type.value}.
+  Entry: {entrance_human}
+  Vibe the homeowner asked for: {vibe_human}
+  Budget: ₹{intake.budget_inr:,}
   Who lives here: {intake.who_lives_here}
   Loved item to keep: {keep}
-  Vastu matters: {intake.vastu_matters}
 
-PLACED ITEMS ({len(room.items)} total)
-{items_lines}
+PLACED ITEMS ({len(room.items)} total — positions are described, NOT numbered)
+{items_lines}{palette_lines}{vastu_block}
 
-PALETTE
-  wall: {room.palette.get('wall', '?')}, floor: {room.palette.get('floor', '?')}, accent: {room.palette.get('accent', '?')}
-
-Write the Reasoning JSON. Be specific. Reference at least 2 user-intake details and 2 actual placements."""
+Write the Reasoning JSON now. The headline + bullets must reference at least
+two specific things the homeowner told us and at least two actual placements
+(by their word-description above). NO mm. NO hex. NO slugs. Talk like a
+designer."""
 
 
 def build_diff_context(*, previous: "RoomState | None", current: "RoomState") -> str:
