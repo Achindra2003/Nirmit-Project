@@ -414,38 +414,51 @@ _PACKS: dict[str, LangPack] = {
     "kn": KANNADA,
 }
 
+# Stored lower-case so lookup is case-insensitive. Users who pick "Other" in
+# the intake type their city free-form ("mumbai", "MUMBAI", "Bengaluru, KA") —
+# previously each variant fell through to the Hindi fallback even when we had
+# the right pack on file.
 _CITY_TO_LANG: dict[str, str] = {
     # Hindi-belt
-    "Delhi":     "hi",
-    "New Delhi": "hi",
-    "Lucknow":   "hi",
-    "Jaipur":    "hi",
-    "Patna":     "hi",
+    "delhi":     "hi",
+    "new delhi": "hi",
+    "lucknow":   "hi",
+    "jaipur":    "hi",
+    "patna":     "hi",
     # Marathi
-    "Mumbai": "mr",
-    "Pune":   "mr",
-    "Nagpur": "mr",
+    "mumbai": "mr",
+    "pune":   "mr",
+    "nagpur": "mr",
     # Bengali
-    "Kolkata": "bn",
+    "kolkata":  "bn",
+    "calcutta": "bn",
     # Tamil
-    "Chennai":   "ta",
-    "Coimbatore": "ta",
+    "chennai":    "ta",
+    "coimbatore": "ta",
+    "madras":     "ta",
     # Telugu
-    "Hyderabad": "te",
+    "hyderabad": "te",
+    "secunderabad": "te",
     # Kannada
-    "Bangalore": "kn",
-    "Bengaluru": "kn",
-    "Mysore":    "kn",
-    "Mysuru":    "kn",
+    "bangalore": "kn",
+    "bengaluru": "kn",
+    "mysore":    "kn",
+    "mysuru":    "kn",
 }
 
 
 def lang_for_city(city: str | None) -> LangPack:
     """Return the LangPack for a city. Falls back to Hindi for unknown cities —
-    Hindi is the most universally-understood trade language across India."""
+    Hindi is the most universally-understood trade language across India.
+
+    Lookup is case-insensitive and tolerates trailing punctuation like
+    "Mumbai, MH" by checking the first comma-delimited token too."""
     if not city:
         return HINDI
-    code = _CITY_TO_LANG.get(city.strip())
+    key = city.strip().lower()
+    code = _CITY_TO_LANG.get(key)
+    if not code and "," in key:
+        code = _CITY_TO_LANG.get(key.split(",", 1)[0].strip())
     return _PACKS.get(code or "", HINDI)
 
 

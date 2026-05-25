@@ -39,6 +39,10 @@ interface Props {
   view?: CameraView;
   warmthK?: number;
   showAtmosphere?: boolean;
+  /** Optional child rendered inside the Canvas's React tree — used by
+   *  SceneSnapshot to mount a `useThree`-aware probe that captures the WebGL
+   *  back buffer once assets finish loading. */
+  snapshotProbe?: React.ReactNode;
 }
 
 export function RoomScene({
@@ -50,6 +54,7 @@ export function RoomScene({
   view = "corner",
   warmthK = 3200,
   showAtmosphere = true,
+  snapshotProbe,
 }: Props) {
   const w = mmToM(room.intake.room_dimensions.width_mm);
   const d = mmToM(room.intake.room_dimensions.depth_mm);
@@ -74,7 +79,11 @@ export function RoomScene({
   return (
     <Canvas
       shadows
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: exposure, outputColorSpace: THREE.SRGBColorSpace }}
+      // `preserveDrawingBuffer` lets ExportRoute call gl.domElement.toDataURL()
+      // to capture a still of the rendered scene for the quotation PDF and
+      // WhatsApp share image. The cost is a small memory overhead (the back
+      // buffer isn't cleared between frames) — negligible for our use case.
+      gl={{ antialias: true, preserveDrawingBuffer: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: exposure, outputColorSpace: THREE.SRGBColorSpace }}
       camera={{ position: initialCam, fov: 52 }}
       style={{ width: "100%", height: "100%" }}
       onPointerMissed={() => onSelectItem?.(null)}
@@ -133,6 +142,7 @@ export function RoomScene({
       />
       <CameraController view={view} roomW={w} roomD={d} roomH={h} entrance={room.intake.entrance_direction} />
       <PostProcess />
+      {snapshotProbe}
     </Canvas>
   );
 }

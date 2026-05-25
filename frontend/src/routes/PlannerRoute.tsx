@@ -94,6 +94,25 @@ function nounFromSku(sku: string): string {
   return (tokens[tokens.length - 1] ?? "piece").toLowerCase();
 }
 
+/** Cheap no-op detector for /apply round-trips. For mutation intents we care
+ * about (change_style today, others can opt in below), check whether the
+ * target item's SKU or position actually changed. The backend returns the
+ * same room_state when no intent applied, so without this check the chat
+ * cheerfully reports "Done." over an unchanged room. */
+function sameRoom(
+  before: import("@/api/types").RoomState,
+  after: import("@/api/types").RoomState,
+  intent: import("@/api/types").Intent,
+): boolean {
+  if (intent.kind === "change_style" && intent.target_item_id) {
+    const b = before.items.find((i) => i.id === intent.target_item_id);
+    const a = after.items.find((i) => i.id === intent.target_item_id);
+    return !!(b && a && b.catalog.sku === a.catalog.sku);
+  }
+  return false; // for other intents, trust the backend round-trip
+}
+
+
 function humanLabel(
   intent: import("@/api/types").Intent,
   items: import("@/api/types").PlacedItem[],
@@ -250,6 +269,18 @@ export function PlannerRoute() {
     const before = room;
     try {
       const res = await api.apply({ room_state: room, intents: [intent], available_visions: visions });
+      // Detect silent no-ops — /apply returns the original room_state when no
+      // intent applied, so a successful HTTP round-trip doesn't guarantee the
+      // user's click changed anything. For change_style specifically, compare
+      // the target's SKU before/after so we can surface "couldn't change"
+      // instead of cheerfully saying "Done." over an unchanged room.
+      const changed = !sameRoom(before, res.room_state, intent);
+      if (!changed) {
+        if (intent.kind === "change_style") {
+          setChat((c) => [...c, { role: "assistant", content: `No other styles fit this piece — it's a one-of-a-kind in this room's vibe.` }]);
+        }
+        return;
+      }
       setRoomHistory((h) => [...h.slice(-19), before]);
       // Single write-path — every edit ends up in the store so cost downstream
       // (StyleRoute, ExportRoute, header chip, footer chip) stays in sync.

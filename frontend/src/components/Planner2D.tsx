@@ -31,6 +31,15 @@ import type { Direction, Opening, PlacedItem, RoomState } from "@/api/types";
 import { useAppStore } from "@/store/useAppStore";
 
 const PAD = 72;
+// Extra padding outside the room rectangle to fit elements that live in the
+// margins: the depth dimension on the LEFT (label rect reaches ox-98) and the
+// width dimension + scale bar on the BOTTOM (scale-bar text sits at
+// oy+dPx+76). Without these, the viewBox stops at the bare PAD and those
+// elements get clipped — visible inside the planner route only because the
+// host SVG happens to render with overflow:visible there, but cut off in
+// the export thumbnail (where the cell strictly clips to the viewBox).
+const PAD_L = 60;
+const PAD_B = 90;
 const TARGET = 760;
 const GRID_MAJOR = 1000;
 const GRID_MINOR = 100;
@@ -60,10 +69,13 @@ export function Planner2D({ room, selectedItemId, onSelectItem, onMoveItem, onRo
   const layoutEditMode = useAppStore((s) => s.layoutEditMode);
   const wMm = room.intake.room_dimensions.width_mm;
   const dMm = room.intake.room_dimensions.depth_mm;
+  // Scale is computed against the original PAD*2 envelope so room-rendering
+  // dimensions stay identical to what the planner route was tuned for —
+  // PAD_L / PAD_B only widen the viewBox so dimension labels don't clip.
   const scale = useMemo(() => (TARGET - PAD * 2) / Math.max(wMm, dMm), [wMm, dMm]);
-  const svgW = wMm * scale + PAD * 2;
-  const svgH = dMm * scale + PAD * 2;
-  const ox = PAD;
+  const svgW = wMm * scale + PAD + PAD_L;
+  const svgH = dMm * scale + PAD + PAD_B;
+  const ox = PAD_L;
   const oy = PAD;
   const wPx = wMm * scale;
   const dPx = dMm * scale;

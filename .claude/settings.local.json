@@ -107,7 +107,8 @@
       "Bash(xargs grep -l \"name_en\")",
       "Bash(grep -rn \"\\\\\"#dc\\\\\\\\|#d4\\\\\\\\|#cb\\\\\\\\|#bf\\\\\\\\|#fa\\\\\\\\|crimson\\\\\\\\|red\\\\\\\\|tomato\" frontend/src/three/)",
       "Bash(grep -iv \"ink\\\\\\\\|paper\\\\\\\\|wall\\\\\\\\|comment\\\\\\\\|//\")",
-      "Bash(PYTHONIOENCODING=utf-8 python backend/scripts/audit_preset_layouts.py)"
+      "Bash(PYTHONIOENCODING=utf-8 python backend/scripts/audit_preset_layouts.py)",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }

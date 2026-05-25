@@ -620,7 +620,21 @@ input[type=range]::-webkit-slider-thumb {
   }
 }
 
-/* Pen-on-paper stroke reveal — used by hero, generating, and plan SVGs */
+/* Pen-on-paper stroke reveal — used by hero, generating, and plan SVGs.
+ * (An earlier ink-bleed drop-shadow filter lived here; it gave a softness
+ * we liked at zoom-1 but rasterised everything sub-pixel-blurry on real
+ * displays — text inside the SVG looked fuzzy. Reverted to crisp strokes.)
+ */
+
+/* Gentle breathing for the hero — a few-pixel vertical drift over 9 seconds
+ * gives the static post-animation state visible life without rotating the
+ * SVG (rotation blurs the text rasteriser). Pairs with the cursor-driven
+ * translate parallax in ReplayableCoverDrawing for an interactive feel. */
+@keyframes heroBreathe {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -3px, 0); }
+}
+
 @keyframes penDraw {
   to {
     stroke-dashoffset: 0;
@@ -630,7 +644,11 @@ input[type=range]::-webkit-slider-thumb {
 @keyframes penLabel {
   from {
     opacity: 0;
-    transform: translate(5px, 3px);
+    transform: translate(4px, 2px);
+  }
+
+  60% {
+    opacity: 1;
   }
 
   to {
@@ -639,13 +657,22 @@ input[type=range]::-webkit-slider-thumb {
   }
 }
 
+/* Fills no longer fade — they pop in with a tiny scale (centred on the
+ * element's own bounding box). Reads like ink settling into hatch lines
+ * instead of a slow opacity ramp. */
 @keyframes penFill {
   from {
     opacity: 0;
+    transform: scale(0.985);
+    transform-origin: center;
+    transform-box: fill-box;
   }
 
   to {
     opacity: 1;
+    transform: scale(1);
+    transform-origin: center;
+    transform-box: fill-box;
   }
 }
 

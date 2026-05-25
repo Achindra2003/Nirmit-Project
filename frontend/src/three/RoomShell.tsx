@@ -104,14 +104,12 @@ export function RoomShell({ room, wallRefs }: Props) {
 
   return (
     <group>
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} material={floorMat} receiveShadow>
         <planeGeometry args={[w, d]} />
-        <primitive object={floorMat} attach="material" />
       </mesh>
 
-      <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]} material={ceilMat}>
         <planeGeometry args={[w, d]} />
-        <primitive object={ceilMat} attach="material" />
       </mesh>
       <mesh position={[0, h - 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[Math.min(w, d) * 0.22, Math.min(w, d) * 0.25, 32]} />
@@ -133,10 +131,10 @@ export function RoomShell({ room, wallRefs }: Props) {
       {wallOrDoor("W", [-w / 2 + WALL_T / 2, h / 2, 0], [WALL_T, h, d + WALL_T], wallMats.W, "W")}
       {wallOrDoor("E", [w / 2 - WALL_T / 2, h / 2, 0], [WALL_T, h, d + WALL_T], wallMats.E, "E")}
 
-      <mesh position={[0, BASE_H / 2, -d / 2 + WALL_T + BASE_D / 2]}><boxGeometry args={[w, BASE_H, BASE_D]} /><primitive object={baseMat} attach="material" /></mesh>
-      <mesh position={[0, BASE_H / 2, d / 2 - WALL_T - BASE_D / 2]}><boxGeometry args={[w, BASE_H, BASE_D]} /><primitive object={baseMat} attach="material" /></mesh>
-      <mesh position={[-w / 2 + WALL_T + BASE_D / 2, BASE_H / 2, 0]}><boxGeometry args={[BASE_D, BASE_H, d]} /><primitive object={baseMat} attach="material" /></mesh>
-      <mesh position={[w / 2 - WALL_T - BASE_D / 2, BASE_H / 2, 0]}><boxGeometry args={[BASE_D, BASE_H, d]} /><primitive object={baseMat} attach="material" /></mesh>
+      <mesh position={[0, BASE_H / 2, -d / 2 + WALL_T + BASE_D / 2]} material={baseMat}><boxGeometry args={[w, BASE_H, BASE_D]} /></mesh>
+      <mesh position={[0, BASE_H / 2, d / 2 - WALL_T - BASE_D / 2]} material={baseMat}><boxGeometry args={[w, BASE_H, BASE_D]} /></mesh>
+      <mesh position={[-w / 2 + WALL_T + BASE_D / 2, BASE_H / 2, 0]} material={baseMat}><boxGeometry args={[BASE_D, BASE_H, d]} /></mesh>
+      <mesh position={[w / 2 - WALL_T - BASE_D / 2, BASE_H / 2, 0]} material={baseMat}><boxGeometry args={[BASE_D, BASE_H, d]} /></mesh>
 
       {/* Crown molding — 40mm tall × 30mm deep ring at ceiling perimeter */}
       <CrownMolding w={w} d={d} h={h} mat={baseMat} />
@@ -147,9 +145,8 @@ export function RoomShell({ room, wallRefs }: Props) {
 const WallBox = forwardRef<THREE.Mesh, { position: [number, number, number]; args: [number, number, number]; material: THREE.Material }>(
   function WallBox({ position, args, material }, ref) {
     return (
-      <mesh ref={ref} position={position} receiveShadow>
+      <mesh ref={ref} position={position} material={material} receiveShadow>
         <boxGeometry args={args} />
-        <primitive object={material} attach="material" />
       </mesh>
     );
   },
@@ -165,10 +162,10 @@ function CrownMolding({ w, d, h, mat }: { w: number; d: number; h: number; mat: 
   const y = h - mH / 2 - 0.01;
   return (
     <group>
-      <mesh position={[0, y, -d / 2 + mD / 2]}><boxGeometry args={[w, mH, mD]} /><primitive object={mat} attach="material" /></mesh>
-      <mesh position={[0, y, d / 2 - mD / 2]}><boxGeometry args={[w, mH, mD]} /><primitive object={mat} attach="material" /></mesh>
-      <mesh position={[-w / 2 + mD / 2, y, 0]}><boxGeometry args={[mD, mH, d]} /><primitive object={mat} attach="material" /></mesh>
-      <mesh position={[w / 2 - mD / 2, y, 0]}><boxGeometry args={[mD, mH, d]} /><primitive object={mat} attach="material" /></mesh>
+      <mesh position={[0, y, -d / 2 + mD / 2]} material={mat}><boxGeometry args={[w, mH, mD]} /></mesh>
+      <mesh position={[0, y, d / 2 - mD / 2]} material={mat}><boxGeometry args={[w, mH, mD]} /></mesh>
+      <mesh position={[-w / 2 + mD / 2, y, 0]} material={mat}><boxGeometry args={[mD, mH, d]} /></mesh>
+      <mesh position={[w / 2 - mD / 2, y, 0]} material={mat}><boxGeometry args={[mD, mH, d]} /></mesh>
     </group>
   );
 }
@@ -202,6 +199,17 @@ function DoorWall({ dir, w, d, h, door, material, wallRef }: {
   const lintelH = Math.max(0, h - doorH);
   const handleH = 1.0; // handle at 1.0 m
 
+  // All three wall-side meshes (left panel, right panel, lintel) MUST share
+  // the exact same material instance so the WallFader's per-frame opacity
+  // mutation on the left panel (the one wallRef points at) is visible across
+  // all three. We also use a `key` derived from material.uuid on each so a
+  // material swap (new paint colour) forces a full remount — previously the
+  // `<primitive object={material}/>` reconciliation occasionally left the
+  // right panel and lintel attached to the old material instance while the
+  // left panel — the one with the React ref — picked up the new one, which
+  // is the "block above the door changes colour but the rest doesn't" bug.
+  const matKey = material.uuid;
+
   if (isNS) {
     const z = dir === "S" ? -d / 2 + WALL_T / 2 : d / 2 - WALL_T / 2;
     // Door leaf flush in the opening so it doesn't obstruct walk / entrance camera.
@@ -211,44 +219,36 @@ function DoorWall({ dir, w, d, h, door, material, wallRef }: {
     const openAngle = 0;
     return (
       <group>
-        {/* Wall panels */}
-        <mesh ref={wallRef} position={[leftMid, h / 2, z]} receiveShadow>
+        {/* Wall panels — full-height left/right plus a strip above the door */}
+        <mesh key={`L-${matKey}`} ref={wallRef} position={[leftMid, h / 2, z]} material={material} receiveShadow>
           <boxGeometry args={[leftLen, h, WALL_T]} />
-          <primitive object={material} attach="material" />
         </mesh>
-        <mesh position={[rightMid, h / 2, z]} receiveShadow>
+        <mesh key={`R-${matKey}`} position={[rightMid, h / 2, z]} material={material} receiveShadow>
           <boxGeometry args={[rightLen, h, WALL_T]} />
-          <primitive object={material} attach="material" />
         </mesh>
         {lintelH > 0.005 && (
-          <mesh position={[doorCenter, doorH + lintelH / 2, z]} receiveShadow>
+          <mesh key={`T-${matKey}`} position={[doorCenter, doorH + lintelH / 2, z]} material={material} receiveShadow>
             <boxGeometry args={[doorW, lintelH, WALL_T]} />
-            <primitive object={material} attach="material" />
           </mesh>
         )}
         {/* Frame trim */}
-        <mesh position={[doorCenter - halfGap - TRIM_W / 2, doorH / 2, z]} castShadow>
+        <mesh position={[doorCenter - halfGap - TRIM_W / 2, doorH / 2, z]} material={trimMat} castShadow>
           <boxGeometry args={[TRIM_W, doorH, WALL_T + 0.01]} />
-          <primitive object={trimMat} attach="material" />
         </mesh>
-        <mesh position={[doorCenter + halfGap + TRIM_W / 2, doorH / 2, z]} castShadow>
+        <mesh position={[doorCenter + halfGap + TRIM_W / 2, doorH / 2, z]} material={trimMat} castShadow>
           <boxGeometry args={[TRIM_W, doorH, WALL_T + 0.01]} />
-          <primitive object={trimMat} attach="material" />
         </mesh>
-        <mesh position={[doorCenter, doorH + TRIM_W / 2, z]} castShadow>
+        <mesh position={[doorCenter, doorH + TRIM_W / 2, z]} material={trimMat} castShadow>
           <boxGeometry args={[doorW + TRIM_W * 2, TRIM_W, WALL_T + 0.01]} />
-          <primitive object={trimMat} attach="material" />
         </mesh>
         {/* Door leaf + handle */}
         <group position={[hingeX, doorH / 2, z]} rotation={[0, openAngle, 0]}>
-          <mesh position={[doorW / 2, 0, DOOR_LEAF_T / 2]} castShadow receiveShadow>
+          <mesh position={[doorW / 2, 0, DOOR_LEAF_T / 2]} material={doorLeafMat} castShadow receiveShadow>
             <boxGeometry args={[doorW, doorH, DOOR_LEAF_T]} />
-            <primitive object={doorLeafMat} attach="material" />
           </mesh>
           {/* Handle sphere near free edge */}
-          <mesh position={[doorW - 0.06, handleH - doorH / 2, DOOR_LEAF_T + 0.018]} castShadow>
+          <mesh position={[doorW - 0.06, handleH - doorH / 2, DOOR_LEAF_T + 0.018]} material={handleMat} castShadow>
             <sphereGeometry args={[0.018, 10, 8]} />
-            <primitive object={handleMat} attach="material" />
           </mesh>
         </group>
       </group>
@@ -260,43 +260,36 @@ function DoorWall({ dir, w, d, h, door, material, wallRef }: {
   const openAngleWE = 0;   // flush — don't block walk view
   return (
     <group>
-      {/* Wall panels */}
-      <mesh ref={wallRef} position={[x, h / 2, leftMid]} receiveShadow>
+      {/* Wall panels — see comment on the NS branch for why all three share
+       *  the same material instance and remount on material.uuid change. */}
+      <mesh key={`L-${matKey}`} ref={wallRef} position={[x, h / 2, leftMid]} material={material} receiveShadow>
         <boxGeometry args={[WALL_T, h, leftLen]} />
-        <primitive object={material} attach="material" />
       </mesh>
-      <mesh position={[x, h / 2, rightMid]} receiveShadow>
+      <mesh key={`R-${matKey}`} position={[x, h / 2, rightMid]} material={material} receiveShadow>
         <boxGeometry args={[WALL_T, h, rightLen]} />
-        <primitive object={material} attach="material" />
       </mesh>
       {lintelH > 0.005 && (
-        <mesh position={[x, doorH + lintelH / 2, doorCenter]} receiveShadow>
+        <mesh key={`T-${matKey}`} position={[x, doorH + lintelH / 2, doorCenter]} material={material} receiveShadow>
           <boxGeometry args={[WALL_T, lintelH, doorW]} />
-          <primitive object={material} attach="material" />
         </mesh>
       )}
       {/* Frame trim */}
-      <mesh position={[x, doorH / 2, doorCenter - halfGap - TRIM_W / 2]} castShadow>
+      <mesh position={[x, doorH / 2, doorCenter - halfGap - TRIM_W / 2]} material={trimMat} castShadow>
         <boxGeometry args={[WALL_T + 0.01, doorH, TRIM_W]} />
-        <primitive object={trimMat} attach="material" />
       </mesh>
-      <mesh position={[x, doorH / 2, doorCenter + halfGap + TRIM_W / 2]} castShadow>
+      <mesh position={[x, doorH / 2, doorCenter + halfGap + TRIM_W / 2]} material={trimMat} castShadow>
         <boxGeometry args={[WALL_T + 0.01, doorH, TRIM_W]} />
-        <primitive object={trimMat} attach="material" />
       </mesh>
-      <mesh position={[x, doorH + TRIM_W / 2, doorCenter]} castShadow>
+      <mesh position={[x, doorH + TRIM_W / 2, doorCenter]} material={trimMat} castShadow>
         <boxGeometry args={[WALL_T + 0.01, TRIM_W, doorW + TRIM_W * 2]} />
-        <primitive object={trimMat} attach="material" />
       </mesh>
       {/* Door leaf + handle */}
       <group position={[x, doorH / 2, hingeZ]} rotation={[0, openAngleWE, 0]}>
-        <mesh position={[DOOR_LEAF_T / 2, 0, doorW / 2]} castShadow receiveShadow>
+        <mesh position={[DOOR_LEAF_T / 2, 0, doorW / 2]} material={doorLeafMat} castShadow receiveShadow>
           <boxGeometry args={[DOOR_LEAF_T, doorH, doorW]} />
-          <primitive object={doorLeafMat} attach="material" />
         </mesh>
-        <mesh position={[DOOR_LEAF_T + 0.018, handleH - doorH / 2, doorW - 0.06]} castShadow>
+        <mesh position={[DOOR_LEAF_T + 0.018, handleH - doorH / 2, doorW - 0.06]} material={handleMat} castShadow>
           <sphereGeometry args={[0.018, 10, 8]} />
-          <primitive object={handleMat} attach="material" />
         </mesh>
       </group>
     </group>

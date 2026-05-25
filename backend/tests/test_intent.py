@@ -67,3 +67,48 @@ def test_apply_unknown_target_returns_none():
     )
     # No applied changes -> returns None per contract
     assert out is None
+
+
+def test_change_style_swaps_to_a_different_peer_sku():
+    """Style swap on a sofa should return a different sofa, not the same one
+    and not a wholly unrelated category. Empty parameters — the planner's
+    ⇄ Style button sends no payload, so the executor must infer the swap
+    target from the current item alone."""
+    room = _seed_room()
+    sofa = next(i for i in room.items if i.category == "seating")
+    new = apply_intents(
+        room,
+        [Intent(kind=IntentKind.CHANGE_STYLE, target_item_id=sofa.id, parameters={})],
+    )
+    assert new is not None, "change_style with empty params must still swap"
+    swapped = next(i for i in new.items if i.id == sofa.id)
+    assert swapped.catalog.sku != sofa.catalog.sku, "SKU must change — same SKU is a no-op"
+    # Should land on another seating item, not a completely unrelated category.
+    assert swapped.category == sofa.category
+
+
+def test_change_style_falls_back_to_category_for_singletons():
+    """Items whose primary tag has no other entries in the curated menu (a
+    coffee table is the only thing tagged 'coffee_table', a diwan the only
+    one tagged 'diwan') used to no-op. The category-fallback tier rescues
+    them by swapping within the broader category."""
+    room = _seed_room()
+    # Every placed item in the seed should have *some* swap target — tag or
+    # category fallback. Iterate them all; if even one is still a no-op, the
+    # planner's ⇄ Style button will silently fail for that piece.
+    no_swap = []
+    for piece in room.items:
+        out = apply_intents(
+            room,
+            [Intent(kind=IntentKind.CHANGE_STYLE, target_item_id=piece.id, parameters={})],
+        )
+        if out is None:
+            no_swap.append((piece.category, piece.name_en))
+            continue
+        swapped = next(i for i in out.items if i.id == piece.id)
+        if swapped.catalog.sku == piece.catalog.sku:
+            no_swap.append((piece.category, piece.name_en))
+    # We accept a small number of true singletons (e.g. a unique mandir or
+    # ceiling fan), but the majority of pieces must be swappable.
+    swap_rate = 1 - len(no_swap) / max(1, len(room.items))
+    assert swap_rate >= 0.7, f"Too many silent no-ops ({swap_rate:.0%}): {no_swap}"

@@ -107,9 +107,17 @@ export function GeneratingRoute() {
             </span>
 
             <div style={{ fontFamily: "var(--fd)", fontSize: 30, fontWeight: 600, lineHeight: 1.1, color: "rgba(242,235,221,.9)", minHeight: 88, transition: "opacity .4s ease" }}>
-              {stage === 0 && "Starting with your room…"}
-              {current}
-              {animationDone && (visionsLoaded ? "Three rooms are ready for you." : "Almost there…")}
+              {/* Single string at a time — earlier this rendered three
+               *  conditionals side-by-side, so when the animation ended
+               *  the "Almost there…" / "Three rooms are ready" line
+               *  butted up against the last stage label ("…labour"),
+               *  producing visible run-on text like "…labourAlmost
+               *  there…". Pick exactly one. */}
+              {animationDone
+                ? (visionsLoaded ? "Three rooms are ready for you." : "Almost there…")
+                : stage === 0
+                  ? "Starting with your room…"
+                  : current}
             </div>
           </div>
 

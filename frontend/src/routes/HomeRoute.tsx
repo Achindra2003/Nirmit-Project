@@ -145,7 +145,7 @@ export function HomeRoute() {
           <div style={{ position: "absolute", top: 20, right: 20, width: 18, height: 18, borderTop: "1px solid var(--line-2)", borderRight: "1px solid var(--line-2)" }} />
           <div style={{ position: "absolute", bottom: 20, left: 20, width: 18, height: 18, borderBottom: "1px solid var(--line-2)", borderLeft: "1px solid var(--line-2)" }} />
           <div style={{ position: "absolute", bottom: 20, right: 20, width: 18, height: 18, borderBottom: "1px solid var(--line-2)", borderRight: "1px solid var(--line-2)" }} />
-          <CoverSectionDrawing />
+          <ReplayableCoverDrawing />
         </div>
 
         {/* Floating scroll indicator — centered, clickable, gently rocks up/down */}
@@ -264,112 +264,226 @@ export function HomeRoute() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Architectural section drawing — pen-on-paper effect.
-   Each element's strokeDasharray == exact path perimeter so the full
-   animation range is productive drawing time (no wasted offset range).
-   @keyframes drawLine has only `to { stroke-dashoffset: 0 }`, so the
-   browser interpolates from the element's own inline dashoffset.
+   ReplayableCoverDrawing — the original architectural section drawing
+   (room shell + sofa + TV + mandir + plant + annotations) restored, but
+   layered into three depth groups so cursor parallax gives a real 2D+3D
+   motif without rotating any text. Each layer drifts a different amount
+   when the cursor moves — the room shell barely moves, the furniture
+   moves a touch, the annotations move most. That's the parallax effect.
+
+   What we DON'T do:
+     - No CSS rotateX/rotateY on the SVG (rotated SVG text rasterises
+       blurry on every browser; learned that the hard way).
+     - No CSS drop-shadow filter on the SVG wrapper (softens every stroke).
+
+   What we DO do:
+     - translate-only parallax per depth layer (sharp at integer pixels).
+     - SVG-internal feDropShadow on furniture elements only — text stays
+       crisp, furniture gets a faint "elevated off the page" shadow that
+       reads as 3D depth in a 2D drawing.
+     - A 9 s ambient breathing translate so the post-animation state isn't
+       inert.
 ───────────────────────────────────────────────────────────────────────── */
-function CoverSectionDrawing() {
+function ReplayableCoverDrawing() {
+  // Cursor offset, -0.5..0.5 on each axis. Per-layer multipliers below
+  // produce the differential motion that sells the parallax.
+  const [parallax, setParallax] = useState({ px: 0, py: 0 });
+
+  function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setParallax({
+      px: (e.clientX - rect.left) / rect.width - 0.5,
+      py: (e.clientY - rect.top) / rect.height - 0.5,
+    });
+  }
+  function onMouseLeave() {
+    setParallax({ px: 0, py: 0 });
+  }
+
   return (
-    <div style={{ width: "100%", maxWidth: 480, position: "relative" }}>
-      <svg
-        className="pen-svg"
-        viewBox="0 0 560 528"
-        width="100%"
-        shapeRendering="geometricPrecision"
-        style={{ overflow: "visible" }}
-      >
-        <defs>
-          <pattern id="hatch-cov" x="0" y="0" width="7" height="7"
-            patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" strokeWidth="0.6" opacity="0.35" />
-          </pattern>
-          <pattern id="hatch-terra-cov" x="0" y="0" width="5" height="5"
-            patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="5" stroke="var(--terra)" strokeWidth="0.8" opacity="0.5" />
-          </pattern>
-          <pattern id="hatch-leaf-cov" x="0" y="0" width="5" height="5"
-            patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="5" stroke="#5A7A4A" strokeWidth="0.7" opacity="0.5" />
-          </pattern>
-        </defs>
-
-        {/* ── Phase 1: room shell — walls drawn in sequence like a hand sketch ── */}
-        <line x1="30" y1="385" x2="530" y2="385" stroke="var(--ink)" strokeWidth="2.5" style={penPath(500, 0, 1.35)} />
-        <line x1="50" y1="385" x2="50" y2="58" stroke="var(--ink)" strokeWidth="2" style={penPath(327, 0.35, 0.95)} />
-        <line x1="510" y1="385" x2="510" y2="58" stroke="var(--ink)" strokeWidth="2" style={penPath(327, 0.7, 0.95)} />
-        <line x1="50" y1="58" x2="510" y2="58" stroke="var(--ink)" strokeWidth="2" style={penPath(460, 1.05, 1.2)} />
-
-        {/* ── Phase 2: furniture — outlines first, hatch settles after ── */}
-        <rect x="114" y="296" width="214" height="89" fill="none" stroke="var(--ink)" strokeWidth="1.3" style={penPath(606, 1.85, 1.4)} />
-        <rect x="114" y="296" width="214" height="89" fill="url(#hatch-cov)" stroke="none" style={penFill(3.0)} />
-        <rect x="114" y="262" width="214" height="40" fill="none" stroke="var(--ink)" strokeWidth="1" style={penPath(508, 2.0, 1.15)} />
-        <rect x="114" y="262" width="214" height="40" fill="var(--paper-2)" stroke="none" style={penFill(2.95)} />
-        <rect x="102" y="258" width="18" height="117" fill="none" stroke="var(--ink)" strokeWidth="0.9" style={penPath(270, 2.05, 0.65)} />
-        <rect x="102" y="258" width="18" height="117" fill="var(--paper-2)" stroke="none" style={penFill(2.85)} />
-        <rect x="328" y="258" width="18" height="117" fill="none" stroke="var(--ink)" strokeWidth="0.9" style={penPath(270, 2.1, 0.65)} />
-        <rect x="328" y="258" width="18" height="117" fill="var(--paper-2)" stroke="none" style={penFill(2.9)} />
-        <line x1="221" y1="296" x2="221" y2="385" stroke="var(--ink)" strokeWidth="0.5" style={penPathQuick(89, 3.15, 0.22)} />
-
-        <rect x="362" y="268" width="143" height="117" fill="none" stroke="var(--ink)" strokeWidth="1.2" style={penPath(520, 1.9, 1.15)} />
-        <line x1="362" y1="314" x2="505" y2="314" stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="4 4" style={penFill(3.05)} />
-        <line x1="362" y1="346" x2="505" y2="346" stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="4 4" style={penFill(3.05)} />
-        <rect x="382" y="184" width="104" height="78" rx="1" fill="none" stroke="var(--ink)" strokeWidth="1" style={penPath(364, 2.25, 0.85)} />
-        <rect x="382" y="184" width="104" height="78" rx="1" fill="var(--ink)" stroke="none" style={penFill(3.1)} />
-        <text x="434" y="228" textAnchor="middle" fontFamily="var(--fm)" fontSize="8" letterSpacing="0.14em" fill="var(--paper)" style={penLabel(3.35, 0.35)}>55&Prime;</text>
-        <line x1="434" y1="262" x2="434" y2="268" stroke="var(--ink)" strokeWidth="0.8" style={penFill(3.0, 0.2)} />
-
-        <rect x="60" y="168" width="52" height="110" fill="none" stroke="var(--terra)" strokeWidth="1.6" style={penPath(324, 2.15, 0.8)} />
-        <rect x="60" y="168" width="52" height="110" fill="url(#hatch-terra-cov)" stroke="none" style={penFill(3.05)} />
-        <line x1="60" y1="196" x2="112" y2="196" stroke="var(--terra)" strokeWidth="0.9" style={penPathQuick(52, 3.1, 0.14)} />
-        <circle cx="86" cy="228" r="5" fill="var(--terra)" style={penFill(3.25, 0.25)} />
-        <circle cx="86" cy="228" r="2.5" fill="var(--paper)" style={penFill(3.3, 0.2)} />
-        <text x="18" y="210" fontFamily="var(--fm)" fontSize="6.5" letterSpacing="0.16em" fill="var(--terra-dk)" style={penLabel(3.4, 0.4)}>MANDIR</text>
-
-        <line x1="222" y1="58" x2="222" y2="148" stroke="var(--ink)" strokeWidth="0.9" style={penPathQuick(90, 2.3, 0.28)} />
-        <path d="M 198 148 L 246 148 L 238 172 L 206 172 Z" fill="none" stroke="var(--ink)" strokeWidth="1" style={penPath(131, 2.55, 0.38)} />
-        <path d="M 198 148 L 246 148 L 238 172 L 206 172 Z" fill="var(--paper-3)" stroke="none" style={penFill(3.05)} />
-        <ellipse cx="222" cy="295" rx="58" ry="9" fill="var(--terra)" style={penFill(3.15, 0.5)} />
-
-        <path d="M 462 350 Q 438 312 476 290 Q 514 312 490 350" fill="none" stroke="#5A7A4A" strokeWidth="1.3" style={penPath(150, 2.65, 0.42)} />
-        <path d="M 462 350 Q 438 312 476 290 Q 514 312 490 350" fill="url(#hatch-leaf-cov)" stroke="none" style={penFill(3.2)} />
-        <rect x="463" y="350" width="26" height="35" fill="none" stroke="#5A7A4A" strokeWidth="1" style={penPath(122, 2.85, 0.34)} />
-
-        {/* ── Phase 3: dimensions + marginalia (after structure is drawn) ── */}
-        <g>
-          <line x1="22" y1="58" x2="22" y2="385" stroke="var(--ink-3)" strokeWidth="0.5" style={penPath(327, 3.2, 0.55)} />
-          <line x1="17" y1="58" x2="27" y2="58" stroke="var(--ink-3)" strokeWidth="0.5" style={penPathQuick(10, 3.35, 0.12)} />
-          <line x1="17" y1="385" x2="27" y2="385" stroke="var(--ink-3)" strokeWidth="0.5" style={penPathQuick(10, 3.4, 0.12)} />
-          <text x="14" y="222" textAnchor="middle" fontFamily="var(--fm)" fontSize="8" fill="var(--ink-3)" transform="rotate(-90, 14, 222)" letterSpacing="0.1em" style={penLabel(3.55)}>10&apos;-0&quot; CEIL.</text>
-        </g>
-
-        {/* Mandir callout — left margin, clear of TV */}
-        <g>
-          <line x1="118" y1="178" x2="138" y2="178" stroke="var(--terra-dk)" strokeWidth="0.7" style={penPathQuick(20, 3.65, 0.15)} />
-          <line x1="138" y1="178" x2="138" y2="152" stroke="var(--terra-dk)" strokeWidth="0.7" style={penPathQuick(26, 3.75, 0.18)} />
-          <circle cx="138" cy="152" r="2" fill="var(--terra-dk)" style={penFill(3.85, 0.2)} />
-          <text x="142" y="156" fontFamily="var(--fd)" fontStyle="italic" fontSize="10.5" fill="var(--terra-dk)" style={penLabel(3.9)}>morning sun</text>
-        </g>
-
-        {/* Sofa note — above title block */}
-        <g>
-          <line x1="221" y1="398" x2="221" y2="386" stroke="var(--ink-2)" strokeWidth="0.7" style={penPathQuick(12, 4.05, 0.12)} />
-          <text x="52" y="408" fontFamily="var(--fd)" fontStyle="italic" fontSize="11.5" fill="var(--ink-2)" style={penLabel(4.15)}>9&apos; sofa — movie nights</text>
-        </g>
-
-        {/* Title block — bottom margin, single column to avoid overlap */}
-        <g>
-          <line x1="30" y1="468" x2="530" y2="468" stroke="var(--ink-3)" strokeWidth="0.4" style={penPath(500, 4.35, 0.7)} />
-          <line x1="30" y1="468" x2="30" y2="498" stroke="var(--ink-3)" strokeWidth="0.4" style={penPathQuick(30, 4.5, 0.15)} />
-          <line x1="530" y1="468" x2="530" y2="498" stroke="var(--ink-3)" strokeWidth="0.4" style={penPathQuick(30, 4.55, 0.15)} />
-          <line x1="30" y1="498" x2="530" y2="498" stroke="var(--ink-3)" strokeWidth="0.4" style={penPath(500, 4.65, 0.55)} />
-          <text x="42" y="486" fontFamily="var(--fm)" fontSize="7.5" fill="var(--ink-3)" letterSpacing="0.12em" style={penLabel(4.85)}>SECTION A–A · LIVING ROOM · 1:32</text>
-          <text x="42" y="512" fontFamily="var(--fd)" fontSize="9" fontWeight="600" fill="var(--ink-2)" letterSpacing="0.05em" style={penLabel(5.0)}>NIRMIT</text>
-          <text x="108" y="512" fontFamily="var(--fb)" fontSize="7.5" fill="var(--ink-3)" style={penLabel(5.15)}>drawn for your family</text>
-        </g>
-      </svg>
+    <div
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      style={{ width: "100%", maxWidth: 480, position: "relative" }}
+    >
+      <div style={{ animation: "heroBreathe 9s ease-in-out infinite" }}>
+        <CoverSectionDrawing parallax={parallax} />
+      </div>
     </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CoverSectionDrawing — architectural section through a living room,
+   composed in Nirmit's paper-and-ink language. Everything floats on the
+   page: subtle pen strokes, eyebrow caps, italic Playfair display, the
+   occasional terra accent. No card, no frame, no vignette overlay —
+   those things belong to UI; this is a drawing.
+
+   Composition (viewBox 560 × 528, free composition):
+     - Room shell drawn at y 80→420 — walls thinner (1.5) than the
+       original so they read as a CONTAINER, not a competitor.
+     - Furniture in the middle layer — sofa, TV+screen, mandir niche,
+       hanging light, plant. The original cast.
+     - Two annotations live in MARGINS, never on the furniture:
+       "morning sun" above the mandir, "9' sofa · movie nights" below
+       the room.
+     - The title block at the bottom is JUST a horizontal rule + text
+       (eyebrow + brand line). No box around it.
+     - A single ceiling-height dimension on the left margin.
+
+   Octopath-Traveler-style depth — diorama parallax that respects the
+   paper-and-ink language:
+     - Three depth layers (BACK shells, MID furniture, FRONT marginalia)
+       drift different amounts on cursor. The drawing feels like a
+       stage you're tilting, not a flat sticker.
+     - feDropShadow lifts the furniture off the page (dy=3.5, σ=1.6).
+       Each piece reads as a small object placed on the paper.
+     - All text in the front layer; no CSS rotate, no filter on text.
+       Glyphs stay at integer pixels, crisp.
+───────────────────────────────────────────────────────────────────────── */
+function CoverSectionDrawing({ parallax }: { parallax: { px: number; py: number } }) {
+  // Per-layer parallax. Back barely moves (deep walls), mid drifts
+  // moderately (furniture diorama), front drifts most (annotations).
+  const tB = `translate(${(-parallax.px * 4).toFixed(2)} ${(-parallax.py * 2).toFixed(2)})`;
+  const tM = `translate(${(-parallax.px * 10).toFixed(2)} ${(-parallax.py * 6).toFixed(2)})`;
+  const tF = `translate(${(-parallax.px * 16).toFixed(2)} ${(-parallax.py * 10).toFixed(2)})`;
+  const layerStyle = { transition: "transform .5s cubic-bezier(0.22, 1, 0.36, 1)" };
+
+  return (
+    <svg
+      className="pen-svg"
+      viewBox="0 0 560 540"
+      width="100%"
+      shapeRendering="geometricPrecision"
+      style={{ overflow: "visible" }}
+    >
+      <defs>
+        <pattern id="hatch-cov" x="0" y="0" width="7" height="7"
+          patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink)" strokeWidth="0.6" opacity="0.35" />
+        </pattern>
+        <pattern id="hatch-terra-cov" x="0" y="0" width="5" height="5"
+          patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="5" stroke="var(--terra)" strokeWidth="0.8" opacity="0.5" />
+        </pattern>
+        <pattern id="hatch-leaf-cov" x="0" y="0" width="5" height="5"
+          patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="5" stroke="#5A7A4A" strokeWidth="0.7" opacity="0.5" />
+        </pattern>
+
+        {/* Furniture drop-shadow. The HD-2D diorama cue — every piece
+            sits slightly proud of the page. */}
+        <filter id="furniture-lift" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="3.5" stdDeviation="1.6" floodColor="var(--ink)" floodOpacity="0.22" />
+        </filter>
+      </defs>
+
+      {/* ════════════════════════════════════════════════════════════════
+            BACK LAYER (slowest parallax): the room shell + dimension
+            tick. Deep in the scene; barely shifts with the cursor.
+         ════════════════════════════════════════════════════════════════ */}
+      <g transform={tB} style={layerStyle}>
+        {/* Room shell — four lines, drawn in sequence like a hand sketch */}
+        <line x1="60" y1="410" x2="500" y2="410" stroke="var(--ink)" strokeWidth="1.8" style={penPath(440, 0.2, 1.2)} />
+        <line x1="80" y1="410" x2="80" y2="80" stroke="var(--ink)" strokeWidth="1.5" style={penPath(330, 0.5, 0.95)} />
+        <line x1="480" y1="410" x2="480" y2="80" stroke="var(--ink)" strokeWidth="1.5" style={penPath(330, 0.8, 0.95)} />
+        <line x1="80" y1="80" x2="480" y2="80" stroke="var(--ink)" strokeWidth="1.5" style={penPath(400, 1.1, 1.1)} />
+
+        {/* Ceiling-height dimension tick — quietly in the left margin */}
+        <g>
+          <line x1="50" y1="80" x2="50" y2="410" stroke="var(--ink-3)" strokeWidth="0.4" style={penPath(330, 3.2, 0.55)} />
+          <line x1="46" y1="80" x2="54" y2="80" stroke="var(--ink-3)" strokeWidth="0.4" style={penPathQuick(8, 3.35, 0.12)} />
+          <line x1="46" y1="410" x2="54" y2="410" stroke="var(--ink-3)" strokeWidth="0.4" style={penPathQuick(8, 3.4, 0.12)} />
+          <text x="40" y="245" textAnchor="middle" fontFamily="var(--fm)" fontSize="9" fill="var(--ink-3)" transform="rotate(-90, 40, 245)" letterSpacing="0.14em" style={penLabel(3.55)}>10&apos;-0&quot;</text>
+        </g>
+      </g>
+
+      {/* ════════════════════════════════════════════════════════════════
+            MID LAYER (moderate parallax): all the furniture. SVG drop-
+            shadow lifts the whole group off the page — the Octopath
+            diorama depth.
+         ════════════════════════════════════════════════════════════════ */}
+      <g transform={tM} style={layerStyle} filter="url(#furniture-lift)">
+        {/* Sofa — body, back cushion, two armrests, centre divider */}
+        <rect x="142" y="318" width="200" height="84" fill="none" stroke="var(--ink)" strokeWidth="1.3" style={penPath(568, 1.85, 1.35)} />
+        <rect x="142" y="318" width="200" height="84" fill="url(#hatch-cov)" stroke="none" style={penFill(2.95)} />
+        <rect x="142" y="286" width="200" height="38" fill="none" stroke="var(--ink)" strokeWidth="1" style={penPath(476, 2.0, 1.1)} />
+        <rect x="142" y="286" width="200" height="38" fill="var(--paper-2)" stroke="none" style={penFill(2.9)} />
+        <rect x="130" y="282" width="16" height="120" fill="none" stroke="var(--ink)" strokeWidth="0.9" style={penPath(272, 2.05, 0.65)} />
+        <rect x="130" y="282" width="16" height="120" fill="var(--paper-2)" stroke="none" style={penFill(2.85)} />
+        <rect x="342" y="282" width="16" height="120" fill="none" stroke="var(--ink)" strokeWidth="0.9" style={penPath(272, 2.1, 0.65)} />
+        <rect x="342" y="282" width="16" height="120" fill="var(--paper-2)" stroke="none" style={penFill(2.9)} />
+        <line x1="242" y1="318" x2="242" y2="402" stroke="var(--ink)" strokeWidth="0.5" style={penPathQuick(84, 3.15, 0.22)} />
+
+        {/* TV cabinet + screen with size label */}
+        <rect x="374" y="290" width="100" height="112" fill="none" stroke="var(--ink)" strokeWidth="1.1" style={penPath(424, 1.9, 1.1)} />
+        <line x1="374" y1="328" x2="474" y2="328" stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="4 4" style={penFill(3.05)} />
+        <line x1="374" y1="362" x2="474" y2="362" stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="4 4" style={penFill(3.05)} />
+        <rect x="388" y="214" width="72" height="60" rx="1" fill="none" stroke="var(--ink)" strokeWidth="1" style={penPath(264, 2.25, 0.85)} />
+        <rect x="388" y="214" width="72" height="60" rx="1" fill="var(--ink)" stroke="none" style={penFill(3.1)} />
+        <text x="424" y="249" textAnchor="middle" fontFamily="var(--fm)" fontSize="9" letterSpacing="0.16em" fill="var(--paper)" style={penLabel(3.35, 0.35)}>55&Prime;</text>
+        <line x1="424" y1="274" x2="424" y2="290" stroke="var(--ink)" strokeWidth="0.8" style={penFill(3.0, 0.2)} />
+
+        {/* Mandir niche — the single terra accent in the drawing */}
+        <rect x="92" y="190" width="50" height="100" fill="none" stroke="var(--terra)" strokeWidth="1.6" style={penPath(300, 2.15, 0.8)} />
+        <rect x="92" y="190" width="50" height="100" fill="url(#hatch-terra-cov)" stroke="none" style={penFill(3.05)} />
+        <line x1="92" y1="216" x2="142" y2="216" stroke="var(--terra)" strokeWidth="0.9" style={penPathQuick(50, 3.1, 0.14)} />
+        <circle cx="117" cy="248" r="5" fill="var(--terra)" style={penFill(3.25, 0.25)} />
+        <circle cx="117" cy="248" r="2.4" fill="var(--paper)" style={penFill(3.3, 0.2)} />
+
+        {/* Hanging light — cord + cone */}
+        <line x1="280" y1="80" x2="280" y2="156" stroke="var(--ink)" strokeWidth="0.9" style={penPathQuick(76, 2.3, 0.28)} />
+        <path d="M 258 156 L 302 156 L 295 178 L 265 178 Z" fill="none" stroke="var(--ink)" strokeWidth="1" style={penPath(122, 2.55, 0.38)} />
+        <path d="M 258 156 L 302 156 L 295 178 L 265 178 Z" fill="var(--paper-3)" stroke="none" style={penFill(3.05)} />
+
+        {/* Sofa shadow ellipse — a small terra warmth under the sofa */}
+        <ellipse cx="242" cy="318" rx="56" ry="8" fill="var(--terra)" style={penFill(3.15, 0.5)} />
+
+        {/* Potted plant — bottom-right */}
+        <path d="M 432 366 Q 408 330 446 308 Q 484 330 460 366" fill="none" stroke="#5A7A4A" strokeWidth="1.3" style={penPath(150, 2.65, 0.42)} />
+        <path d="M 432 366 Q 408 330 446 308 Q 484 330 460 366" fill="url(#hatch-leaf-cov)" stroke="none" style={penFill(3.2)} />
+        <rect x="433" y="366" width="26" height="32" fill="none" stroke="#5A7A4A" strokeWidth="1" style={penPath(116, 2.85, 0.34)} />
+      </g>
+
+      {/* ════════════════════════════════════════════════════════════════
+            FRONT LAYER (most parallax): two margin annotations + brand
+            line. Pure paper-and-ink — eyebrow caps, italic Playfair, no
+            container, no rules around the text. Everything floats.
+         ════════════════════════════════════════════════════════════════ */}
+      <g transform={tF} style={layerStyle}>
+        {/* "morning sun" annotates the mandir from above. Solid leader
+              line (the design-language convention everywhere else in the
+              app — never dashed), ending in a small filled circle. */}
+        <g>
+          <line x1="118" y1="62" x2="118" y2="190" stroke="var(--terra-dk)" strokeWidth="0.7"
+            style={penPath(128, 3.5, 0.5)} />
+          <circle cx="118" cy="190" r="2.4" fill="var(--terra-dk)" style={penFill(3.95, 0.2)} />
+          <text x="118" y="52" textAnchor="middle" fontFamily="var(--fd)" fontStyle="italic" fontSize="14" fill="var(--terra-dk)"
+            style={penLabel(3.85)}>morning sun</text>
+        </g>
+
+        {/* "9' sofa · movie nights" annotates the sofa from below. Same
+              language — a thin solid leader, italic Playfair label. */}
+        <g>
+          <line x1="242" y1="410" x2="242" y2="438" stroke="var(--ink-2)" strokeWidth="0.7"
+            style={penPath(28, 4.0, 0.3)} />
+          <circle cx="242" cy="410" r="2.4" fill="var(--ink-2)" style={penFill(4.2, 0.2)} />
+          <text x="242" y="454" textAnchor="middle" fontFamily="var(--fd)" fontStyle="italic" fontSize="14" fill="var(--ink-2)"
+            style={penLabel(4.1)}>9&apos; sofa · movie nights</text>
+        </g>
+
+        {/* Brand line at the bottom — just an eyebrow + italic tagline.
+              No box, no rule, no border. The same shape every Nirmit
+              footer uses (.eyebrow + italic Playfair). */}
+        <text x="60" y="498" fontFamily="var(--fm)" fontSize="10.5" fill="var(--ink-3)" letterSpacing="0.22em"
+          style={penLabel(4.45)}>SECTION · LIVING ROOM · 1:32</text>
+        <text x="60" y="528" fontFamily="var(--fd)" fontSize="17" fontWeight="600" fill="var(--ink-2)" letterSpacing="0.03em"
+          style={penLabel(4.6)}>Nirmit</text>
+        <text x="118" y="528" fontFamily="var(--fd)" fontStyle="italic" fontSize="14" fill="var(--ink-3)"
+          style={penLabel(4.7)}>— drawn for your family</text>
+      </g>
+    </svg>
   );
 }
 

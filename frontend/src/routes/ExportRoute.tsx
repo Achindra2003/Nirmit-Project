@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import type { ExportRequest } from "@/api/types";
+import type { ExportRequest, RoomState } from "@/api/types";
 import { api } from "@/api/client";
 import { useAppStore } from "@/store/useAppStore";
 import { TopNav } from "@/components/shell/TopNav";
+import { Planner2D } from "@/components/Planner2D";
+import { SceneSnapshot } from "@/three/SceneSnapshot";
 
 interface LanguageInfo {
   code: string;
@@ -67,6 +69,10 @@ export function ExportRoute() {
   const [selected, setSelected] = useState<ExportOption>("pdf");
   const [saving, setSaving]     = useState(false);
   const [savedId, setSavedId]   = useState<string | null>(null);
+  // Captured 3D render dataURL, embedded as <img> in the document and the
+  // share card so html2canvas can rasterise it cleanly (WebGL canvases are
+  // unreliable to capture directly).
+  const [sceneImg, setSceneImg] = useState<string | null>(null);
   const boqRef = useRef<HTMLDivElement>(null);
   const waRef  = useRef<HTMLDivElement>(null);
 
@@ -221,6 +227,15 @@ export function ExportRoute() {
   return (
     <div className="paper" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
 
+      {/* Hidden 3D snapshot probe — renders the room off-screen, captures the
+       *  canvas once GLBs have loaded, then unmounts itself by virtue of
+       *  sceneImg flipping to truthy. The captured dataURL embeds in the BOQ
+       *  doc and the WhatsApp card as an <img>, which html2canvas captures
+       *  reliably (WebGL canvases don't always rasterise cleanly). */}
+      {!sceneImg && vision && (
+        <SceneSnapshot room={vision.room_state} onCapture={setSceneImg} />
+      )}
+
       {/* Header */}
       <TopNav
         stage="export"
@@ -308,6 +323,8 @@ export function ExportRoute() {
               wFt={wFt}
               dFt={dFt}
               furnitureCount={boq.furniture.length}
+              room={vision.room_state}
+              sceneImg={sceneImg}
             />
           ) : (
             <div ref={boqRef} className="card-inset" style={{ maxWidth: 740, margin: "0 auto", background: "var(--paper)" }}>
@@ -339,6 +356,11 @@ export function ExportRoute() {
                 <SummaryCell label="Total" value={hidePrices ? REDACTED : `₹${(boq.grand_total_inr / 100000).toFixed(2)}L`} accent />
                 <SummaryCell label="Remaining" value={hidePrices ? REDACTED : (() => { const r = vision.room_state.intake.budget_inr - boq.grand_total_inr; return `${r >= 0 ? "+" : "−"}${formatAmount(Math.abs(r))}`; })()} />
               </div>
+
+              {/* Drawings — 3D perspective + 2D plan side-by-side. The
+                  carpenter / contractor reads the plan; the family looks at
+                  the perspective. Both are essential to the document. */}
+              <DrawingsBlock room={vision.room_state} sceneImg={sceneImg} />
 
               {/* Furniture BOQ */}
               <div style={{ marginBottom: 28 }}>
@@ -616,7 +638,7 @@ function SummaryCell({ label, value, accent }: { label: string; value: string; a
  * Nirmit-branded keepsake, not a marketing flyer.
  */
 function WhatsAppCard({
-  outerRef, roomName, tagline, philosophy, roomType, city, grandTotal, wFt, dFt, furnitureCount,
+  outerRef, roomName, tagline, philosophy, roomType, city, grandTotal, wFt, dFt, furnitureCount, room, sceneImg,
 }: {
   outerRef: React.RefObject<HTMLDivElement>;
   roomName: string;
@@ -628,6 +650,8 @@ function WhatsAppCard({
   wFt: string;
   dFt: string;
   furnitureCount: number;
+  room: RoomState;
+  sceneImg: string | null;
 }) {
   const philosophyLabel = philosophy.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const roomLabel = roomType.charAt(0).toUpperCase() + roomType.slice(1);
@@ -643,53 +667,144 @@ function WhatsAppCard({
           aspectRatio: "4 / 5",
           background: "var(--paper)",
           border: "1px solid var(--line)",
-          padding: "44px 44px 38px",
+          padding: "32px 36px 28px",
           display: "flex",
           flexDirection: "column",
           position: "relative",
           boxShadow: "0 4px 18px rgba(0,0,0,.08)",
         }}
       >
-        {/* Logotype */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 32 }}>
-          <span style={{ fontFamily: "var(--fd)", fontSize: 24, fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.01em", lineHeight: 1 }}>Nirmit</span>
-          <span style={{ fontFamily: "var(--fh)", fontSize: 14, color: "var(--ink)", opacity: 0.5, lineHeight: 1 }}>निर्मित</span>
+        {/* Logotype + room name on one row to save vertical space for the
+         *  3D hero image below */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.01em", lineHeight: 1 }}>Nirmit</span>
+            <span style={{ fontFamily: "var(--fh)", fontSize: 13, color: "var(--ink)", opacity: 0.5, lineHeight: 1 }}>निर्मित</span>
+          </div>
+          <span style={{ fontFamily: "var(--fm)", fontSize: 8, letterSpacing: "0.16em", color: "var(--ink-3)", textTransform: "uppercase" as const }}>
+            Designed for our home
+          </span>
         </div>
 
-        {/* Centre block */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <span className="eyebrow" style={{ marginBottom: 14 }}>Designed for our home</span>
-          <h2 style={{ fontFamily: "var(--fd)", fontSize: 44, fontWeight: 500, lineHeight: 1.05, color: "var(--ink)", letterSpacing: "-0.02em", marginBottom: 8 }}>
-            {roomName}
-          </h2>
-          <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 16, color: "var(--ink-2)", marginBottom: 28, lineHeight: 1.4 }}>
-            {tagline}
-          </p>
+        {/* 3D hero — fills the upper visual zone. The captured frame is
+         *  4:3; the share-card cell intentionally matches that ratio so
+         *  `objectFit: contain` shows the entire render edge-to-edge
+         *  without cropping the ceiling or the floor. Falls back to the
+         *  2D plan if the 3D capture isn't ready. */}
+        <div style={{ position: "relative" as const, width: "100%", aspectRatio: "4 / 3", marginBottom: 16, overflow: "hidden", border: "1px solid var(--line)", background: "var(--paper-2)", display: "grid", placeItems: "center", padding: 6 }}>
+          {sceneImg ? (
+            <img src={sceneImg} alt={`3D render of ${roomName}`} style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto", objectFit: "contain", display: "block" }} />
+          ) : (
+            <PlanThumb room={room} />
+          )}
+        </div>
 
-          <div style={{ display: "flex", gap: 24, marginBottom: 24 }}>
-            <ShareStat label="Room" value={`${roomLabel} · ${wFt}×${dFt} ft`} />
-            <ShareStat label="Vibe" value={philosophyLabel} />
-          </div>
-          <div style={{ display: "flex", gap: 24 }}>
-            <ShareStat label="City" value={city} />
-            <ShareStat label="Pieces" value={String(furnitureCount)} />
-          </div>
+        {/* Room name + tagline */}
+        <h2 style={{ fontFamily: "var(--fd)", fontSize: 32, fontWeight: 500, lineHeight: 1.04, color: "var(--ink)", letterSpacing: "-0.02em", marginBottom: 4 }}>
+          {roomName}
+        </h2>
+        <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 13, color: "var(--ink-2)", marginBottom: 16, lineHeight: 1.4 }}>
+          {tagline}
+        </p>
+
+        <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
+          <ShareStat label="Room" value={`${roomLabel} · ${wFt}×${dFt} ft`} />
+          <ShareStat label="Vibe" value={philosophyLabel} />
+          <ShareStat label="City" value={city} />
         </div>
 
         {/* Footer: grand total + tagline */}
-        <div style={{ marginTop: 28, borderTop: "1px solid var(--line)", paddingTop: 18, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <div style={{ marginTop: "auto", borderTop: "1px solid var(--line)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <div>
-            <div style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.18em", color: "var(--ink-3)", textTransform: "uppercase" as const, marginBottom: 4 }}>Grand total</div>
-            <div style={{ fontFamily: "var(--fd)", fontSize: 28, fontWeight: 600, color: "var(--terra)", lineHeight: 1 }}>
+            <div style={{ fontFamily: "var(--fm)", fontSize: 8.5, letterSpacing: "0.18em", color: "var(--ink-3)", textTransform: "uppercase" as const, marginBottom: 3 }}>Grand total · {furnitureCount} pieces</div>
+            <div style={{ fontFamily: "var(--fd)", fontSize: 26, fontWeight: 600, color: "var(--terra)", lineHeight: 1 }}>
               ₹{(grandTotal / 100000).toFixed(2)}L
             </div>
           </div>
           <div style={{ textAlign: "right" as const }}>
-            <div style={{ fontFamily: "var(--fm)", fontSize: 8.5, color: "var(--ink-3)", letterSpacing: "0.14em" }}>BUILT FOR INDIAN HOMES</div>
-            <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 11, color: "var(--ink-3)", marginTop: 3 }}>nirmit.design</div>
+            <div style={{ fontFamily: "var(--fm)", fontSize: 8, color: "var(--ink-3)", letterSpacing: "0.14em" }}>BUILT FOR INDIAN HOMES</div>
+            <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 10, color: "var(--ink-3)", marginTop: 2 }}>nirmit.design</div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Drawings block — embedded inside the quotation/contractor BOQ.
+ * 3D perspective on the left, top-down floor plan on the right. Both are
+ * essential: the family looks at the perspective, the carpenter reads the
+ * plan. While the 3D snapshot is still capturing, we show a placeholder
+ * that mirrors the final layout so the page doesn't reflow on capture. */
+function DrawingsBlock({ room, sceneImg }: { room: RoomState; sceneImg: string | null }) {
+  // Each cell is a fixed height with the visual using `contain` to fit
+  // entirely — the earlier `aspectRatio: 4/3` + `objectFit: cover` combo
+  // cropped the 3D image at top/bottom (whenever the cell ended up wider
+  // than 4:3) and forced the Planner2D SVG to overflow into hidden space.
+  // 280px is tall enough that the room reads at a glance and short enough
+  // that the document still fits on one A4 page after the BOQ rows.
+  const CELL_H = 280;
+  const cellWrap: React.CSSProperties = {
+    height: CELL_H,
+    border: "1px solid var(--line)",
+    position: "relative",
+    overflow: "hidden",
+    display: "grid",
+    placeItems: "center",
+    padding: 8,
+  };
+  const cellLabel: React.CSSProperties = {
+    position: "absolute",
+    bottom: 8,
+    left: 10,
+    fontFamily: "var(--fm)",
+    fontSize: 9,
+    letterSpacing: "0.16em",
+    color: "var(--ink-3)",
+    textTransform: "uppercase",
+    background: "rgba(240,230,211,.85)",
+    padding: "2px 7px",
+  };
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <span className="eyebrow" style={{ display: "block", marginBottom: 14 }}>Drawings · Perspective &amp; Floor Plan</span>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {/* 3D — left. `objectFit: contain` shows the WHOLE captured frame
+            instead of cropping it to the cell aspect ratio. */}
+        <div style={{ ...cellWrap, background: "var(--paper-2)" }}>
+          {sceneImg ? (
+            <img
+              src={sceneImg}
+              alt="3D perspective of the room"
+              style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto", objectFit: "contain", display: "block" }}
+            />
+          ) : (
+            <div style={{ color: "var(--ink-3)", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 13 }}>
+              Rendering 3D view…
+            </div>
+          )}
+          <div style={cellLabel}>Perspective · 3D</div>
+        </div>
+        {/* 2D plan — right. Wraps Planner2D in a sized container with no
+            flex collapse weirdness; Planner2D's own
+            preserveAspectRatio="xMidYMid meet" letterboxes inside. */}
+        <div style={{ ...cellWrap, background: "var(--paper)" }}>
+          <PlanThumb room={room} />
+          <div style={cellLabel}>Floor plan · Top-down</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Thumbnail of Planner2D for the document. The earlier flex+maxHeight
+ * wrapper let the SVG render at its intrinsic height, which then exceeded
+ * the cell. Sized box + a direct child Planner2D lets preserveAspectRatio
+ * do the actual fitting. */
+function PlanThumb({ room }: { room: RoomState }) {
+  return (
+    <div style={{ width: "100%", height: "100%", lineHeight: 0 }}>
+      <Planner2D room={room} />
     </div>
   );
 }

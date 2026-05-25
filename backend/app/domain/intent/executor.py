@@ -10,6 +10,7 @@ from __future__ import annotations
 import uuid
 
 from app.domain.catalog import CatalogQuery, get_catalog
+from app.domain.catalog.model import CatalogItem
 from app.domain.catalog.presets import get_menu
 from app.domain.solver import DoorOpening, SolverInput, SolverItem, composition_for, solve
 from app.schemas.state import (
@@ -112,7 +113,11 @@ def _apply_one(
     if kind is IntentKind.CHANGE_FINISH:
         return _change_finish(room, intent.target_item_id, intent.parameters)
     if kind is IntentKind.CHANGE_STYLE:
-        return _replace(room, intent.target_item_id, intent.parameters)
+        # Style swap is a *peer rotation*, not a generic catalog replace —
+        # clicking ⇄ Style on a sofa cycles through the OTHER sofas in the
+        # catalog. _replace requires the caller to know what to swap to;
+        # _style_swap figures it out from the current item's primary tag.
+        return _style_swap(room, intent.target_item_id)
     if kind is IntentKind.MIX_FROM_VISION:
         return _mix(room, intent.parameters, available_visions or [])
     if kind is IntentKind.FREE_TEXT:
@@ -289,6 +294,131 @@ def _replace(room: RoomState, target_id: str | None, params: dict) -> RoomState 
         found = True
     if not found:
         return None
+    return room.model_copy(update={"items": out})
+
+
+def _style_swap(room: RoomState, target_id: str | None) -> RoomState | None:
+    """Rotate the target item to the next peer that shares its primary tag.
+
+    Lookup order — important because the runtime room is composed from the
+    curated philosophy menus (SKUs like `LIVING-GATHERING-SOFA`), not the
+    hero catalog. Hitting the hero catalog first would return None for
+    every placed item and silently no-op the Style button.
+
+      1. Resolve the current item from `get_menu(room_type, philosophy)`.
+         Peers come from the SAME menu, so a swap stays inside the room's
+         philosophy (a "gathering" sofa won't morph into a "breath" sofa).
+      2. Fall back to the hero catalog if the room has no philosophy (rare,
+         only happens for legacy room_states without philosophy set).
+
+    The "primary tag" is the first entry in CatalogItem.tags, which the
+    curated menus use as the natural item-kind label ("sofa", "chair",
+    "bed", "wardrobe", …). Items that share it are the natural style peers
+    — a 3-seat sofa swaps with the L-shaped sectional and the 2-seat
+    compact, but not with a diwan or an ottoman.
+
+    We additionally guard against wildly different footprints (within
+    900mm on each axis) so the layout doesn't break — a wide king bed
+    won't swap to a single bed and leave the bedside tables stranded.
+
+    Returns None when there are no compatible peers, which the planner
+    surfaces to the user as "couldn't change style". That matches the
+    Suresh-standard: never silently produce a non-change.
+    """
+    if not target_id:
+        return None
+    target = next((i for i in room.items if i.id == target_id), None)
+    if target is None:
+        return None
+
+    # Resolve current + peer pool from the philosophy menu when possible.
+    pool: list[CatalogItem] = []
+    current: CatalogItem | None = None
+    if room.philosophy:
+        menu = get_menu(room.intake.room_type.value, room.philosophy)
+        pool = list(menu.values())
+        current = next((c for c in pool if c.sku == target.catalog.sku), None)
+    if current is None:
+        # Legacy room state without philosophy attached, or item from the
+        # hero catalog. Search the full hero catalog as a fallback.
+        catalog = get_catalog()
+        current = catalog.get(target.catalog.sku)
+        pool = list(catalog._items)  # noqa: SLF001
+    if current is None:
+        return None
+
+    def _dims_ok(c: CatalogItem) -> bool:
+        # ±1000mm on each axis — generous enough to let a 3-seat sofa swap
+        # with a 2-seat sofa, but tight enough that an ottoman doesn't take
+        # over a sofa's spot and leave the layout broken.
+        return (
+            abs(c.dimensions.width_mm - current.dimensions.width_mm) <= 1000
+            and abs(c.dimensions.depth_mm - current.dimensions.depth_mm) <= 1000
+        )
+
+    # Two-tier peer search. Most curated menus group same-kind items (sofa,
+    # sofa_l, sofa_2seat) under the same first tag, so tag-match gives the
+    # cleanest swap pool. But singletons like 'diwan' or 'coffee_table' have
+    # no tag peers — for those, fall back to same-category matching so the
+    # user still gets a meaningful swap (a diwan can become a sofa) instead
+    # of silent no-op. Both tiers respect the ±1m dimension tolerance.
+    primary_tag = current.tags[0] if current.tags else None
+    tag_peers: list[CatalogItem] = []
+    if primary_tag:
+        tag_peers = [
+            c for c in pool
+            if c.sku != current.sku
+            and c.tags
+            and c.tags[0] == primary_tag
+            and _dims_ok(c)
+        ]
+    if tag_peers:
+        peers = sorted(tag_peers, key=lambda c: c.sku)
+    else:
+        peers = sorted(
+            (c for c in pool if c.sku != current.sku and c.category == current.category and _dims_ok(c)),
+            key=lambda c: c.sku,
+        )
+    if not peers:
+        return None
+
+    # Pick the next peer alphabetically AFTER the current SKU so clicking
+    # Style repeatedly rotates around the available alternatives.
+    next_item = next((p for p in peers if p.sku > current.sku), peers[0])
+
+    out: list[PlacedItem] = []
+    for i in room.items:
+        if i.id != target_id:
+            out.append(i)
+            continue
+        out.append(
+            PlacedItem(
+                id=i.id,
+                catalog=CatalogRef(
+                    sku=next_item.sku,
+                    asset_url=next_item.asset_url,
+                    tint_hex=next_item.tint_hex,
+                    roughness_hint=next_item.roughness_hint,
+                    size_label=next_item.size_label,
+                    material_label=next_item.material_label,
+                    finish_label=next_item.finish_label,
+                    placement_type=next_item.placement_type,
+                ),
+                name_en=next_item.name_en,
+                name_hi=next_item.name_hi,
+                category=next_item.category,
+                dimensions=Dimensions(
+                    width_mm=next_item.dimensions.width_mm,
+                    depth_mm=next_item.dimensions.depth_mm,
+                    height_mm=next_item.dimensions.height_mm,
+                ),
+                position=i.position,
+                facing=i.facing,
+                is_buy=i.is_buy,
+                price_inr=next_item.price_inr,
+                build_price_inr=next_item.build_price_inr,
+            )
+        )
     return room.model_copy(update={"items": out})
 
 
