@@ -1,32 +1,122 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/api/client";
-import type { ChatResponse, Intent, IntentKind, RoomState, Vision } from "@/api/types";
+import type { ChatResponse, Intent, IntentKind, RoomState } from "@/api/types";
 import { RoomScene, type CameraView } from "@/three/RoomScene";
 import { Planner2D } from "@/components/Planner2D";
 import { useAppStore } from "@/store/useAppStore";
 
 type ViewMode = "3d" | "2d";
 
-const SUGGESTIONS = ["Make the sofa bigger", "Add more storage", "Make it feel warmer", "Lighter and airier", "Add a study desk"];
+// Room-aware prompt presets. The chat panel picks the bucket for the active
+// room so a bedroom doesn't get "add a coffee table" and a study doesn't get
+// "more cushions". Falls back to GENERAL when the room_type isn't mapped.
+const PROMPTS_BY_ROOM: Record<string, string[]> = {
+  living:  ["Make it feel warmer",      "Add a reading nook",       "Bigger sofa, darker fabric", "Move the TV to the other wall", "Add more storage",       "Show me another style"],
+  bedroom: ["A softer, calmer feel",    "Add a small dressing area","Swap the wardrobe for something simpler", "Add a bedside lamp",     "More floor space",       "Show me another style"],
+  dining:  ["Seat one more person",     "Bring in a buffet",        "Lighter wood, less heavy",   "Add a pendant light",            "More room for the chairs", "Show me another style"],
+  study:   ["Make the desk feel bigger","Add a reading chair",      "More shelf space",           "Better lighting for screen work","Swap the chair for something taller", "Show me another style"],
+};
+const GENERAL_PROMPTS = ["Add more storage", "Make it feel warmer", "Lighter and airier", "Show me another style"];
+
+function suggestionsFor(roomType: string | undefined): string[] {
+  if (!roomType) return GENERAL_PROMPTS;
+  return PROMPTS_BY_ROOM[roomType] ?? GENERAL_PROMPTS;
+}
+
+// Friendly nouns for the catalog sub_categories the AI uses in suggestions.
+// Without this the AI cards show raw slugs like "tv_unit" or "lounge_chair".
+// Keyed by sub_category from backend/app/domain/catalog/presets/*.py.
+const ITEM_LABEL: Record<string, string> = {
+  accent_chair:  "an accent chair",
+  bed_king:      "a king bed",
+  bed_queen:     "a queen bed",
+  bench:         "a bench",
+  bookshelf:     "a bookshelf",
+  cabinet:       "a cabinet",
+  chest:         "a chest of drawers",
+  coffee_table:  "a coffee table",
+  desk:          "a desk",
+  desk_chair:    "a desk chair",
+  desk_lamp:     "a desk lamp",
+  dining_chair:  "a dining chair",
+  dining_table:  "a dining table",
+  diwan:         "a diwan",
+  dressing_table:"a dressing table",
+  fireplace:     "a fireplace",
+  floating_shelf:"a floating shelf",
+  lamp:          "a floor lamp",
+  lounge_chair:  "a lounge chair",
+  mirror:        "a mirror",
+  pendant_light: "a pendant light",
+  plant:         "a plant",
+  pouffe:        "a pouffe",
+  rug:           "a rug",
+  side_table:    "a side table",
+  sideboard:     "a sideboard",
+  sofa:          "a sofa",
+  sofa_l:        "an L-sofa",
+  tv_unit:       "a TV unit",
+  wall_art:      "wall art",
+  wardrobe:      "a wardrobe",
+};
+
+// Friendly verb-phrase for each intent kind. Keeps the AI cards readable
+// instead of the raw "Mix From Vision" / "Change Fabric" title-case.
+const INTENT_VERB: Record<string, string> = {
+  add:             "Add",
+  remove:          "Remove",
+  replace:         "Swap",
+  change_style:    "Swap style on",
+  change_fabric:   "Change fabric of",
+  change_finish:   "Change finish of",
+  duplicate:       "Duplicate",
+  rotate:          "Rotate",
+  move:            "Move",
+  make_bigger:     "Make bigger:",
+  make_smaller:    "Make smaller:",
+  recolor_room:    "Recolour the room",
+  mix_from_vision: "Borrow from another vision",
+  free_text:       "Adjust",
+};
+
+function humanLabel(intent: import("@/api/types").Intent, items: import("@/api/types").PlacedItem[]): string {
+  const sub  = typeof intent.parameters.sub_category === "string" ? intent.parameters.sub_category : null;
+  const sku  = typeof intent.parameters.sku === "string" ? intent.parameters.sku : null;
+  const verb = INTENT_VERB[intent.kind] ?? intent.kind.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  if (intent.kind === "add") {
+    // Catalog noun beats sub_category slug beats SKU slug. SKUs look like
+    // "blendswap_cc_0_couch" — we never want those in user-facing copy.
+    const noun = (sub && ITEM_LABEL[sub]) || (sub ? `a ${sub.replace(/_/g, " ")}` : null) || (sku ? "a piece" : "something");
+    return `Add ${noun}`;
+  }
+  if (intent.target_item_id) {
+    const target = items.find((i) => i.id === intent.target_item_id);
+    if (target?.name_en) return `${verb} ${target.name_en}`;
+  }
+  return verb;
+}
 
 export function PlannerRoute() {
-  const visions          = useAppStore((s) => s.visions);
-  const selectedVisionId = useAppStore((s) => s.selectedVisionId);
-  const setStage         = useAppStore((s) => s.setStage);
-  const setVisions       = useAppStore((s) => s.setVisions);
-  const selectVision     = useAppStore((s) => s.selectVision);
-  const selectedId       = useAppStore((s) => s.selectedItemId);
-  const setSelectedId    = useAppStore((s) => s.setSelectedItem);
-  const editMode         = useAppStore((s) => s.editMode);
-  const setEditMode      = useAppStore((s) => s.setEditMode);
-  const layoutEditMode   = useAppStore((s) => s.layoutEditMode);
-  const setLayoutEditMode = useAppStore((s) => s.setLayoutEditMode);
+  const visions             = useAppStore((s) => s.visions);
+  const selectedVisionId    = useAppStore((s) => s.selectedVisionId);
+  const setStage            = useAppStore((s) => s.setStage);
+  const patchActiveVision   = useAppStore((s) => s.patchActiveVision);
+  const selectedId          = useAppStore((s) => s.selectedItemId);
+  const setSelectedId       = useAppStore((s) => s.setSelectedItem);
+  const editMode            = useAppStore((s) => s.editMode);
+  const setEditMode         = useAppStore((s) => s.setEditMode);
+  const layoutEditMode      = useAppStore((s) => s.layoutEditMode);
+  const setLayoutEditMode   = useAppStore((s) => s.setLayoutEditMode);
 
   const baseVision = visions.find((v) => v.id === selectedVisionId) ?? visions[0];
 
-  const [room, setRoom]         = useState<RoomState | null>(baseVision?.room_state ?? null);
+  // Single source of truth for the room is the store's vision. Local React
+  // state is just a roomHistory ring for Undo — everything visible on the
+  // canvas reads from baseVision.room_state, so StyleRoute / ExportRoute see
+  // exactly what the user sees here.
+  const room: RoomState | null = baseVision?.room_state ?? null;
+  const budgetHeadline = baseVision?.cost.story.headline ?? "";
   const [roomHistory, setRoomHistory] = useState<RoomState[]>([]);
-  const [budgetHeadline, setBH] = useState(baseVision?.cost.story.headline ?? "");
   const [chat, setChat]         = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [draft, setDraft]       = useState("");
   const [sending, setSending]   = useState(false);
@@ -34,6 +124,9 @@ export function PlannerRoute() {
   const [viewMode, setViewMode] = useState<ViewMode>("2d");
   const [camView, setCamView]   = useState<CameraView>("corner");
   const [advisory, setAdvisory] = useState(false);
+  // Prompt-presets panel — collapsed by default so the chat stays focused on
+  // the conversation; user can expand when they want a nudge.
+  const [showPrompts, setShowPrompts] = useState(false);
   const [backendUp, setBackendUp] = useState(true);
   const [firstLookSuggestions, setFirstLookSuggestions] = useState<Intent[]>([]);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<number>>(new Set());
@@ -45,13 +138,12 @@ export function PlannerRoute() {
 
   useEffect(() => {
     if (baseVision) {
-      setRoom(baseVision.room_state);
-      setBH(baseVision.cost.story.headline);
       setChat([{
         role: "assistant",
         content: `${baseVision.reasoning.headline} Tap anything to select it — or just tell me what you'd change.`,
       }]);
       setSelectedId(null);
+      setRoomHistory([]);
     }
   }, [baseVision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -104,8 +196,9 @@ export function PlannerRoute() {
     try {
       const res = await api.apply({ room_state: room, intents: [intent], available_visions: visions });
       setRoomHistory((h) => [...h.slice(-19), before]);
-      setRoom(res.room_state);
-      setBH(res.cost.story.headline);
+      // Single write-path — every edit ends up in the store so cost downstream
+      // (StyleRoute, ExportRoute, header chip, footer chip) stays in sync.
+      patchActiveVision({ room_state: res.room_state, cost: res.cost });
       if (intent.kind === "remove") setSelectedId(null);
       if (echo) setChat((c) => [...c, { role: "user", content: echo }, { role: "assistant", content: `Done. ${res.cost.story.headline}` }]);
     } catch (e) {
@@ -114,12 +207,14 @@ export function PlannerRoute() {
   }
 
   function undo() {
-    setRoomHistory((h) => {
-      if (h.length === 0) return h;
-      const prev = h[h.length - 1];
-      setRoom(prev);
-      return h.slice(0, -1);
-    });
+    if (roomHistory.length === 0 || !room) return;
+    const prev = roomHistory[roomHistory.length - 1];
+    setRoomHistory((h) => h.slice(0, -1));
+    // Round-trip undo through /cost so the cost is recomputed for the prior
+    // room_state — otherwise the cost shown would lag behind by one step.
+    api.cost({ room_state: prev })
+      .then((c) => patchActiveVision({ room_state: prev, cost: c }))
+      .catch(() => patchActiveVision({ room_state: prev }));
   }
 
   useEffect(() => {
@@ -162,13 +257,13 @@ export function PlannerRoute() {
 
   function applyPending() {
     if (!pending?.proposed_room_state) return;
-    setRoom(pending.proposed_room_state);
+    const proposed = pending.proposed_room_state;
     setPending(null);
-    if (baseVision) {
-      const refreshed: Vision = { ...baseVision, room_state: pending.proposed_room_state };
-      setVisions(visions.map((v) => (v.id === baseVision.id ? refreshed : v)));
-      selectVision(baseVision.id);
-    }
+    // Round-trip /cost so the chat-applied change re-prices the room (avoids
+    // a stale headline after the user accepts a proposal).
+    api.cost({ room_state: proposed })
+      .then((c) => patchActiveVision({ room_state: proposed, cost: c }))
+      .catch(() => patchActiveVision({ room_state: proposed }));
   }
 
 
@@ -191,10 +286,27 @@ export function PlannerRoute() {
             />
           </div>
 
-          {/* Centre — room name + dims, flex-1 so it fills remaining space and centres naturally */}
-          <div style={{ flex: 1, display: "flex", alignItems: "baseline", justifyContent: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
+          {/* Centre — room name + dims. Room-size chip bumped from 10px/35%
+              opacity to 12px/65% with a subtle paper pill background so it's
+              legible at a glance. */}
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, minWidth: 0, overflow: "hidden" }}>
             <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 17, fontWeight: 500, color: "var(--paper)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{baseVision.name}</span>
-            <span style={{ fontFamily: "var(--fm)", fontSize: 10, color: "rgba(242,235,221,.35)", letterSpacing: "0.04em", flexShrink: 0 }}>{wFt}′-0″ × {dFt}′-0″</span>
+            <span
+              style={{
+                fontFamily: "var(--fm)",
+                fontSize: 12,
+                fontWeight: 500,
+                color: "rgba(242,235,221,.82)",
+                letterSpacing: "0.06em",
+                flexShrink: 0,
+                padding: "3px 10px",
+                background: "rgba(242,235,221,.08)",
+                border: "1px solid rgba(242,235,221,.18)",
+                borderRadius: 2,
+              }}
+            >
+              {wFt}′ × {dFt}′
+            </span>
           </div>
 
           {/* Right — 2D/3D toggle + controls */}
@@ -266,37 +378,45 @@ export function PlannerRoute() {
                 ↩ Undo
               </button>
             )}
-            {/* Annotative edit toggle */}
+            {/* Edit / Furniture / Size — solid pill buttons so they read as
+                affordances at a glance. Active state uses --leaf (green) for
+                Edit and a filled --terra background for the actions inside
+                edit mode. */}
             <button
               onClick={() => { setLayoutEditMode(!layoutEditMode); if (layoutEditMode) { setSelectedId(null); setShowCatalogue(false); } }}
               style={{
-                background: "transparent",
-                border: "none",
+                background: layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.08)",
+                border: `1px solid ${layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.28)"}`,
                 cursor: "pointer",
                 fontFamily: "var(--fb)",
-                fontSize: 11.5,
-                letterSpacing: "0.06em",
-                color: layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.55)",
-                borderBottom: `1px solid ${layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.2)"}`,
-                padding: "2px 0",
-                transition: "color .2s, border-color .2s",
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                color: layoutEditMode ? "var(--paper)" : "rgba(242,235,221,.88)",
+                padding: "6px 14px",
+                borderRadius: 3,
+                transition: "all .18s",
+                textTransform: "uppercase" as const,
               }}
             >
-              {layoutEditMode ? "✓ Done" : "Edit"}
+              {layoutEditMode ? "✓ Done editing" : "✎ Edit"}
             </button>
             {layoutEditMode && (
               <button
                 onClick={() => setShowCatalogue(v => !v)}
                 style={{
-                  background: showCatalogue ? "rgba(242,235,221,.1)" : "transparent",
-                  border: "1px solid rgba(242,235,221,.2)",
+                  background: showCatalogue ? "var(--terra)" : "rgba(184,67,42,.18)",
+                  border: `1px solid ${showCatalogue ? "var(--terra)" : "rgba(184,67,42,.42)"}`,
                   cursor: "pointer",
-                  fontFamily: "var(--fm)",
-                  fontSize: 10,
+                  fontFamily: "var(--fb)",
+                  fontSize: 12,
+                  fontWeight: 600,
                   letterSpacing: "0.08em",
-                  color: showCatalogue ? "var(--paper)" : "rgba(242,235,221,.45)",
-                  padding: "4px 10px",
-                  transition: "all .15s",
+                  color: showCatalogue ? "var(--paper)" : "rgba(242,235,221,.88)",
+                  padding: "6px 14px",
+                  borderRadius: 3,
+                  transition: "all .18s",
+                  textTransform: "uppercase" as const,
                 }}
               >
                 + Furniture
@@ -305,14 +425,18 @@ export function PlannerRoute() {
             <button
               onClick={() => setShowRoomEdit(v => !v)}
               style={{
-                background: "transparent",
-                border: "none",
+                background: showRoomEdit ? "rgba(242,235,221,.14)" : "transparent",
+                border: "1px solid rgba(242,235,221,.28)",
                 cursor: "pointer",
-                fontFamily: "var(--fm)",
-                fontSize: 10,
+                fontFamily: "var(--fb)",
+                fontSize: 12,
+                fontWeight: 500,
                 letterSpacing: "0.08em",
-                color: "rgba(242,235,221,.35)",
-                padding: "2px 0",
+                color: "rgba(242,235,221,.78)",
+                padding: "6px 12px",
+                borderRadius: 3,
+                transition: "all .18s",
+                textTransform: "uppercase" as const,
               }}
               title="Adjust room dimensions"
             >
@@ -327,6 +451,35 @@ export function PlannerRoute() {
           <div className="canvas-viewport-container" style={{ flex: 1, height: "100%", position: "relative" }}>
             <div className="canvas-corner-mark mark-tl">+</div>
             <div className="canvas-corner-mark mark-tr">+</div>
+            {/* EDIT MODE banner — small but unmistakable. Sits above the
+                canvas at the top centre while edit is active so the user
+                always knows whether their drags will register. */}
+            {layoutEditMode && (
+              <div
+                style={{
+                  position: "absolute" as const,
+                  top: 12,
+                  left: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "5px 12px 5px 8px",
+                  background: "var(--leaf)",
+                  color: "var(--paper)",
+                  fontFamily: "var(--fm)",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase" as const,
+                  zIndex: 10,
+                  borderRadius: 2,
+                  boxShadow: "0 2px 8px rgba(0,0,0,.25)",
+                }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--paper)" }} />
+                Edit mode · drag to move · double-click to rotate
+              </div>
+            )}
           {viewMode === "3d" ? (
             <RoomScene
               room={room}
@@ -385,8 +538,19 @@ export function PlannerRoute() {
               <button
                 onClick={() => {
                   if (!room) return;
-                  const updated = { ...room, intake: { ...room.intake, room_dimensions: { width_mm: roomW, depth_mm: roomD, height_mm: room.intake.room_dimensions.height_mm } } };
-                  setRoom(updated);
+                  const updated: RoomState = {
+                    ...room,
+                    intake: {
+                      ...room.intake,
+                      room_dimensions: { width_mm: roomW, depth_mm: roomD, height_mm: room.intake.room_dimensions.height_mm },
+                    },
+                  };
+                  // Re-price after dimension change (some line items scale with
+                  // floor area). Persist room + cost so all downstream screens
+                  // pick up the new size.
+                  api.cost({ room_state: updated })
+                    .then((c) => patchActiveVision({ room_state: updated, cost: c }))
+                    .catch(() => patchActiveVision({ room_state: updated }));
                   setShowRoomEdit(false);
                 }}
                 className="btn-primary"
@@ -411,12 +575,14 @@ export function PlannerRoute() {
                   : <CBtn onClick={() => setEditMode("move")} bold>↕ Move</CBtn>
               )}
               {layoutEditMode && <CBtn onClick={() => rotateItem(selected.id)}>↻ Rotate</CBtn>}
-              {layoutEditMode && <CBtn onClick={() => itemIntent("duplicate", "Duplicate")}>⧉ Dup</CBtn>}
-              {/* Intent actions — always available */}
-              <CBtn onClick={() => itemIntent("make_bigger", "Make bigger")}>＋</CBtn>
-              <CBtn onClick={() => itemIntent("make_smaller", "Make smaller")}>－</CBtn>
+              {layoutEditMode && <CBtn onClick={() => itemIntent("duplicate", "Duplicate")}>⧉ Duplicate</CBtn>}
+              {/* Intent actions — always available. The legacy +/- size
+                  buttons were dropped on 2026-05-25; resizing a single piece
+                  rarely matches what the user means by "make this bigger"
+                  (which is usually "pick a different SKU"). Style swap covers
+                  that path. */}
               <CBtn onClick={() => itemIntent("change_style", "Style")}>⇄ Style</CBtn>
-              <CBtn onClick={() => itemIntent("remove", "Remove")} danger>✕</CBtn>
+              <CBtn onClick={() => itemIntent("remove", "Remove")} danger>✕ Remove</CBtn>
               <button onClick={() => setSelectedId(null)} style={{ background: "transparent", border: "none", fontSize: 20, lineHeight: 1, color: "var(--ink-3)", cursor: "pointer", marginLeft: 2 }} aria-label="Deselect">×</button>
             </div>
           )}
@@ -436,11 +602,23 @@ export function PlannerRoute() {
           )}
         </div>
 
-        {/* Canvas footer */}
+        {/* Canvas footer — live cost. Reads structured cost.story directly
+            (not a parse of the headline string) so the number is always
+            current after a drag, intent, AI proposal, or material change. */}
         <div style={{ height: 56, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
             <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "rgba(242,235,221,.28)", letterSpacing: "0.12em" }}>ESTIMATE</span>
-            <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 500, color: "var(--terra)" }}>{budgetHeadline.split(" ")[0]}</span>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 600, color: "var(--terra)" }}>
+              ₹{Math.round((baseVision.cost.story.total_inr || 0) / 1000)}k
+            </span>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "rgba(242,235,221,.45)", letterSpacing: "0.08em" }}>
+              of ₹{Math.round((baseVision.cost.story.budget_inr || 0) / 1000)}k
+            </span>
+            {baseVision.cost.story.remaining_inr < 0 && (
+              <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "#E07A5F", letterSpacing: "0.08em" }}>
+                · ₹{Math.round(Math.abs(baseVision.cost.story.remaining_inr) / 1000)}k OVER
+              </span>
+            )}
           </div>
           <button
             className="btn-primary-dark"
@@ -538,9 +716,10 @@ export function PlannerRoute() {
             <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)" }}>SUGGESTED IMPROVEMENTS</span>
             {firstLookSuggestions.map((intent, i) => {
               if (dismissedSuggestions.has(i)) return null;
-              const label = intent.parameters.sku
-                ? `Add ${intent.parameters.sub_category || intent.parameters.sku}`
-                : intent.kind.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              // humanLabel: catalog-aware label so suggestions read like
+              // "Add a bookshelf" instead of "Add bookshelf" or worse the
+              // raw SKU "blendswap_cc_0_bookcase".
+              const label = humanLabel(intent, room.items);
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "var(--paper-3)", border: "1px solid var(--line)", borderLeft: "3px solid var(--terra)" }}>
                   <span style={{ flex: 1, fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.4 }}>{label}</span>
@@ -558,19 +737,32 @@ export function PlannerRoute() {
           </div>
         )}
 
-        {/* Suggestion chips */}
-        <div style={{ padding: "8px 20px 4px", display: "flex", flexWrap: "wrap" as const, gap: 6, flexShrink: 0, borderTop: "1px solid var(--line)" }}>
-          {SUGGESTIONS.map((s) => (
-            <div
-              key={s}
-              onClick={() => setDraft(s)}
-              style={{ padding: "6px 14px", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12.5, border: "1px solid var(--line)", cursor: "pointer", color: "var(--ink-2)", transition: "all .18s ease", whiteSpace: "nowrap" as const, borderRadius: 2 }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--terra)"; e.currentTarget.style.color = "var(--terra-dk)"; e.currentTarget.style.background = "rgba(194,80,46,.04)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.color = "var(--ink-2)"; e.currentTarget.style.background = "transparent"; }}
-            >
-              {s}
+        {/* Suggestion chips — collapsible, room-aware. Header is always
+            visible so the user knows the affordance exists; the chips
+            themselves are tucked away until they tap to expand. */}
+        <div style={{ flexShrink: 0, borderTop: "1px solid var(--line)" }}>
+          <button
+            onClick={() => setShowPrompts((v) => !v)}
+            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" as const }}
+          >
+            <span className="eyebrow">Try asking · {suggestionsFor(room?.intake.room_type).length}</span>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.1em" }}>{showPrompts ? "▲" : "▼"}</span>
+          </button>
+          {showPrompts && (
+            <div style={{ padding: "0 20px 10px", display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+              {suggestionsFor(room?.intake.room_type).map((s) => (
+                <div
+                  key={s}
+                  onClick={() => { setDraft(s); setShowPrompts(false); }}
+                  style={{ padding: "6px 14px", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12.5, border: "1px solid var(--line)", cursor: "pointer", color: "var(--ink-2)", transition: "all .18s ease", whiteSpace: "nowrap" as const, borderRadius: 2 }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--terra)"; e.currentTarget.style.color = "var(--terra-dk)"; e.currentTarget.style.background = "rgba(194,80,46,.04)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.color = "var(--ink-2)"; e.currentTarget.style.background = "transparent"; }}
+                >
+                  {s}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
 
         {/* Input */}

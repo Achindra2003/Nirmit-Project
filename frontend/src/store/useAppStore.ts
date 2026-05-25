@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Intake, Vision } from "@/api/types";
+import type { CostBreakdown, Intake, RoomState, Vision } from "@/api/types";
 
 export type Stage = "home" | "intake" | "generating" | "reveal" | "planner" | "style" | "export";
 
@@ -34,6 +34,14 @@ interface AppState {
   setEditMode: (m: EditMode) => void;
   setLayoutEditMode: (on: boolean) => void;
 
+  /**
+   * Single write-path for any change to the currently-selected vision —
+   * dragging an item, intent application, AI proposal, dimension change,
+   * material swap. Updates `visions[]` in place so StyleRoute and ExportRoute
+   * always read the latest room_state + cost without their own sync logic.
+   */
+  patchActiveVision: (patch: { room_state?: RoomState; cost?: CostBreakdown }) => void;
+
   reset: () => void;
 }
 
@@ -64,6 +72,21 @@ export const useAppStore = create<AppState>((set) => ({
       selectedItemId: on ? s.selectedItemId : null,
       editMode: on ? s.editMode : "browse",
     })),
+
+  patchActiveVision: (patch) =>
+    set((s) => {
+      if (!s.selectedVisionId) return {};
+      const next = s.visions.map((v) =>
+        v.id === s.selectedVisionId
+          ? {
+              ...v,
+              room_state: patch.room_state ?? v.room_state,
+              cost: patch.cost ?? v.cost,
+            }
+          : v,
+      );
+      return { visions: next };
+    }),
 
   reset: () =>
     set({

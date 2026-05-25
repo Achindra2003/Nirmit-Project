@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Intent, RoomState } from "@/api/types";
+import type { Intent } from "@/api/types";
 import { api } from "@/api/client";
 import { RoomScene } from "@/three/RoomScene";
 import { FinishingPanel } from "@/components/FinishingPanel";
@@ -8,13 +8,14 @@ import { useAppStore } from "@/store/useAppStore";
 type MaterialTab = "paint" | "flooring" | "lighting";
 
 export function StyleRoute() {
-  const visions          = useAppStore((s) => s.visions);
-  const selectedVisionId = useAppStore((s) => s.selectedVisionId);
-  const setStage         = useAppStore((s) => s.setStage);
-  const setVisions       = useAppStore((s) => s.setVisions);
+  const visions           = useAppStore((s) => s.visions);
+  const selectedVisionId  = useAppStore((s) => s.selectedVisionId);
+  const setStage          = useAppStore((s) => s.setStage);
+  const patchActiveVision = useAppStore((s) => s.patchActiveVision);
 
   const baseVision = visions.find((v) => v.id === selectedVisionId) ?? visions[0];
-  const [room, setRoom] = useState<RoomState | null>(baseVision?.room_state ?? null);
+  // Source of truth is the store; no local copy of the room here.
+  const room = baseVision?.room_state ?? null;
   const [tab, setTab]   = useState<MaterialTab>("paint");
 
   if (!baseVision || room === null) return (
@@ -26,12 +27,10 @@ export function StyleRoute() {
   async function applyFinishing(intent: Intent) {
     if (!room) return;
     try {
+      // /apply returns the new room_state AND the recomputed cost — both go
+      // into the store so the cost chip + ExportRoute pick it up immediately.
       const res = await api.apply({ room_state: room, intents: [intent], available_visions: visions });
-      setRoom(res.room_state);
-      const updated = visions.map((v) =>
-        v.id === baseVision!.id ? { ...v, room_state: res.room_state } : v
-      );
-      setVisions(updated);
+      patchActiveVision({ room_state: res.room_state, cost: res.cost });
     } catch (e) {
       console.warn("finishing apply failed", e);
     }
@@ -138,14 +137,18 @@ export function StyleRoute() {
             showAtmosphere
           />
 
-          {/* Cost impact badge */}
+          {/* Cost impact badge — live from the store; updates the moment a
+              finishing change is applied (paint, floor, lighting). */}
           <div className="floating-draft-panel" style={{
             bottom: "var(--s-5)", left: "50%", transform: "translateX(-50%)",
             display: "flex", alignItems: "baseline", gap: 12,
           }}>
             <span style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.1em" }}>ESTIMATE</span>
-            <span style={{ fontFamily: "var(--fd)", fontSize: 20, fontWeight: 600, color: "var(--terra)" }}>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 22, fontWeight: 600, color: "var(--terra)" }}>
               ₹{Math.round((baseVision.cost.story.total_inr || 0) / 1000)}k
+            </span>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.08em" }}>
+              of ₹{Math.round((baseVision.cost.story.budget_inr || 0) / 1000)}k
             </span>
           </div>
           </div>
