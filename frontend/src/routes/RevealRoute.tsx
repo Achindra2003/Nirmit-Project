@@ -153,8 +153,9 @@ export function RevealRoute() {
 
       <TopNav stage="reveal" hideTrail />
 
-      {/* Spread */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1.15fr 1fr", minHeight: 0 }}>
+      {/* Spread — `.reveal-body` is the responsive hook (tablet styles
+       *  in styles.css). */}
+      <div className="reveal-body" style={{ flex: 1, display: "grid", gridTemplateColumns: "1.15fr 1fr", minHeight: 0 }}>
 
         {/* LEFT — 3D canvas */}
         <div style={{ display: "flex", flexDirection: "column", minHeight: 0, position: "relative" }}>

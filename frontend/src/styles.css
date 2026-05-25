@@ -1161,3 +1161,122 @@ input[type=range]::-webkit-slider-thumb {
   display: inline-block;
   margin-top: var(--s-1);
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   Responsive — tablet (≤ 1100 px) and phone fallback (< 760 px).
+
+   Nirmit is a working surface (planner, BOQ, 3D scene); it's not
+   sized for phones. The tablet pass below makes the existing layouts
+   actually usable at iPad-sized viewports without rewriting routes.
+   The < 760px block shows a polite "use a larger screen" message
+   instead of letting things break.
+
+   Layout classes are applied per-route. Inline `style={...}` grids
+   still set the desktop default; the media-query rules below
+   override them on smaller viewports via `!important` (the only
+   reliable way to beat inline grid-template-columns).
+   ───────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  /* HomeRoute — hero copy + section drawing stack vertically */
+  .home-hero {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
+  .home-hero > div:first-child {
+    padding: 56px 40px 24px !important;
+  }
+  .home-hero > div:nth-child(2) {
+    padding: 0 40px 56px !important;
+    min-height: 480px;
+  }
+
+  /* IntakeRoute — question column above answer column */
+  .intake-body {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
+  .intake-body > div:first-child {
+    border-right: none !important;
+    border-bottom: 1px solid var(--line);
+    padding: 32px 40px !important;
+  }
+  .intake-body > div:nth-child(2) {
+    overflow: visible !important;
+  }
+
+  /* GeneratingRoute — narrower dark rail, smaller narration */
+  .generating-body {
+    grid-template-columns: 1fr 280px !important;
+  }
+  .generating-narration {
+    font-size: 24px !important;
+  }
+
+  /* RevealRoute — tighter columns; let it stay 2-up since each
+     vision card still earns its place */
+  .reveal-body {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* ExportRoute — narrow the option sidebar */
+  .export-body {
+    grid-template-columns: 280px 1fr !important;
+  }
+
+  /* Planner + Style — narrower right rail so the 3D canvas keeps
+     enough horizontal real estate */
+  .planner-shell {
+    grid-template-columns: 1fr 300px !important;
+  }
+  .planner-shell.ai-collapsed {
+    grid-template-columns: 1fr 44px !important;
+  }
+  .style-shell {
+    grid-template-columns: 300px 1fr !important;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Drop to a single column for the long planner experience too. The
+     side AI panel becomes a bottom drawer in this band — but the
+     simpler fallback for now is just a narrower stripe. */
+  .export-body {
+    grid-template-columns: 240px 1fr !important;
+  }
+  .planner-shell {
+    grid-template-columns: 1fr 260px !important;
+  }
+  .style-shell {
+    grid-template-columns: 260px 1fr !important;
+  }
+  .generating-body {
+    grid-template-columns: 1fr 240px !important;
+  }
+}
+
+/* Phone fallback — explicitly not supported. Show a paper-and-ink
+ * "use a larger screen" panel instead of letting the cramped grids
+ * ship broken. The .small-screen-gate element is rendered by
+ * <App />, layered on top via the css below; the actual layout
+ * underneath stays untouched in the DOM so resizing back to a
+ * tablet/desktop just hides the gate. */
+.small-screen-gate {
+  display: none;
+}
+
+@media (max-width: 759px) {
+  .small-screen-gate {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--paper);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    overflow: auto;
+  }
+}

@@ -57,7 +57,7 @@ export function GeneratingRoute() {
         <span className="eyebrow" style={{ color: "var(--ink-3)" }}>Drawing your room…</span>
       } />
 
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "3fr 340px", minHeight: 0 }}>
+      <div className="generating-body" style={{ flex: 1, display: "grid", gridTemplateColumns: "3fr 340px", minHeight: 0 }}>
 
         {/* Left — animated floor plan */}
         <div style={{ position: "relative", padding: "40px 24px 40px 56px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", background: "var(--paper)" }}>
@@ -106,7 +106,7 @@ export function GeneratingRoute() {
               Notes as we draw
             </span>
 
-            <div style={{ fontFamily: "var(--fd)", fontSize: 30, fontWeight: 600, lineHeight: 1.1, color: "rgba(242,235,221,.9)", minHeight: 88, transition: "opacity .4s ease" }}>
+            <div className="generating-narration" style={{ fontFamily: "var(--fd)", fontSize: 30, fontWeight: 600, lineHeight: 1.1, color: "rgba(242,235,221,.9)", minHeight: 88, transition: "opacity .4s ease" }}>
               {/* Single string at a time — earlier this rendered three
                *  conditionals side-by-side, so when the animation ended
                *  the "Almost there…" / "Three rooms are ready" line

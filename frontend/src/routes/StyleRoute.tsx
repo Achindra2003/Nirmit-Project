@@ -43,7 +43,7 @@ export function StyleRoute() {
   ];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "380px 1fr", width: "100%", height: "100vh", background: "var(--basalt)" }}>
+    <div className="style-shell" style={{ display: "grid", gridTemplateColumns: "380px 1fr", width: "100%", height: "100vh", background: "var(--basalt)" }}>
 
       {/* Left — materials panel */}
       <div style={{ display: "flex", flexDirection: "column", background: "var(--paper)", borderRight: "1px solid var(--line)", overflow: "hidden" }}>

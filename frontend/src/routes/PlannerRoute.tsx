@@ -355,7 +355,10 @@ export function PlannerRoute() {
 
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: aiOpen ? "1fr 380px" : "1fr 44px", width: "100%", height: "100vh", background: "var(--basalt)", transition: "grid-template-columns .28s ease" }}>
+    <div
+      className={`planner-shell${aiOpen ? "" : " ai-collapsed"}`}
+      style={{ display: "grid", gridTemplateColumns: aiOpen ? "1fr 380px" : "1fr 44px", width: "100%", height: "100vh", background: "var(--basalt)", transition: "grid-template-columns .28s ease" }}
+    >
 
       {/* ── LEFT: canvas ── */}
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>

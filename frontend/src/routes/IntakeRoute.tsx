@@ -166,8 +166,10 @@ export function IntakeRoute() {
         <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${((page + (ok[page] ? 1 : 0)) / 4) * 100}%`, background: "var(--terra)", transition: "width .5s ease", borderRadius: "0 2px 2px 0" }} />
       </div>
 
-      {/* Body */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.4fr", minHeight: 0 }}>
+      {/* Body — `.intake-body` is the responsive hook. Below 1100 px the
+       *  question column stacks above the answer column so each gets the
+       *  full viewport width. */}
+      <div className="intake-body" style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1.4fr", minHeight: 0 }}>
 
         {/* Left — question */}
         <div style={{ padding: "var(--s-8) var(--s-6) var(--s-6) var(--s-7)", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: "1px solid var(--line)" }}>

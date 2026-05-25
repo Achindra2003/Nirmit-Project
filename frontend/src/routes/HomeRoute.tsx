@@ -77,8 +77,12 @@ export function HomeRoute() {
     >
       <TopNav stage="home" hideTrail hideBack />
 
-      {/* Hero */}
+      {/* Hero — `.home-hero` is the responsive hook (see styles.css media
+       *  query): under 1100 px the two columns stack so the headline and
+       *  the section drawing each get the full width instead of being
+       *  crushed into half-and-half. */}
       <div
+        className="home-hero"
         style={{
           flexShrink: 0,
           minHeight: "calc(100vh - 64px)",

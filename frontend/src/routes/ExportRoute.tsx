@@ -252,8 +252,10 @@ export function ExportRoute() {
         }
       />
 
-      {/* Body */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "340px 1fr", minHeight: 0 }}>
+      {/* Body — `.export-body` shrinks the option sidebar from 340 to
+       *  280 (and 240 below 900px) so the BOQ preview keeps enough room
+       *  at tablet sizes. */}
+      <div className="export-body" style={{ flex: 1, display: "grid", gridTemplateColumns: "340px 1fr", minHeight: 0 }}>
 
         {/* LEFT — export options + cost */}
         <div style={{ borderRight: "1px solid var(--line)", display: "flex", flexDirection: "column", overflow: "auto" }}>
