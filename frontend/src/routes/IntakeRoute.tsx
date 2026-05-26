@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "@/api/client";
-import type { Direction, Intake, RoomType, Vibe } from "@/api/types";
+import type { Intake, RoomType, Vibe } from "@/api/types";
 import { useAppStore } from "@/store/useAppStore";
 import { TopNav } from "@/components/shell/TopNav";
 
@@ -83,7 +83,6 @@ export function IntakeRoute() {
   const [vibe, setVibe]       = useState<Vibe | null>(null);
   const [room, setRoom]       = useState<RoomType | null>(null);
   const [size, setSize]       = useState<string | null>(null);
-  const [entrance, setEntrance] = useState<Direction>("S");
   const [who, setWho]         = useState("");
   const [chips, setChips]     = useState<string[]>([]);
   const [budget, setBudget]   = useState(300_000);
@@ -118,10 +117,14 @@ export function IntakeRoute() {
     setError(null);
     const sizeObj = SIZES.find((s) => s.id === size);
     const effectiveCity = city === "Other" ? otherCity.trim() : city;
+    // entrance_direction defaults to "S" — the picker was removed from the
+    // intake wizard (2026-05-26) because most users don't know it off the top
+    // of their head and the cost/visuals don't materially change with it. The
+    // backend still requires the field, so we send the safe default.
     const intake: Intake = {
       room_type: room ?? "living",
       room_dimensions: { width_mm: sizeObj?.w_mm ?? 4200, depth_mm: sizeObj?.d_mm ?? 3600, height_mm: 3000 },
-      entrance_direction: entrance,
+      entrance_direction: "S",
       who_lives_here: who.trim() || chips.join(". "),
       vibe: vibe!,
       budget_inr: budget,
@@ -214,7 +217,7 @@ export function IntakeRoute() {
         <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div key={`a${page}`} className="slide-up" style={{ animationDelay: ".12s", flex: 1, overflowY: "auto", padding: "var(--s-7) var(--s-8) var(--s-5)" }}>
             {P.kind === "vibe"   && <VibeAnswer   vibe={vibe}     setVibe={setVibe} />}
-            {P.kind === "room"   && <RoomAnswer   room={room}     setRoom={setRoom} size={size} setSize={setSize} entrance={entrance} setEntrance={setEntrance} />}
+            {P.kind === "room"   && <RoomAnswer   room={room}     setRoom={setRoom} size={size} setSize={setSize} />}
             {P.kind === "who"    && <WhoAnswer    who={who}       setWho={setWho} chips={chips} toggleChip={toggleChip} />}
             {P.kind === "budget" && <BudgetAnswer budget={budget} setBudget={setBudget} city={city} setCity={setCity} otherCity={otherCity} setOtherCity={setOtherCity} />}
           </div>
@@ -264,7 +267,7 @@ export function IntakeRoute() {
 
 function VibeAnswer({ vibe, setVibe }: { vibe: Vibe | null; setVibe: (v: Vibe) => void }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+    <div className="vibe-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
       {VIBES.map((v) => {
         const sel = vibe === v.id;
         return (
@@ -319,10 +322,9 @@ function VibeAnswer({ vibe, setVibe }: { vibe: Vibe | null; setVibe: (v: Vibe) =
   );
 }
 
-function RoomAnswer({ room, setRoom, size, setSize, entrance, setEntrance }: {
+function RoomAnswer({ room, setRoom, size, setSize }: {
   room: RoomType | null; setRoom: (r: RoomType) => void;
   size: string | null; setSize: (s: string) => void;
-  entrance: Direction; setEntrance: (d: Direction) => void;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
@@ -344,7 +346,7 @@ function RoomAnswer({ room, setRoom, size, setSize, entrance, setEntrance }: {
       {/* Size */}
       <div>
         <span className="eyebrow">Size</span>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 14 }}>
+        <div className="size-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 14 }}>
           {SIZES.map((rs) => {
             const sel = size === rs.id;
             return (
@@ -357,22 +359,6 @@ function RoomAnswer({ room, setRoom, size, setSize, entrance, setEntrance }: {
                 <div style={{ fontFamily: "var(--fb)", fontSize: 15, fontWeight: 600, color: sel ? "var(--terra)" : "var(--ink)" }}>{rs.en}</div>
                 <div style={{ fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", marginTop: 3, letterSpacing: "0.08em" }}>{rs.dims}</div>
                 <div style={{ fontFamily: "var(--fb)", fontSize: 12, color: "var(--ink-3)", marginTop: 8, lineHeight: 1.4 }}>{rs.desc}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Entrance direction */}
-      <div>
-        <span className="eyebrow">Entrance faces</span>
-        <div style={{ display: "flex", gap: 0, marginTop: 14, borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
-          {(["N", "E", "S", "W"] as const).map((d, i) => {
-            const sel = entrance === d;
-            return (
-              <div key={d} onClick={() => setEntrance(d)} style={{ flex: 1, padding: "14px 10px", cursor: "pointer", textAlign: "center", borderLeft: i > 0 ? "1px solid var(--line)" : "none", background: sel ? "var(--ink)" : "transparent", color: sel ? "var(--paper)" : "var(--ink)", transition: "all .25s ease" }}>
-                <div style={{ fontFamily: "var(--fm)", fontSize: 14, fontWeight: 500, letterSpacing: "0.1em" }}>{d}</div>
-                <div style={{ fontSize: 12, marginTop: 3, opacity: 0.6 }}>{{ N: "North", E: "East", S: "South", W: "West" }[d]}</div>
               </div>
             );
           })}
@@ -445,7 +431,7 @@ function BudgetAnswer({ budget, setBudget, city, setCity, otherCity, setOtherCit
 
       <div>
         <span className="eyebrow">City</span>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, marginTop: 14, borderTop: "1px solid var(--line)", borderLeft: "1px solid var(--line)" }}>
+        <div className="city-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, marginTop: 14, borderTop: "1px solid var(--line)", borderLeft: "1px solid var(--line)" }}>
           {CITIES.map((c) => {
             const sel = city === c;
             return (

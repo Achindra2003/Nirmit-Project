@@ -157,8 +157,63 @@ VASTU rules:
 ACCESSIBILITY rules:
   • If "who_lives_here" mentions elderly, kids, or anyone with mobility needs, produce 1-2 accessibility notes. Otherwise empty.
 
+NAMING the scheme — this matters, get it right:
+  The name is a 2-4 word architect's title for ONE concrete physical feature
+  of the layout. Point at a wall, a corner, a piece, or what occupies the
+  centre. The reader should be able to walk into the room and find the thing
+  the name refers to.
+
+  GOOD names (each names something you can point at):
+    "The Long Wall"       — sofa runs the long edge
+    "The Wardrobe Run"    — wardrobe fills the long wall
+    "The Open Centre"     — the middle of the room stays empty
+    "The Mandir Niche"    — mandir tucked into a recessed corner
+    "The Reading Corner"  — chair + lamp claim one corner
+    "The Bed Wall"        — bed pushed against the long wall
+    "The Big Table"       — dining table dominates the room
+    "The Storage Stack"   — full-height cabinets line one wall
+    "The Window Seat"     — seating built into the window bay
+    "The Bookshelf Wall"  — books climb a wall behind the desk
+    "The Diwan Bed"       — bed doubles as a daytime sitting piece
+
+  BAD names — DO NOT do any of these:
+    "The Cozy Family Room"        ← "cozy" is a feeling, not a feature
+    "The Modern Living Layout"    ← "modern" describes nothing structural
+    "The Harmonious Space"        ← what is in the room?
+    "The Perfect Gathering Room"  ← banned word + abstract praise
+    "Smart Storage Solution"      ← marketing copy, no "The", says nothing
+    "The Beautiful Bedroom"       ← adjective is the user's job, not yours
+    "The Peaceful Retreat"        ← "retreat" is a brochure word
+    "The Family Haven"            ← "haven" is a brochure word
+    "The Ultimate Living Room"    ← superlatives are sales talk
+    "The Stylish Layout"          ← "stylish" tells the reader nothing
+
+  HARD RULES — break any and the name will be rejected:
+    1. Start with "The ".
+    2. 2-4 words total (including "The").
+    3. Use a concrete physical noun: Wall, Corner, Centre, Niche, Run, Stack,
+       Floor, Table, Bed, Sofa, Window, Seat, Shelf, Cabinet, Bay, Loop,
+       Spine, Edge. Plus an optional descriptor of WHERE (Long, Short, Open,
+       Closed, Quiet, Front, Back, North, Side).
+    4. NO feeling adjectives: cozy, warm, peaceful, harmonious, perfect,
+       ideal, premium, luxe, stylish, elegant, modern, contemporary, minimal,
+       beautiful, stunning, amazing, smart, clever, ultimate, perfect.
+    5. NEVER use: Gathering, Breath, Keeper, Studio, Bazaar, Shore. These
+       are intake-vibe labels — using them collides with the user's own pick.
+    6. The three vision names returned for one Generate must be DISTINCT
+       (different nouns / spatial moves). Don't return "The Long Wall" three
+       times with different palettes.
+
+  Tagline (one sentence, 6-12 words): name a person- or family-specific
+  consequence of the layout move the name captures. Example pairs:
+    name "The Long Wall"   →  tagline "Sofa runs the long edge — wide enough for the whole family on movie nights."
+    name "The Wardrobe Run" →  tagline "Floor-to-ceiling wardrobe hides every season's clothes behind one wall."
+    name "The Open Centre" →  tagline "Furniture hugs the walls so the centre stays clear from door to window."
+
 Output: ONLY valid JSON, no markdown, no commentary:
 {
+  "name": "2-4 words, the spatial move, e.g. 'The Long Wall'. Never use Gathering/Breath/Keeper.",
+  "tagline": "One sentence, 6-12 words, names a consequence for THIS household.",
   "headline": "One warm line, 6-12 words. e.g. 'Built for your family's evenings together.'",
   "bullets": ["3-5 specific reasons. Each cites a real placement (in words, never numbers) and ties to something the homeowner told us."],
   "vastu_notes": ["1-3 lines when Vastu was opted into, else []"],

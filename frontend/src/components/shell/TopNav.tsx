@@ -38,6 +38,7 @@ export function TopNav({ stage, dark = false, rightContent, hideTrail = false, h
 
   return (
     <div
+      className="top-nav"
       style={{
         height: 64,
         padding: "0 var(--s-6)",
@@ -53,7 +54,7 @@ export function TopNav({ stage, dark = false, rightContent, hideTrail = false, h
       }}
     >
       {/* Left: back + logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 200 }}>
+      <div className="top-nav-left" style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 200 }}>
         {!hideBack && backStage && (
           <button
             onClick={() => setStage(backStage)}
@@ -84,7 +85,7 @@ export function TopNav({ stage, dark = false, rightContent, hideTrail = false, h
       )}
 
       {/* Right: context actions */}
-      <div style={{ minWidth: 200, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
+      <div className="top-nav-right" style={{ minWidth: 200, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
         {rightContent}
       </div>
     </div>

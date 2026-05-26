@@ -18,11 +18,21 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "llama-3.3-70b-versatile"
     GROQ_API_KEY: str | None = None
 
-    # Generation pipeline — each vision used to trigger 2 LLM calls (style + ranker).
-    # Defaults keep Groq free-tier TPD usable; enable when you have headroom.
+    # Generation pipeline — each vision triggers up to 3 LLM calls (interpret +
+    # style + ranker). The ranker is now on by default because the deterministic
+    # vision names ("The Long Wall" / "The Open Centre" / "The Working Walls")
+    # felt repetitive across sessions — the LLM ranker generates fresh names +
+    # tagline + per-vision reasoning that actually references the household's
+    # specifics. Interpret + Style remain off because they're luxuries; the
+    # deterministic fallbacks for those are good enough.
+    #
+    # If you hit Groq quota issues, flip LLM_RANKER_ON_GENERATE back to False
+    # — the deterministic naming table + reasoning still ships a respectable
+    # baseline. The quota gate (LlmQuotaGate) also auto-disables LLM calls
+    # when the API starts refusing.
     LLM_INTERPRET_ON_GENERATE: bool = False
     LLM_STYLE_ON_GENERATE: bool = False
-    LLM_RANKER_ON_GENERATE: bool = False
+    LLM_RANKER_ON_GENERATE: bool = True
     ANTHROPIC_API_KEY: str | None = None
     OPENAI_API_KEY: str | None = None
 

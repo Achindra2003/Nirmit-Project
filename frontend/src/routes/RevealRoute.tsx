@@ -162,14 +162,10 @@ export function RevealRoute() {
           <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 0 }}>
             <RoomScene room={vision.room_state} view={view} warmthK={vision.room_state.lighting_kelvin ?? 3200} showAtmosphere />
 
-            {/* Caption overlay bottom-left */}
-            <div style={{ position: "absolute", left: 28, bottom: 28, opacity: show ? 1 : 0, transition: "opacity 1s ease .4s", pointerEvents: "none" }}>
-              <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "rgba(242,235,221,.55)", letterSpacing: "0.14em", textTransform: "uppercase" as const, display: "block", marginBottom: 6 }}>
-                {({ eye: "AS YOU WALK IN", corner: "ROOM VIEW", top: "FROM ABOVE", walk: "WALK THROUGH" } as const)[view]}
-              </span>
-              <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 22, fontWeight: 500, color: "var(--paper)" }}>{vision.name}</div>
-              <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "rgba(242,235,221,.6)", marginTop: 3 }}>{vision.tagline}</div>
-            </div>
+            {/* (The bottom-left ROOM VIEW / name / tagline caption overlay was
+                removed 2026-05-26 — the same name + tagline already lives in
+                the right-side info panel, so the overlay was redundant and
+                obscured part of the scene.) */}
 
             {/* View pills — bottom right */}
             <div style={{ position: "absolute", right: 24, bottom: 28, display: "flex", gap: 0, border: "1px solid rgba(242,235,221,.22)", background: "rgba(20,16,12,.55)", backdropFilter: "blur(10px)" }}>

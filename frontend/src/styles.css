@@ -1163,22 +1163,60 @@ input[type=range]::-webkit-slider-thumb {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Responsive — tablet (≤ 1100 px) and phone fallback (< 760 px).
+   Responsive system — tablet-up only.
 
-   Nirmit is a working surface (planner, BOQ, 3D scene); it's not
-   sized for phones. The tablet pass below makes the existing layouts
-   actually usable at iPad-sized viewports without rewriting routes.
-   The < 760px block shows a polite "use a larger screen" message
-   instead of letting things break.
+   Nirmit is a working surface (planner, BOQ, 3D scene). Phones are
+   explicitly out of scope — the .small-screen-gate panel at the
+   bottom of this file replaces the whole UI below 760px with a
+   "please use a larger screen" notice (the underlying routes stay
+   mounted, so resizing back lifts the gate without losing state).
 
-   Layout classes are applied per-route. Inline `style={...}` grids
-   still set the desktop default; the media-query rules below
-   override them on smaller viewports via `!important` (the only
-   reliable way to beat inline grid-template-columns).
+   Tablet tiers (760-1280) are tuned to feel deliberate, not just
+   "narrower desktop". Inline `style={...}` grids still set the
+   desktop default; the rules here override via `!important` (the
+   only reliable way to beat inline grid-template-columns).
+
+       · ≥ 1280px           Desktop default
+       · 1100-1280          Compact desktop (13" laptops)
+       · 900-1100           Large tablet landscape (iPad Pro)
+       · 760-900            Tablet portrait / small landscape
+       · < 760              Small-screen gate
    ───────────────────────────────────────────────────────────────── */
 
+/* ============== Compact desktop (≤ 1280px) ============== */
+@media (max-width: 1280px) {
+  /* Slightly tighter horizontal padding so the page-shell doesn't waste
+     real estate on 1366×768 / MacBook 13" screens. */
+  .page-shell       { padding: var(--s-6) var(--s-7) var(--s-7); }
+  .page-shell-tight { padding: var(--s-5) var(--s-6) var(--s-6); }
+
+  /* Working screens — sidebars KEEP their desktop width here. We used to
+     shrink them at 1280 to give the canvas a few extra px, but the chat
+     bubbles and material panels lost reading rhythm at narrower widths.
+     The canvas can give up a little; the panels can't. */
+  .planner-shell { grid-template-columns: 1fr 380px !important; }
+  /* When the collaborator is collapsed the canvas takes the full width —
+     the floating handle sits inside the canvas area, not a grid column. */
+  .planner-shell.ai-collapsed { grid-template-columns: 1fr !important; }
+  .style-shell   { grid-template-columns: 380px 1fr !important; }
+  .export-body   { grid-template-columns: 340px 1fr !important; }
+
+  /* Planner header actions — gap shrinks first; labels still visible. */
+  .planner-header-actions { gap: 12px !important; }
+  /* 2D/3D segmented toggle inside the actions cluster — tighter padding so
+     the cluster doesn't crowd the catalogue / size buttons. */
+  .planner-header-actions [role="tab"] { padding: 7px 16px !important; }
+}
+
+/* ============== Large tablet landscape (≤ 1100px) ============== */
 @media (max-width: 1100px) {
-  /* HomeRoute — hero copy + section drawing stack vertically */
+  /* TopNav padding shrinks — the centred ProgressTrail needs every px to
+     keep its labels readable. */
+  .top-nav { padding: 0 var(--s-5) !important; }
+
+  /* HomeRoute — hero copy + section drawing stack vertically.
+     At this width the side-by-side felt cramped on both halves; the
+     stacked rhythm reads more like a magazine spread. */
   .home-hero {
     grid-template-columns: 1fr !important;
     min-height: auto !important;
@@ -1188,10 +1226,11 @@ input[type=range]::-webkit-slider-thumb {
   }
   .home-hero > div:nth-child(2) {
     padding: 0 40px 56px !important;
-    min-height: 480px;
+    min-height: 460px;
   }
 
-  /* IntakeRoute — question column above answer column */
+  /* IntakeRoute — question column above answer column. Padding and the
+     intake display size scale down so the heading doesn't dominate. */
   .intake-body {
     grid-template-columns: 1fr !important;
     overflow-y: auto !important;
@@ -1204,63 +1243,115 @@ input[type=range]::-webkit-slider-thumb {
   .intake-body > div:nth-child(2) {
     overflow: visible !important;
   }
-
-  /* GeneratingRoute — narrower dark rail, smaller narration */
-  .generating-body {
-    grid-template-columns: 1fr 280px !important;
-  }
-  .generating-narration {
-    font-size: 24px !important;
+  .intake-body > div:nth-child(2) > div:first-child {
+    padding: 32px 40px var(--s-4) !important;
   }
 
-  /* RevealRoute — tighter columns; let it stay 2-up since each
-     vision card still earns its place */
-  .reveal-body {
-    grid-template-columns: 1fr 1fr !important;
+  /* GeneratingRoute — narrower narration rail, smaller heading */
+  .generating-body { grid-template-columns: 1fr 300px !important; }
+  .generating-narration { font-size: 26px !important; }
+
+  /* RevealRoute — kept 2-up; each vision is the headline of the page. */
+  .reveal-body { grid-template-columns: 1fr 1fr !important; }
+
+  /* Working screens — sidebars still readable. 360px is the floor for the
+     chat (smaller and the message bubbles start hyphenating proper nouns)
+     and the materials picker (the swatch grid needs ~280px of inner space
+     plus padding). */
+  .planner-shell { grid-template-columns: 1fr 360px !important; }
+  .planner-shell.ai-collapsed { grid-template-columns: 1fr !important; }
+  .style-shell   { grid-template-columns: 360px 1fr !important; }
+  .export-body   { grid-template-columns: 320px 1fr !important; }
+
+  /* Planner header — at this width five labelled pills no longer fit
+     alongside the 2D/3D segmented toggle. Drop the pill labels (Edit,
+     Furniture, Size, Undo) to icon-only; the title attr surfaces the
+     full label on hover. The segmented toggle keeps its 2D / 3D text
+     because that's the primary view switch. */
+  .planner-header-actions { gap: 10px !important; }
+  .planner-pill-label { display: none !important; }
+  .planner-pill {
+    padding: 7px 11px !important;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* ExportRoute — narrow the option sidebar */
-  .export-body {
-    grid-template-columns: 280px 1fr !important;
-  }
+  /* Selected-item floating controls — give it room above the canvas
+     centre so the wrap doesn't collide with the camera-preset pills
+     anchored bottom-centre. */
+  .floating-draft-panel { padding: var(--s-3) !important; }
 
-  /* Planner + Style — narrower right rail so the 3D canvas keeps
-     enough horizontal real estate */
-  .planner-shell {
-    grid-template-columns: 1fr 300px !important;
+  /* Reveal right panel — tighten internal padding so the reasoning
+     headline (24px italic Playfair) has room to breathe instead of
+     bumping against the sidebar border. */
+  .reveal-body > div:nth-child(2) { font-size: 14px; }
+  .reveal-body > div:nth-child(2) > div > div:nth-child(1) {
+    padding: 20px 22px 12px !important;
   }
-  .planner-shell.ai-collapsed {
-    grid-template-columns: 1fr 44px !important;
+  .reveal-body > div:nth-child(2) > div > div:nth-child(2) {
+    padding: var(--s-2) var(--s-4) var(--s-3) !important;
   }
-  .style-shell {
-    grid-template-columns: 300px 1fr !important;
+  .reveal-body > div:nth-child(2) > div > div:nth-child(3) {
+    padding: 14px 22px 18px !important;
   }
 }
 
+/* ============== Tablet portrait (≤ 900px) ============== */
 @media (max-width: 900px) {
-  /* Drop to a single column for the long planner experience too. The
-     side AI panel becomes a bottom drawer in this band — but the
-     simpler fallback for now is just a narrower stripe. */
-  .export-body {
-    grid-template-columns: 240px 1fr !important;
+  /* Progress trail collapses to dots-only — labels at this width
+     wrap awkwardly and steal centre space from the logo / actions. */
+  .progress-trail-label { display: none !important; }
+  .progress-trail-connector { width: 16px !important; margin: 0 6px !important; }
+
+  /* Sidebar widths at iPad-portrait class — kept at 340 (not 300) so chat
+     bubbles still wrap naturally instead of breaking proper nouns mid-word
+     and the materials swatch grid stays 3-up. */
+  .planner-shell { grid-template-columns: 1fr 340px !important; }
+  .planner-shell.ai-collapsed { grid-template-columns: 1fr !important; }
+  .style-shell   { grid-template-columns: 340px 1fr !important; }
+  .export-body   { grid-template-columns: 280px 1fr !important; }
+  .generating-body { grid-template-columns: 1fr 260px !important; }
+
+  /* IntakeRoute — vibe cards drop from 3-up to 2-up so each photo
+     keeps a recognisable aspect. Size + city cards also breathe
+     better at 2-up here than crammed at 4-up. */
+  .vibe-grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+  .size-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* ExportRoute right pane — tighter side gutters so the document
+     itself keeps the same internal padding it has on desktop. */
+  .export-body > div:nth-child(2) { padding: 32px 24px !important; }
+
+  /* HomeRoute — tighter padding so the hero doesn't feel marooned in
+     the upper half of the viewport. */
+  .home-hero > div:first-child { padding: 44px 32px 20px !important; }
+  .home-hero > div:nth-child(2) { padding: 0 32px 44px !important; min-height: 420px; }
+
+  /* IntakeRoute — slightly narrower padding to match. */
+  .intake-body > div:first-child,
+  .intake-body > div:nth-child(2) > div:first-child {
+    padding: 28px 32px !important;
   }
-  .planner-shell {
-    grid-template-columns: 1fr 260px !important;
-  }
-  .style-shell {
-    grid-template-columns: 260px 1fr !important;
-  }
-  .generating-body {
-    grid-template-columns: 1fr 240px !important;
+
+  /* Planner footer — at narrow tablet width the room identity + estimate
+     + CTA need a tighter cluster so the CTA stays right-aligned. The
+     room name truncates with ellipsis already; here we just shrink the
+     left cluster's gap. */
+  .planner-footer { padding: 0 18px !important; gap: 14px !important; }
+  .planner-footer > div:first-child { gap: 18px !important; }
+  .planner-footer > div:first-child > div:nth-child(2) {
+    padding-left: 18px !important;
   }
 }
 
-/* Phone fallback — explicitly not supported. Show a paper-and-ink
- * "use a larger screen" panel instead of letting the cramped grids
- * ship broken. The .small-screen-gate element is rendered by
- * <App />, layered on top via the css below; the actual layout
- * underneath stays untouched in the DOM so resizing back to a
- * tablet/desktop just hides the gate. */
+/* ─────────── Small-screen gate (< 760px) ───────────
+ * Phones are out of scope. The .small-screen-gate panel (rendered by
+ * <App />) is layered on top via the css below; the actual layout
+ * underneath stays mounted, so resizing back to tablet/desktop simply
+ * hides the gate and no state is lost.
+ */
 .small-screen-gate {
   display: none;
 }

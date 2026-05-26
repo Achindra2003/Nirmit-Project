@@ -35,7 +35,7 @@ interface PropPlacement {
 }
 
 interface PropSpec extends PropPlacement {
-  kind: "chai" | "book" | "throw" | "plant_potted" | "frame" | "vase" | "diya" | "rug";
+  kind: "chai" | "book" | "throw" | "plant_potted" | "frame" | "diya" | "rug";
   accent?: string;
 }
 
@@ -44,7 +44,6 @@ function deriveProps(room: RoomState): PropSpec[] {
   const coffee = room.items.find((i) => i.category === "table" && /coffee/i.test(i.name_en));
   const bookshelf = room.items.find((i) => i.category === "storage" && /shelf|book/i.test(i.name_en));
   const mandir = room.items.find((i) => i.category === "mandir");
-  const tv = room.items.find((i) => i.category === "tv_unit" || /tv unit/i.test(i.name_en));
 
   // Chai mug + book on the coffee table
   if (coffee) {
@@ -53,11 +52,12 @@ function deriveProps(room: RoomState): PropSpec[] {
     out.push({ kind: "book", x: c.x + 0.18, y: c.h, z: c.z - 0.05, rotation: 0.18 });
   }
 
-  // The procedural throw blanket on the sofa + procedural rug under the
-  // conversation were removed (2026-05-23). The throw read as a floating red
-  // rectangle to users; the rug fought with the real `rug` GLB people now add
-  // from the curated menu. Atmosphere is for small accent props (chai, book,
-  // diya, vase) — anything sofa- or floor-sized should be a real catalog item.
+  // Removed (2026-05-23): procedural throw on the sofa + rug under the
+  // conversation. Removed (2026-05-26): the brown-and-green vase on the TV
+  // unit — it floated awkwardly because the 0.5m x-offset frequently placed it
+  // beside the TV unit rather than on it, and it was confusing because nothing
+  // matching it appears in the 2D floor plan. If a user wants a vase, it
+  // should be a real catalog item, not procedural decor.
 
   // Books on the bookshelf
   if (bookshelf) {
@@ -71,15 +71,6 @@ function deriveProps(room: RoomState): PropSpec[] {
     const c = visualCentreOf(mandir);
     out.push({ kind: "diya", x: c.x, y: c.h, z: c.z + 0.06 });
   }
-
-  // Vase on the TV unit
-  if (tv) {
-    const c = visualCentreOf(tv);
-    out.push({ kind: "vase", x: c.x - 0.5, y: c.h, z: c.z, scale: 0.85 });
-  }
-
-  // The hard-coded picture frame on the entrance wall was also removed — when
-  // users add a real wall_art SKU, the procedural frame double-stacked on it.
 
   return out;
 }
@@ -105,8 +96,6 @@ function AtmosphereProp({ kind, x, y, z, rotation = 0, scale = 1, accent }: Prop
       return <PottedPlant x={x} y={y} z={z} rotation={rotation} scale={scale} />;
     case "frame":
       return <PictureFrame x={x} y={y} z={z} rotation={rotation} scale={scale} />;
-    case "vase":
-      return <Vase x={x} y={y} z={z} scale={scale} />;
     case "diya":
       return <Diya x={x} y={y} z={z} />;
     case "rug":
@@ -194,21 +183,6 @@ function PictureFrame({ x, y, z, rotation = 0, scale = 1 }: PropPlacement) {
       <mesh position={[0, 0, 0.013]}>
         <planeGeometry args={[0.42, 0.62]} />
         <meshStandardMaterial color="#c9a96e" roughness={0.5} />
-      </mesh>
-    </group>
-  );
-}
-
-function Vase({ x, y, z, scale = 1 }: PropPlacement) {
-  return (
-    <group position={[x, y, z]} scale={scale}>
-      <mesh castShadow>
-        <cylinderGeometry args={[0.06, 0.04, 0.22, 24]} />
-        <meshStandardMaterial color="#4a4035" roughness={0.45} metalness={0.15} />
-      </mesh>
-      <mesh position={[0, 0.18, 0]}>
-        <cylinderGeometry args={[0.045, 0.045, 0.04, 16]} />
-        <meshStandardMaterial color="#6b8d3a" roughness={0.95} />
       </mesh>
     </group>
   );

@@ -1,5 +1,6 @@
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore, type Stage } from "@/store/useAppStore";
 import { HomeRoute } from "@/routes/HomeRoute";
 import { IntakeRoute } from "@/routes/IntakeRoute";
 import { GeneratingRoute } from "@/routes/GeneratingRoute";
@@ -19,8 +20,50 @@ const ROUTE_MAP = {
   export:     <ExportRoute />,
 };
 
+const VALID_STAGES: ReadonlySet<Stage> = new Set([
+  "home", "intake", "generating", "reveal", "planner", "style", "export",
+]);
+
 export function App() {
   const stage = useAppStore((s) => s.stage);
+
+  // Browser back/forward integration.
+  //
+  // The URL itself never changes — we deliberately keep every screen at "/"
+  // so individual stages are NOT bookmarkable. Stage transitions still write
+  // history entries via pushState, so pressing browser back / forward moves
+  // through the same sequence the in-app Back button uses (home → intake →
+  // generating → reveal → planner → style → export). On popstate we mirror
+  // the recorded stage into the store WITHOUT triggering another push (the
+  // `skipPushRef` flag breaks the otherwise-infinite back/forward cycle).
+  const skipPushRef = useRef(false);
+  const initialisedRef = useRef(false);
+
+  useEffect(() => {
+    // Seed the current history entry so the initial press of back has somewhere
+    // to land. `replaceState` (not push) keeps the entry count at one.
+    window.history.replaceState({ stage }, "");
+    initialisedRef.current = true;
+
+    const onPop = (e: PopStateEvent) => {
+      const next = (e.state?.stage as Stage | undefined) ?? "home";
+      if (!VALID_STAGES.has(next)) return;
+      skipPushRef.current = true;
+      useAppStore.setState({ stage: next });
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!initialisedRef.current) return;
+    if (skipPushRef.current) {
+      // This change came from popstate — don't push, just clear the flag.
+      skipPushRef.current = false;
+      return;
+    }
+    window.history.pushState({ stage }, "");
+  }, [stage]);
 
   // Dev escape hatch: ?dev=3dfront renders the raw 3D-FRONT viewer outside the
   // normal stage flow. Not part of the user experience.

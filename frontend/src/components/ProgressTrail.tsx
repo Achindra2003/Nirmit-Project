@@ -20,7 +20,7 @@ export function ProgressTrail({ stage, dark = false }: Props) {
   const active = STAGE_TO_STEP[stage] ?? -1;
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 0, height: 44, userSelect: "none" }}>
+    <div className="progress-trail" style={{ display: "flex", alignItems: "center", gap: 0, height: 44, userSelect: "none" }}>
       {STEPS.map((label, i) => {
         const done   = i < active;
         const isCurr = i === active;
@@ -36,7 +36,7 @@ export function ProgressTrail({ stage, dark = false }: Props) {
           : (dark ? "rgba(242,235,221,.12)" : "var(--line)");
 
         return (
-          <div key={label} style={{ display: "flex", alignItems: "center" }}>
+          <div key={label} className="progress-trail-step" style={{ display: "flex", alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
               {/* Step dot */}
               <div style={{
@@ -47,8 +47,9 @@ export function ProgressTrail({ stage, dark = false }: Props) {
                 transition: "all .3s ease",
                 flexShrink: 0,
               }} />
-              {/* Label */}
-              <span style={{
+              {/* Label — `.progress-trail-label` hides on narrow viewports so
+                  only the dots remain (see styles.css media queries). */}
+              <span className="progress-trail-label" style={{
                 fontFamily: "var(--fb)",
                 fontSize: 11,
                 fontWeight: isCurr ? 600 : 400,
@@ -62,7 +63,7 @@ export function ProgressTrail({ stage, dark = false }: Props) {
             </div>
             {/* Connector */}
             {i < STEPS.length - 1 && (
-              <div style={{
+              <div className="progress-trail-connector" style={{
                 width: 24,
                 height: 1.5,
                 margin: "0 8px",

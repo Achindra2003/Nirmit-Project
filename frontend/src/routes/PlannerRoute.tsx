@@ -4,6 +4,7 @@ import type { ChatResponse, Intent, IntentKind, RoomState } from "@/api/types";
 import { RoomScene, type CameraView } from "@/three/RoomScene";
 import { Planner2D } from "@/components/Planner2D";
 import { humanizeReasoningLine } from "@/lib/humanizeReasoning";
+import { vibeFeeling } from "@/lib/vibeMeta";
 import { useAppStore } from "@/store/useAppStore";
 
 type ViewMode = "3d" | "2d";
@@ -192,9 +193,16 @@ export function PlannerRoute() {
 
   useEffect(() => {
     if (baseVision) {
+      // Welcome message references the user's chosen feeling so the
+      // assistant's tone isn't generic ("Built for something warm and
+      // lived-in.") — but deliberately NOT the vibe name, which usually
+      // matches the vision name shown in the footer ("The Gathering") and
+      // would read as duplicate signal.
+      const vFeel = vibeFeeling(baseVision.room_state.intake.vibe);
+      const opener = `Built for something ${vFeel}. ${humanizeReasoningLine(baseVision.reasoning.headline)}`;
       setChat([{
         role: "assistant",
-        content: `${humanizeReasoningLine(baseVision.reasoning.headline)} Tap anything to select it — or tell me what you'd change in plain words.`,
+        content: `${opener} Tap anything to select it — or tell me what you'd change in plain words.`,
       }]);
       setSelectedId(null);
       setRoomHistory([]);
@@ -357,14 +365,14 @@ export function PlannerRoute() {
   return (
     <div
       className={`planner-shell${aiOpen ? "" : " ai-collapsed"}`}
-      style={{ display: "grid", gridTemplateColumns: aiOpen ? "1fr 380px" : "1fr 44px", width: "100%", height: "100vh", background: "var(--basalt)", transition: "grid-template-columns .28s ease" }}
+      style={{ display: "grid", gridTemplateColumns: aiOpen ? "1fr 380px" : "1fr", width: "100%", height: "100vh", background: "var(--basalt)", transition: "grid-template-columns .28s ease" }}
     >
 
       {/* ── LEFT: canvas ── */}
-      <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
 
         {/* Canvas header */}
-        <div style={{ height: 56, padding: "0 20px 0 24px", display: "flex", alignItems: "center", gap: 16, flexShrink: 0, borderBottom: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)" }}>
+        <div className="planner-header" style={{ height: 56, padding: "0 20px 0 24px", display: "flex", alignItems: "center", gap: 16, flexShrink: 0, borderBottom: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)" }}>
 
           {/* Left — logo */}
           <div onClick={() => setStage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -381,7 +389,7 @@ export function PlannerRoute() {
           <div style={{ flex: 1, minWidth: 0 }} />
 
           {/* Right — 2D/3D toggle + controls */}
-          <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
+          <div className="planner-header-actions" style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
             {/* Prominent segmented view toggle */}
             <div
               role="tablist"
@@ -429,9 +437,11 @@ export function PlannerRoute() {
                 );
               })}
             </div>
-            {/* Undo button — shows when history available */}
+            {/* Undo — when history available. `.planner-pill-label` spans
+                are hidden at tablet widths so only the icon shows. */}
             {roomHistory.length > 0 && (
               <button
+                className="planner-pill"
                 onClick={undo}
                 title="Undo last change (Ctrl/Cmd+Z)"
                 style={{
@@ -446,7 +456,8 @@ export function PlannerRoute() {
                   transition: "color .2s",
                 }}
               >
-                ↩ Undo
+                <span aria-hidden>↩</span>
+                <span className="planner-pill-label"> Undo</span>
               </button>
             )}
             {/* Edit / Furniture / Size — solid pill buttons so they read as
@@ -454,7 +465,9 @@ export function PlannerRoute() {
                 Edit and a filled --terra background for the actions inside
                 edit mode. */}
             <button
+              className="planner-pill"
               onClick={() => { setLayoutEditMode(!layoutEditMode); if (layoutEditMode) { setSelectedId(null); setShowCatalogue(false); } }}
+              title={layoutEditMode ? "Done editing layout" : "Edit layout"}
               style={{
                 background: layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.08)",
                 border: `1px solid ${layoutEditMode ? "var(--leaf)" : "rgba(242,235,221,.28)"}`,
@@ -470,11 +483,14 @@ export function PlannerRoute() {
                 textTransform: "uppercase" as const,
               }}
             >
-              {layoutEditMode ? "✓ Done editing" : "✎ Edit"}
+              <span aria-hidden>{layoutEditMode ? "✓" : "✎"}</span>
+              <span className="planner-pill-label">{layoutEditMode ? " Done editing" : " Edit"}</span>
             </button>
             {layoutEditMode && (
               <button
+                className="planner-pill"
                 onClick={() => setShowCatalogue(v => !v)}
+                title="Add furniture from the catalogue"
                 style={{
                   background: showCatalogue ? "var(--terra)" : "rgba(184,67,42,.18)",
                   border: `1px solid ${showCatalogue ? "var(--terra)" : "rgba(184,67,42,.42)"}`,
@@ -490,10 +506,12 @@ export function PlannerRoute() {
                   textTransform: "uppercase" as const,
                 }}
               >
-                + Furniture
+                <span aria-hidden>+</span>
+                <span className="planner-pill-label"> Furniture</span>
               </button>
             )}
             <button
+              className="planner-pill"
               onClick={() => setShowRoomEdit(v => !v)}
               style={{
                 background: showRoomEdit ? "rgba(242,235,221,.14)" : "transparent",
@@ -511,13 +529,66 @@ export function PlannerRoute() {
               }}
               title="Adjust room dimensions"
             >
-              ⊡ Size
+              <span aria-hidden>⊡</span>
+              <span className="planner-pill-label"> Size</span>
             </button>
           </div>
         </div>
 
         {/* Canvas area */}
         <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex" }}>
+          {/* Collapsed-collaborator handle — only visible when the chat panel
+              is hidden. Sits at the right edge of the canvas like a draftsman's
+              tab, with the live "still-thinking" terra dot to confirm the
+              collaborator is alive in the background even when out of frame.
+              Replaces the older 44px vertical rail with rotated text, which
+              read as ugly UI noise instead of an invitation. */}
+          {!aiOpen && (
+            <button
+              onClick={() => setAiOpen(true)}
+              title="Open the collaborator"
+              aria-label="Open the collaborator chat"
+              style={{
+                position: "absolute",
+                right: 0,
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 38,
+                height: 72,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                background: "var(--paper-3)",
+                border: "1px solid var(--line)",
+                borderRight: "none",
+                borderTopLeftRadius: 6,
+                borderBottomLeftRadius: 6,
+                cursor: "pointer",
+                zIndex: 6,
+                color: "var(--ink-2)",
+                fontFamily: "var(--fm)",
+                fontSize: 16,
+                lineHeight: 1,
+                transition: "transform .18s ease, background .18s ease, color .18s ease",
+                boxShadow: "0 4px 14px rgba(0,0,0,.16)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translate(-3px, -50%)";
+                e.currentTarget.style.background = "var(--paper)";
+                e.currentTarget.style.color = "var(--terra)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(-50%)";
+                e.currentTarget.style.background = "var(--paper-3)";
+                e.currentTarget.style.color = "var(--ink-2)";
+              }}
+            >
+              <span aria-hidden style={{ fontSize: 16 }}>‹</span>
+              <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--terra)", animation: "pulse 2s ease infinite" }} />
+            </button>
+          )}
           {/* Main canvas */}
           <div className="canvas-viewport-container" style={{ flex: 1, height: "100%", position: "relative" }}>
             <div className="canvas-corner-mark mark-tl">+</div>
@@ -653,7 +724,7 @@ export function PlannerRoute() {
             proposal, or material change. Room name + size moved here from
             the canvas header so the Edit / Furniture / Size button cluster
             never crowds them out. */}
-        <div style={{ height: 56, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)", gap: 24 }}>
+        <div className="planner-footer" style={{ height: 56, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)", gap: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 28, minWidth: 0, flex: 1 }}>
             {/* Room identity */}
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
@@ -690,45 +761,16 @@ export function PlannerRoute() {
         </div>
       </div>
 
-      {/* ── RIGHT: AI chat (light paper panel) ──
-          Collapsible. When closed, the panel becomes a thin rail with a vertical
-          handle so the canvas takes the full width. When open, normal 380px chat
-          experience. The grid-template-columns transition above animates the
-          width change. */}
-      {!aiOpen ? (
-        <button
-          onClick={() => setAiOpen(true)}
-          title="Open collaborator"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            gap: 12,
-            padding: "16px 0",
-            borderLeft: "1px solid var(--line)",
-            background: "var(--paper)",
-            cursor: "pointer",
-            overflow: "hidden",
-          }}
-        >
-          <span style={{ fontFamily: "var(--fm)", fontSize: 14, color: "var(--terra)", lineHeight: 1 }}>‹</span>
-          <span style={{
-            fontFamily: "var(--fm)",
-            fontSize: 9.5,
-            letterSpacing: "0.22em",
-            color: "var(--ink-3)",
-            textTransform: "uppercase" as const,
-            writingMode: "vertical-rl" as const,
-            transform: "rotate(180deg)",
-            marginTop: 10,
-          }}>
-            Collaborator
-          </span>
-          <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--terra)", animation: "pulse 2s ease infinite", marginTop: 10 }} />
-        </button>
-      ) : (
-      <div style={{ display: "flex", flexDirection: "column", borderLeft: "1px solid var(--line)", background: "var(--paper)", overflow: "hidden" }}>
+      {/* ── RIGHT: AI chat panel ──
+          Collapsible: when `aiOpen` is false the panel column doesn't render
+          at all (the grid drops to a single 1fr column, so the canvas takes
+          the full width). The collapsed-state affordance lives ABOVE on the
+          canvas itself — a floating "Collaborator" handle anchored to the
+          right edge near the top-right of the canvas area. That replaces the
+          old 44px vertical rail with rotated text, which read as visual
+          clutter rather than an invitation. */}
+      {aiOpen && (
+      <div className="planner-ai-panel" style={{ display: "flex", flexDirection: "column", borderLeft: "1px solid var(--line)", background: "var(--paper)", overflow: "hidden" }}>
 
         {/* Chat header */}
         <div style={{ padding: "16px 24px 16px", borderBottom: "1px solid var(--line)", flexShrink: 0, display: "flex", alignItems: "flex-start", gap: 12 }}>

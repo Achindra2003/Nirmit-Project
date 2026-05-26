@@ -3,6 +3,7 @@ import type { Intent } from "@/api/types";
 import { api } from "@/api/client";
 import { RoomScene } from "@/three/RoomScene";
 import { FinishingPanel } from "@/components/FinishingPanel";
+import { vibeFeeling } from "@/lib/vibeMeta";
 import { useAppStore } from "@/store/useAppStore";
 
 type MaterialTab = "paint" | "flooring" | "lighting";
@@ -48,13 +49,15 @@ export function StyleRoute() {
       {/* Left — materials panel */}
       <div style={{ display: "flex", flexDirection: "column", background: "var(--paper)", borderRight: "1px solid var(--line)", overflow: "hidden" }}>
 
-        {/* Panel header */}
+        {/* Panel header — sub-copy references the user's feeling so the
+            tuning doesn't feel arbitrary, without re-stating the vision
+            name (which is right there in the dark canvas header). */}
         <div style={{ padding: "28px 28px 20px", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
           <h2 style={{ fontFamily: "var(--fd)", fontSize: 32, fontWeight: 600, lineHeight: 1.05, color: "var(--ink)", marginBottom: 6 }}>
             Materials & <span style={{ fontStyle: "italic", fontWeight: 400, color: "var(--terra)" }}>finish</span>
           </h2>
           <p style={{ fontFamily: "var(--fb)", fontSize: 14, color: "var(--ink-2)", lineHeight: 1.5 }}>
-            Set the tone for walls, floors, and light.
+            Set the tone for walls, floors, and light — tuned for something {vibeFeeling(room.intake.vibe)}.
           </p>
         </div>
 
