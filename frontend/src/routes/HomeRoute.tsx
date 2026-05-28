@@ -3,11 +3,17 @@ import { api, type DesignSummary } from "@/api/client";
 import type { RoomState, Vision } from "@/api/types";
 import { penFill, penLabel, penPath, penPathQuick } from "@/lib/penDraw";
 import { useAppStore } from "@/store/useAppStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { TopNav } from "@/components/shell/TopNav";
 
 export function HomeRoute() {
   const setStage = useAppStore((s) => s.setStage);
   const setVisions = useAppStore((s) => s.setVisions);
+  // Saved-rooms section is auth-gated: anonymous visitors see only the
+  // hero + CTA (no archive section at all — the empty-state for a
+  // never-signed-in visitor is noise). Signed-in users see their archive
+  // below the hero. See memory/project_auth_strategy.md.
+  const user = useAuthStore((s) => s.user);
   const [loading, setLoading] = useState(true);
   const [designs, setDesigns] = useState<DesignSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -15,11 +21,20 @@ export function HomeRoute() {
   const savedRoomsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Skip the listDesigns call entirely for anonymous visitors — we
+    // already know they have no archive to fetch, and we never render
+    // the section for them anyway.
+    if (!user) {
+      setLoading(false);
+      setDesigns([]);
+      return;
+    }
+    setLoading(true);
     api.listDesigns()
       .then((r) => setDesigns(r.designs))
       .catch(() => setDesigns([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
   async function open(id: string) {
     try {
@@ -69,6 +84,11 @@ export function HomeRoute() {
   }
 
   const hasRooms = !loading && designs.length > 0;
+  // Signed-in users with at least one saved room see the archive
+  // section + the floating scroll cue. Anonymous visitors (no `user`)
+  // see hero only, even if `designs` somehow had entries — gate is
+  // explicit on `user` so the intent reads in the JSX. */
+  const showArchive = !!user && hasRooms;
 
   return (
     <div
@@ -152,8 +172,11 @@ export function HomeRoute() {
           <ReplayableCoverDrawing />
         </div>
 
-        {/* Floating scroll indicator — centered, clickable, gently rocks up/down */}
-        {hasRooms && (
+        {/* Floating scroll indicator — centered, clickable, gently rocks
+            up/down. Only appears for signed-in users with at least one
+            saved room (gated on `showArchive`, not just `hasRooms`).
+            Anonymous visitors see the hero unbroken. */}
+        {showArchive && (
           <button
             onClick={scrollToRooms}
             style={{
@@ -193,8 +216,9 @@ export function HomeRoute() {
         )}
       </div>
 
-      {/* Saved rooms */}
-      {hasRooms && (
+      {/* Saved rooms — auth-gated. Anonymous visitors don't see this
+          section at all; it's noise for someone who just arrived. */}
+      {showArchive && (
         <div
           ref={savedRoomsRef}
           className="page-shell"

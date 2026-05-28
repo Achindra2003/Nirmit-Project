@@ -1,7 +1,10 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAppStore, type Stage } from "@/store/useAppStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { HomeRoute } from "@/routes/HomeRoute";
+import { LoginRoute } from "@/routes/LoginRoute";
+import { SignupRoute } from "@/routes/SignupRoute";
 import { IntakeRoute } from "@/routes/IntakeRoute";
 import { GeneratingRoute } from "@/routes/GeneratingRoute";
 import { RevealRoute } from "@/routes/RevealRoute";
@@ -10,8 +13,10 @@ import { StyleRoute } from "@/routes/StyleRoute";
 import { ExportRoute } from "@/routes/ExportRoute";
 import { ThreeDFrontRoute } from "@/routes/ThreeDFrontRoute";
 
-const ROUTE_MAP = {
+const ROUTE_MAP: Record<Stage, React.ReactElement> = {
   home:       <HomeRoute />,
+  login:      <LoginRoute />,
+  signup:     <SignupRoute />,
   intake:     <IntakeRoute />,
   generating: <GeneratingRoute />,
   reveal:     <RevealRoute />,
@@ -21,11 +26,20 @@ const ROUTE_MAP = {
 };
 
 const VALID_STAGES: ReadonlySet<Stage> = new Set([
-  "home", "intake", "generating", "reveal", "planner", "style", "export",
+  "home", "login", "signup",
+  "intake", "generating", "reveal", "planner", "style", "export",
 ]);
 
 export function App() {
   const stage = useAppStore((s) => s.stage);
+  // Wait for the initial Supabase session restore before rendering routes.
+  // Without this gate, a refresh of a signed-in browser would flash the
+  // anonymous home page (saved-rooms section hidden) for ~200ms before the
+  // session lands and the page re-renders. Show a quiet paper splash
+  // instead. No PROTECTED_STAGES — auth is optional; the splash is purely
+  // about waiting for `bootstrapped` so the page knows which version of
+  // itself to render. See memory/project_auth_strategy.md.
+  const bootstrapped = useAuthStore((s) => s.bootstrapped);
 
   // Browser back/forward integration.
   //
@@ -71,6 +85,13 @@ export function App() {
     return <ThreeDFrontRoute />;
   }
 
+  // First-paint splash while Supabase restores the session from localStorage.
+  // Once `bootstrapped` flips true (always quickly — usually under a frame
+  // or two in stub mode, ~150ms in real mode), the route renders for real.
+  if (!bootstrapped) {
+    return <AuthBootSplash />;
+  }
+
   return (
     <>
       <AnimatePresence mode="wait">
@@ -80,7 +101,13 @@ export function App() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.32, ease: [0.22, 0.7, 0, 1] }}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+          // overflowY: auto so any route whose content exceeds 100vh (e.g.
+          // SignupRoute on shorter viewports — has more fields + a footer
+          // that push past the fold) gets a scrollbar instead of having
+          // its bottom content silently clipped. Routes that manage their
+          // own internal scrolling (HomeRoute, PlannerRoute) fit inside
+          // 100% height and are unaffected.
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflowY: "auto" }}
         >
           {ROUTE_MAP[stage]}
         </motion.div>
@@ -92,6 +119,32 @@ export function App() {
        *  phone-sized viewports. */}
       <SmallScreenGate />
     </>
+  );
+}
+
+/**
+ * Tiny paper splash shown while Supabase restores the user's session from
+ * localStorage. Without it a signed-in visitor sees a flash of the
+ * anonymous home page (saved-rooms section hidden) before auth lands.
+ */
+function AuthBootSplash() {
+  return (
+    <div className="paper" style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center" }}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        style={{ display: "flex", alignItems: "baseline", gap: 12 }}
+      >
+        <span style={{ fontFamily: "var(--fd)", fontSize: 36, fontWeight: 600, color: "var(--ink)", letterSpacing: "-0.01em" }}>Nirmit</span>
+        <span style={{ fontFamily: "var(--fh)", fontSize: 22, color: "var(--ink)", opacity: 0.45 }}>निर्मित</span>
+        <motion.span
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--terra)", marginLeft: 6 }}
+        />
+      </motion.div>
+    </div>
   );
 }
 

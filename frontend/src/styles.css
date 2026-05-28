@@ -161,11 +161,20 @@ textarea:focus-visible {
   color: var(--basalt);
 }
 
-/* ── Paper surface (grain texture instead of grid) ── */
-/*.paper {
+/* ── Paper surface (grain texture instead of grid) ──
+ *
+ *  `position: relative` is the critical bit. `.paper::before` absolute-
+ *  positions with `inset: 0`, which resolves against the nearest
+ *  positioned ancestor. Without this rule, that ancestor is the motion.div
+ *  in App.tsx (which is position:absolute) — so the grain only covers the
+ *  first 100vh, and scrolling reveals bare paper underneath. With
+ *  position: relative here, ::before fills .paper's actual height
+ *  (which grows with content via minHeight: 100vh), and the grain
+ *  continues all the way down a long scrolled page. */
+.paper {
   position: relative;
   background: var(--paper);
-}*/
+}
 
 .paper::before {
   content: '';

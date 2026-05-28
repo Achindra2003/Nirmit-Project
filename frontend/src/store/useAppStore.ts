@@ -1,7 +1,19 @@
 import { create } from "zustand";
 import type { CostBreakdown, Intake, RoomState, Vision } from "@/api/types";
 
-export type Stage = "home" | "intake" | "generating" | "reveal" | "planner" | "style" | "export";
+/**
+ * Stage covers the full journey.
+ *
+ * Auth is OPTIONAL and LATE (see memory/project_auth_strategy.md): every
+ * stage works signed-out, including the design flow. `login` and `signup`
+ * are reachable from the TopNav "Sign in" link on the home page; success
+ * routes the user back to "home" where the saved-rooms section is now
+ * visible. There is no protected stage.
+ */
+export type Stage =
+  | "home"
+  | "login" | "signup"
+  | "intake" | "generating" | "reveal" | "planner" | "style" | "export";
 
 /**
  * Planner edit mode — resolves the OrbitControls ⇄ drag conflict on the R3F
@@ -20,6 +32,13 @@ interface AppState {
   selectedVisionId: string | null;
   visionsLoaded: boolean;
 
+  // ── Auth-return memory ──
+  // Where to send the user after a successful sign-in or sign-up, when
+  // they were promoted to auth mid-flow. Today only the export page's
+  // "Sign in to save" button sets this to "export"; LoginRoute and
+  // SignupRoute consume it on success and clear it. */
+  pendingReturn: Stage | null;
+
   // ── Planner editing ──
   selectedItemId: string | null;
   editMode: EditMode;
@@ -29,6 +48,7 @@ interface AppState {
   setIntake: (i: Intake) => void;
   setVisions: (v: Vision[]) => void;
   selectVision: (id: string) => void;
+  setPendingReturn: (s: Stage | null) => void;
 
   setSelectedItem: (id: string | null) => void;
   setEditMode: (m: EditMode) => void;
@@ -51,6 +71,7 @@ export const useAppStore = create<AppState>((set) => ({
   visions: [],
   selectedVisionId: null,
   visionsLoaded: false,
+  pendingReturn: null,
 
   selectedItemId: null,
   editMode: "browse",
@@ -60,6 +81,7 @@ export const useAppStore = create<AppState>((set) => ({
   setIntake: (intake) => set({ intake }),
   setVisions: (visions) => set({ visions, selectedVisionId: visions[0]?.id ?? null, visionsLoaded: true }),
   selectVision: (selectedVisionId) => set({ selectedVisionId }),
+  setPendingReturn: (pendingReturn) => set({ pendingReturn }),
 
   setSelectedItem: (selectedItemId) =>
     // Deselecting always drops you back to browse mode (no orphaned move mode).
@@ -95,6 +117,7 @@ export const useAppStore = create<AppState>((set) => ({
       visions: [],
       selectedVisionId: null,
       visionsLoaded: false,
+      pendingReturn: null,
       selectedItemId: null,
       editMode: "browse",
       layoutEditMode: false,

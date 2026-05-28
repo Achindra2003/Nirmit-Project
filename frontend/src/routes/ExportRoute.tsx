@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import type { ExportRequest, RoomState } from "@/api/types";
 import { api } from "@/api/client";
 import { useAppStore } from "@/store/useAppStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { TopNav } from "@/components/shell/TopNav";
 import { Planner2D } from "@/components/Planner2D";
 import { SceneSnapshot } from "@/three/SceneSnapshot";
@@ -61,6 +62,11 @@ const REDACTED = "— — —";
 
 export function ExportRoute() {
   const { visions, selectedVisionId, reset } = useAppStore();
+  const setStage = useAppStore((s) => s.setStage);
+  const setPendingReturn = useAppStore((s) => s.setPendingReturn);
+  // Save targets Supabase — needs an authed user. The Save button's
+  // label / click handler / inline message all switch on this.
+  const user = useAuthStore((s) => s.user);
   const vision = visions.find((v) => v.id === selectedVisionId) ?? visions[0];
 
   const [boq, setBoq]           = useState<BOQResponse | null>(null);
@@ -69,6 +75,10 @@ export function ExportRoute() {
   const [selected, setSelected] = useState<ExportOption>("pdf");
   const [saving, setSaving]     = useState(false);
   const [savedId, setSavedId]   = useState<string | null>(null);
+  // Inline feedback near the Save button. Split from `error` (which is
+  // page-wide / global) so a save failure doesn't blow up the whole
+  // page and a save success has somewhere quiet to land. */
+  const [saveMsg, setSaveMsg]   = useState<string | null>(null);
   // Captured 3D render dataURL, embedded as <img> in the document and the
   // share card so html2canvas can rasterise it cleanly (WebGL canvases are
   // unreliable to capture directly).
@@ -162,12 +172,26 @@ export function ExportRoute() {
 
   async function save() {
     if (!vision || saving) return;
+    // Anonymous users can't save — api.saveDesign would throw "Sign in
+    // to save…" with no UI feedback. Route them to login, stashing the
+    // current stage in pendingReturn so they land back HERE after auth
+    // (LoginRoute / SignupRoute consume that flag on success).
+    if (!user) {
+      setPendingReturn("export");
+      setStage("login");
+      return;
+    }
     setSaving(true);
+    setSaveMsg(null);
     try {
       const r = await api.saveDesign({ name: vision.name, philosophy: vision.philosophy, room_state: vision.room_state, existing_id: savedId });
       setSavedId(r.id);
+      setSaveMsg("Saved · find it on your home page.");
+      // Clear the success message after a beat so the bar doesn't stay
+      // shouting "saved!" forever.
+      setTimeout(() => setSaveMsg(null), 4500);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setSaveMsg(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
     }
@@ -560,22 +584,50 @@ export function ExportRoute() {
 
       {/* Bottom bar */}
       <div style={{ height: 52, padding: "0 40px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderTop: "1px solid var(--line)", background: "var(--paper-2)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
           <button
             className="btn-secondary"
             onClick={save}
             disabled={saving}
-            style={{ padding: "8px 18px" }}
+            style={{ padding: "8px 18px", flexShrink: 0 }}
           >
-            {saving ? "Saving…" : savedId ? "Saved ✓" : "Save design"}
+            {/* Label adapts: anonymous → "Sign in to save"; signed in
+             *  → "Save design" / "Saving…" / "Saved ✓" (after success). */}
+            {!user
+              ? "Sign in to save"
+              : saving
+                ? "Saving…"
+                : savedId
+                  ? "Saved ✓"
+                  : "Save design"}
           </button>
           <button
             onClick={reset}
             className="tool-action-lnk"
-            style={{ padding: 0 }}
+            style={{ padding: 0, flexShrink: 0 }}
           >
             Start a new room →
           </button>
+          {/* Inline feedback next to the buttons — green-ish ink for
+           *  success, terra for errors. Truncates if the message is
+           *  long so the bottom bar height stays steady. */}
+          {saveMsg && (
+            <span
+              style={{
+                fontFamily: "var(--fd)",
+                fontStyle: "italic",
+                fontSize: 13,
+                color: saveMsg.startsWith("Saved") ? "var(--ink-2)" : "var(--terra-dk)",
+                marginLeft: 4,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                maxWidth: 360,
+              }}
+            >
+              {saveMsg}
+            </span>
+          )}
         </div>
         {boq && !hidePrices && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
