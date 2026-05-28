@@ -5,6 +5,7 @@ import { RoomScene, type CameraView } from "@/three/RoomScene";
 import { Planner2D } from "@/components/Planner2D";
 import { humanizeReasoningLine } from "@/lib/humanizeReasoning";
 import { vibeFeeling } from "@/lib/vibeMeta";
+import { checkRoomChange, type GuardConcern } from "@/lib/plannerGuards";
 import { useAppStore } from "@/store/useAppStore";
 
 type ViewMode = "3d" | "2d";
@@ -168,6 +169,15 @@ export function PlannerRoute() {
   const [draft, setDraft]       = useState("");
   const [sending, setSending]   = useState(false);
   const [pending, setPending]   = useState<ChatResponse | null>(null);
+  // Guard-modal state — set when a room change crosses one of the rules in
+  // lib/plannerGuards.ts (missing essential, too many of one piece, room
+  // cramped). The modal stays mounted until the user confirms or cancels;
+  // confirming runs `onConfirm`, cancelling runs `onCancel` (drops the
+  // change, leaving the room untouched).
+  const [guardModal, setGuardModal] = useState<
+    | { concern: GuardConcern; onConfirm: () => void; onCancel: () => void }
+    | null
+  >(null);
   const [viewMode, setViewMode] = useState<ViewMode>("2d");
   const [camView, setCamView]   = useState<CameraView>("corner");
   const [advisory, setAdvisory] = useState(false);
@@ -289,12 +299,33 @@ export function PlannerRoute() {
         }
         return;
       }
-      setRoomHistory((h) => [...h.slice(-19), before]);
-      // Single write-path — every edit ends up in the store so cost downstream
-      // (StyleRoute, ExportRoute, header chip, footer chip) stays in sync.
-      patchActiveVision({ room_state: res.room_state, cost: res.cost });
-      if (intent.kind === "remove") setSelectedId(null);
-      if (echo) setChat((c) => [...c, { role: "user", content: echo }, { role: "assistant", content: `Done. ${res.cost.story.headline}` }]);
+      // Single commit closure — runs whether the guard let us through
+      // immediately or the user clicked "yes, do it anyway" in the modal.
+      const commit = () => {
+        setRoomHistory((h) => [...h.slice(-19), before]);
+        // Single write-path — every edit ends up in the store so cost downstream
+        // (StyleRoute, ExportRoute, header chip, footer chip) stays in sync.
+        patchActiveVision({ room_state: res.room_state, cost: res.cost });
+        if (intent.kind === "remove") setSelectedId(null);
+        if (echo) setChat((c) => [...c, { role: "user", content: echo }, { role: "assistant", content: `Done. ${res.cost.story.headline}` }]);
+      };
+
+      // Guard gate: ask checkRoomChange whether this edit crosses a rule
+      // (missing essential / too many / cramped). If it does, route via
+      // the confirm modal — confirm runs `commit`, cancel drops the
+      // change on the floor (state stays as before; the api.apply round
+      // trip is wasted but harmless). Drag / rotate / style swaps almost
+      // never trigger the guard, so the common path is unchanged.
+      const concern = checkRoomChange(before, res.room_state);
+      if (concern) {
+        setGuardModal({
+          concern,
+          onConfirm: () => { setGuardModal(null); commit(); },
+          onCancel:  () => { setGuardModal(null); /* discard res */ },
+        });
+        return;
+      }
+      commit();
     } catch (e) {
       setChat((c) => [...c, { role: "assistant", content: `I couldn't do that — ${e instanceof Error ? e.message : String(e)}` }]);
     }
@@ -350,14 +381,40 @@ export function PlannerRoute() {
   }
 
   function applyPending() {
-    if (!pending?.proposed_room_state) return;
+    if (!pending?.proposed_room_state || !room) return;
     const proposed = pending.proposed_room_state;
-    setPending(null);
-    // Round-trip /cost so the chat-applied change re-prices the room (avoids
-    // a stale headline after the user accepts a proposal).
-    api.cost({ room_state: proposed })
-      .then((c) => patchActiveVision({ room_state: proposed, cost: c }))
-      .catch(() => patchActiveVision({ room_state: proposed }));
+    const before = room;
+    // The chat round-trip already gave us the proposed room; we still
+    // need to re-price it. Wrap the commit in a closure so the guard
+    // can defer it without losing the chain.
+    const commit = () => {
+      setPending(null);
+      setRoomHistory((h) => [...h.slice(-19), before]);
+      api.cost({ room_state: proposed })
+        .then((c) => patchActiveVision({ room_state: proposed, cost: c }))
+        .catch(() => patchActiveVision({ room_state: proposed }));
+    };
+    // AI proposals can be invasive (mix from another vision, recolour,
+    // large rearrangements). Run the same guard the per-intent applies
+    // use — better to ask "are you sure?" than to wipe out the only
+    // sofa via a chat reply the user didn't fully read.
+    const concern = checkRoomChange(before, proposed);
+    if (concern) {
+      setGuardModal({
+        concern,
+        onConfirm: () => { setGuardModal(null); commit(); },
+        onCancel:  () => {
+          // Cancel also clears the pending proposal — otherwise the
+          // floating "Apply / Discard" bar in the chat panel would
+          // remain, which would be confusing right after the user
+          // just said no.
+          setGuardModal(null);
+          setPending(null);
+        },
+      });
+      return;
+    }
+    commit();
   }
 
 
@@ -944,6 +1001,114 @@ export function PlannerRoute() {
         </div>
       </div>
       )}
+
+      {/* ── Guard modal ──
+          Confirm gate for room mutations that cross a rule in
+          lib/plannerGuards.ts. Rendered at the route level so it overlays
+          both the canvas AND the AI panel — no matter which surface
+          triggered the edit (catalogue add, item remove, drag, AI
+          proposal), this dialog is what the user has to dismiss. */}
+      {guardModal && (
+        <GuardConfirmDialog
+          concern={guardModal.concern}
+          onConfirm={guardModal.onConfirm}
+          onCancel={guardModal.onCancel}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Modal shown when the planner guard flags a room change. Single dialog,
+ * centred on the viewport, paper background — paper-and-ink language to
+ * match the rest of the app instead of a native window.confirm. Pressing
+ * Escape acts as Cancel; pressing Enter confirms — both surface the most
+ * common keyboard expectations.
+ */
+function GuardConfirmDialog({
+  concern,
+  onConfirm,
+  onCancel,
+}: {
+  concern: GuardConcern;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+      if (e.key === "Enter")  { e.preventDefault(); onConfirm(); }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onConfirm, onCancel]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="guard-modal-title"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 200,
+        display: "grid",
+        placeItems: "center",
+        background: "rgba(20, 16, 12, 0.55)",
+        backdropFilter: "blur(2px)",
+        animation: "fade 0.2s ease-out both",
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div
+        style={{
+          maxWidth: 460,
+          width: "calc(100vw - 48px)",
+          background: "var(--paper)",
+          border: "1px solid var(--line)",
+          padding: "32px 32px 28px",
+          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.32)",
+          position: "relative",
+        }}
+      >
+        {/* Drafting-paper corner ticks — same convention used around the
+            hero cover drawing, so the modal reads as part of the same
+            visual language and not a generic system dialog. */}
+        <div style={{ position: "absolute", top: 8, left: 8, width: 12, height: 12, borderTop: "1px solid var(--terra)", borderLeft: "1px solid var(--terra)" }} />
+        <div style={{ position: "absolute", top: 8, right: 8, width: 12, height: 12, borderTop: "1px solid var(--terra)", borderRight: "1px solid var(--terra)" }} />
+        <div style={{ position: "absolute", bottom: 8, left: 8, width: 12, height: 12, borderBottom: "1px solid var(--terra)", borderLeft: "1px solid var(--terra)" }} />
+        <div style={{ position: "absolute", bottom: 8, right: 8, width: 12, height: 12, borderBottom: "1px solid var(--terra)", borderRight: "1px solid var(--terra)" }} />
+
+        <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--terra-dk)", letterSpacing: "0.22em", textTransform: "uppercase" as const, display: "block", marginBottom: 14 }}>
+          A moment
+        </span>
+        <h3
+          id="guard-modal-title"
+          style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 26, fontWeight: 500, lineHeight: 1.18, color: "var(--ink)", letterSpacing: "-0.01em", marginBottom: 14 }}
+        >
+          {concern.title}
+        </h3>
+        <p style={{ fontFamily: "var(--fb)", fontSize: 15, color: "var(--ink-2)", lineHeight: 1.6, marginBottom: 26 }}>
+          {concern.body}
+        </p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 14, alignItems: "center" }}>
+          <button
+            onClick={onCancel}
+            className="tool-action-lnk"
+            style={{ padding: "8px 4px", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)" }}
+          >
+            {concern.cancelLabel}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="btn-primary"
+            style={{ padding: "10px 20px", fontSize: 12 }}
+          >
+            {concern.confirmLabel}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

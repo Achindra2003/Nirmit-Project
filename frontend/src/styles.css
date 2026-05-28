@@ -683,6 +683,13 @@ input[type=range]::-webkit-slider-thumb {
   }
 }
 
+/* (Removed 2026-05-27): the holographic card-tilt, specular sheen,
+ * per-item hover physics, and floor-anchor scaling that lived here
+ * for the cover drawing have all been pulled. The drawing now
+ * commits the whole experience to its pen-draw choreography on first
+ * paint and stays still afterwards — the show-piece is the drafting
+ * motion itself, not what happens when the user hovers. */
+
 @keyframes pulse {
 
   0%,
@@ -1208,29 +1215,46 @@ input[type=range]::-webkit-slider-thumb {
   .planner-header-actions [role="tab"] { padding: 7px 16px !important; }
 }
 
-/* ============== Large tablet landscape (≤ 1100px) ============== */
+/* ============== Tablet portrait — large (≤ 1100px) ============== */
 @media (max-width: 1100px) {
   /* TopNav padding shrinks — the centred ProgressTrail needs every px to
      keep its labels readable. */
   .top-nav { padding: 0 var(--s-5) !important; }
 
-  /* HomeRoute — hero copy + section drawing stack vertically.
-     At this width the side-by-side felt cramped on both halves; the
-     stacked rhythm reads more like a magazine spread. */
+  /* ── HomeRoute hero, stacked ──
+     At this width the hero copy + cover drawing read as a vertical
+     magazine spread instead of side-by-side. Three polish moves over
+     the previous mechanical stack:
+       1. Hero text gets a balanced top/bottom padding rhythm (was
+          56/24 — felt top-heavy) and a tighter lead width so the
+          paragraph doesn't sprawl across the full-bleed column.
+       2. Hero display tightens from clamp(48, 5.4vw, 82) to
+          clamp(44, 5vw, 56) — at 900-1100px viewports the heading
+          would otherwise hit 49-59px in a column that's now full
+          width, which read as oversized. 56px caps it nicely.
+       3. Drop the arbitrary min-height on the drawing column; the
+          SVG renders to its own aspect ratio (560/540 ≈ 1.04), so
+          at 900px wide it naturally takes ~440px tall — let it
+          breathe by its own dimensions, not a magic number. */
   .home-hero {
     grid-template-columns: 1fr !important;
     min-height: auto !important;
   }
   .home-hero > div:first-child {
-    padding: 56px 40px 24px !important;
+    padding: 56px 40px 40px !important;
   }
   .home-hero > div:nth-child(2) {
-    padding: 0 40px 56px !important;
-    min-height: 460px;
+    padding: 16px 40px 64px !important;
   }
+  .hero-display { font-size: clamp(44px, 5vw, 56px) !important; }
+  .hero-lead    { font-size: 16px !important; line-height: 1.7 !important; max-width: 52ch; }
 
-  /* IntakeRoute — question column above answer column. Padding and the
-     intake display size scale down so the heading doesn't dominate. */
+  /* ── IntakeRoute, stacked ──
+     Question column above answer column. The previous setup separated
+     them only with a 1px border, which read as a hard split between
+     two halves. Bumping the answer-column padding-top makes the join
+     feel like a section break in a magazine instead. The display also
+     tightens so the heading doesn't dominate the now-full-width column. */
   .intake-body {
     grid-template-columns: 1fr !important;
     overflow-y: auto !important;
@@ -1238,14 +1262,15 @@ input[type=range]::-webkit-slider-thumb {
   .intake-body > div:first-child {
     border-right: none !important;
     border-bottom: 1px solid var(--line);
-    padding: 32px 40px !important;
+    padding: 36px 40px 32px !important;
   }
   .intake-body > div:nth-child(2) {
     overflow: visible !important;
   }
   .intake-body > div:nth-child(2) > div:first-child {
-    padding: 32px 40px var(--s-4) !important;
+    padding: 40px 40px var(--s-4) !important;
   }
+  .intake-display { font-size: clamp(28px, 3vw, 38px) !important; }
 
   /* GeneratingRoute — narrower narration rail, smaller heading */
   .generating-body { grid-template-columns: 1fr 300px !important; }
