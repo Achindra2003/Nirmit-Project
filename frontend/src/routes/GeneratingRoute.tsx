@@ -53,9 +53,7 @@ export function GeneratingRoute() {
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "var(--paper)" }}>
 
-      <TopNav stage="generating" hideTrail rightContent={
-        <span className="eyebrow" style={{ color: "var(--ink-3)" }}>Drawing your room…</span>
-      } />
+      <TopNav stage="generating" hideTrail />
 
       <div className="generating-body" style={{ flex: 1, display: "grid", gridTemplateColumns: "3fr 340px", minHeight: 0 }}>
 
@@ -103,7 +101,7 @@ export function GeneratingRoute() {
 
           <div>
             <span style={{ fontFamily: "var(--fm)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(242,235,221,.35)", display: "block", marginBottom: 20 }}>
-              Notes as we draw
+              Working notes
             </span>
 
             <div className="generating-narration" style={{ fontFamily: "var(--fd)", fontSize: 30, fontWeight: 600, lineHeight: 1.1, color: "rgba(242,235,221,.9)", minHeight: 88, transition: "opacity .4s ease" }}>
@@ -114,7 +112,7 @@ export function GeneratingRoute() {
                *  producing visible run-on text like "…labourAlmost
                *  there…". Pick exactly one. */}
               {animationDone
-                ? (visionsLoaded ? "Three rooms are ready for you." : "Almost there…")
+                ? (visionsLoaded ? "Three rooms, ready." : "Almost there…")
                 : stage === 0
                   ? "Starting with your room…"
                   : current}
@@ -124,7 +122,7 @@ export function GeneratingRoute() {
           {/* Stage list */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(242,235,221,.28)", marginBottom: 2 }}>
-              Working steps
+              Steps
             </span>
             {STAGES.map((s, i) => {
               const stageStart = s.t;

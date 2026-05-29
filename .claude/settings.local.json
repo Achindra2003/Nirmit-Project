@@ -108,7 +108,13 @@
       "Bash(grep -rn \"\\\\\"#dc\\\\\\\\|#d4\\\\\\\\|#cb\\\\\\\\|#bf\\\\\\\\|#fa\\\\\\\\|crimson\\\\\\\\|red\\\\\\\\|tomato\" frontend/src/three/)",
       "Bash(grep -iv \"ink\\\\\\\\|paper\\\\\\\\|wall\\\\\\\\|comment\\\\\\\\|//\")",
       "Bash(PYTHONIOENCODING=utf-8 python backend/scripts/audit_preset_layouts.py)",
-      "Bash(echo \"exit=$?\")"
+      "Bash(echo \"exit=$?\")",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(grep -n \"^      </div>$\\\\|^      \\)}$\\\\|^    </div>$\\\\|^  \\);$\\\\|^}$\\\\|^function \" frontend/src/routes/PlannerRoute.tsx)",
+      "Bash(echo \"TSC=$?\")",
+      "Bash(echo \"BUILD=$?\")",
+      "Bash(grep -v \"^total\\\\|^d.*\\\\.\\\\s*$\\\\|^d.*\\\\.\\\\.\\\\s*$\")",
+      "Bash(grep -v \"node_modules\\\\|\\\\.txt$\")"
     ]
   }
 }

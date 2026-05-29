@@ -136,9 +136,9 @@ export function HomeRoute() {
           </h1>
 
           <p className="hero-lead appear-3">
-            Tell us how you live in your flat. We draw three fully furnished rooms
-            you can walk through in 3D, then hand your carpenter a quotation
-            Suresh can build from without guessing.
+            Tell us how you live. We draw three rooms you can walk through —
+            refine the one you like, and hand your carpenter a quotation they
+            can actually build from.
           </p>
 
           <div className="appear-4">
@@ -269,8 +269,8 @@ export function HomeRoute() {
                     <button className="btn-ghost" onClick={() => open(d.id)}>Open &rarr;</button>
                     {confirmDelete === d.id ? (
                       <div className="inline-confirm">
-                        <span className="inline-confirm-label">Remove?</span>
-                        <button className="inline-confirm-yes" onClick={() => { void remove(d.id); setConfirmDelete(null); }}>Remove</button>
+                        <span className="inline-confirm-label">Drop it?</span>
+                        <button className="inline-confirm-yes" onClick={() => { void remove(d.id); setConfirmDelete(null); }}>Yes, drop</button>
                         <button className="inline-confirm-no" onClick={() => setConfirmDelete(null)}>Keep</button>
                       </div>
                     ) : (

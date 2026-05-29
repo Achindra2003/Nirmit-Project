@@ -296,7 +296,7 @@ export function RevealRoute() {
                 onClick={() => setStage("planner")}
                 style={{ width: "100%" }}
               >
-                Refine this room
+                Open this room
                 <span style={{ fontSize: 16, fontWeight: 400 }}>→</span>
               </button>
             </div>

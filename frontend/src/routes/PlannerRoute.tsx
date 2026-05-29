@@ -212,7 +212,7 @@ export function PlannerRoute() {
       const opener = `Built for something ${vFeel}. ${humanizeReasoningLine(baseVision.reasoning.headline)}`;
       setChat([{
         role: "assistant",
-        content: `${opener} Tap anything to select it — or tell me what you'd change in plain words.`,
+        content: `${opener} Tap anything in the room — or just tell me what you'd change.`,
       }]);
       setSelectedId(null);
       setRoomHistory([]);
@@ -813,7 +813,7 @@ export function PlannerRoute() {
             onClick={() => setStage("style")}
             style={{ padding: "10px 24px", fontSize: 11 }}
           >
-            Materials & finish →
+            Tune the materials →
           </button>
         </div>
       </div>
@@ -836,7 +836,7 @@ export function PlannerRoute() {
             <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 10 }}>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--terra)", animation: "pulse 2s ease infinite", flexShrink: 0 }} />
               <span style={{ fontFamily: "var(--fb)", fontSize: 13, fontWeight: 500, color: "var(--terra)", lineHeight: 1.4 }}>
-                {budgetHeadline || "Calculating…"}
+                {budgetHeadline || "Reading the room…"}
               </span>
             </div>
           </div>
@@ -898,8 +898,8 @@ export function PlannerRoute() {
           {/* Proposal card */}
           {pending?.proposed_room_state && (
             <div style={{ background: "var(--paper-3)", border: "1px solid var(--line)", borderLeft: "4px solid var(--terra)", padding: "14px 16px" }}>
-              <span className="eyebrow" style={{ display: "block", marginBottom: 6 }}>Proposed change</span>
-              <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 15, color: "var(--ink)", margin: "0 0 8px" }}>Apply this to the room?</p>
+              <span className="eyebrow" style={{ display: "block", marginBottom: 6 }}>A change is proposed</span>
+              <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 15, color: "var(--ink)", margin: "0 0 8px" }}>Apply it to the room?</p>
               <div style={{ fontFamily: "var(--fm)", fontSize: 10, color: pending.cost_delta_inr >= 0 ? "var(--terra)" : "var(--leaf)", letterSpacing: "0.08em", marginBottom: 12 }}>
                 {pending.cost_delta_inr >= 0 ? "+" : ""}₹{Math.round(pending.cost_delta_inr / 1000)}K COST CHANGE
               </div>
@@ -927,7 +927,7 @@ export function PlannerRoute() {
         {/* First-look suggestion cards */}
         {firstLookSuggestions.length > 0 && firstLookSuggestions.some((_, i) => !dismissedSuggestions.has(i)) && (
           <div style={{ padding: "8px 20px", borderTop: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
-            <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)" }}>SUGGESTED IMPROVEMENTS</span>
+            <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)" }}>A FEW IDEAS</span>
             {firstLookSuggestions.map((intent, i) => {
               if (dismissedSuggestions.has(i)) return null;
               // humanLabel: catalog-aware label so suggestions read like
@@ -960,7 +960,7 @@ export function PlannerRoute() {
             onClick={() => setShowPrompts((v) => !v)}
             style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" as const }}
           >
-            <span className="eyebrow">Try asking · {suggestionsFor(room?.intake.room_type).length}</span>
+            <span className="eyebrow">Need a nudge?</span>
             <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.1em" }}>{showPrompts ? "▲" : "▼"}</span>
           </button>
           {showPrompts && (
@@ -986,7 +986,7 @@ export function PlannerRoute() {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-            placeholder="Tell Nirmit what to refine…"
+            placeholder="Ask me to change something…"
             style={{ flex: 1, border: "none", borderBottom: "1px solid var(--ink)", background: "transparent", padding: "10px 0", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 16, outline: "none", color: "var(--ink)" }}
             onFocus={(e) => { e.currentTarget.style.borderBottomColor = "var(--terra)"; }}
             onBlur={(e) => { e.currentTarget.style.borderBottomColor = "var(--ink)"; }}
@@ -1081,7 +1081,7 @@ function GuardConfirmDialog({
         <div style={{ position: "absolute", bottom: 8, right: 8, width: 12, height: 12, borderBottom: "1px solid var(--terra)", borderRight: "1px solid var(--terra)" }} />
 
         <span style={{ fontFamily: "var(--fm)", fontSize: 9.5, color: "var(--terra-dk)", letterSpacing: "0.22em", textTransform: "uppercase" as const, display: "block", marginBottom: 14 }}>
-          A moment
+          Heads up
         </span>
         <h3
           id="guard-modal-title"
@@ -1148,7 +1148,7 @@ function AdvisoryPanel({ open, onToggle, vastuNotes, items, roomDepth }: {
       >
         <span className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--terra)", display: "inline-block", flexShrink: 0 }} />
-          Spatial advisory · {notes.length}
+          Worth flagging · {notes.length}
         </span>
         <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.1em" }}>{open ? "▲" : "▼"}</span>
       </button>
@@ -1232,7 +1232,7 @@ function CatalogueDrawer({
       overflow: "hidden",
     }}>
       <div style={{ padding: "12px 16px 10px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)" }}>FURNITURE CATALOGUE</span>
+        <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)" }}>FROM THE CATALOGUE</span>
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-3)", fontSize: 16, lineHeight: 1 }}>×</button>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>

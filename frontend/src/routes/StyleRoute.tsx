@@ -3,7 +3,6 @@ import type { Intent } from "@/api/types";
 import { api } from "@/api/client";
 import { RoomScene } from "@/three/RoomScene";
 import { FinishingPanel } from "@/components/FinishingPanel";
-import { vibeFeeling } from "@/lib/vibeMeta";
 import { useAppStore } from "@/store/useAppStore";
 
 type MaterialTab = "paint" | "flooring" | "lighting";
@@ -57,7 +56,7 @@ export function StyleRoute() {
             Materials & <span style={{ fontStyle: "italic", fontWeight: 400, color: "var(--terra)" }}>finish</span>
           </h2>
           <p style={{ fontFamily: "var(--fb)", fontSize: 14, color: "var(--ink-2)", lineHeight: 1.5 }}>
-            Set the tone for walls, floors, and light — tuned for something {vibeFeeling(room.intake.vibe)}.
+            Walls, floors, light — already keyed to your room. Nudge them to taste.
           </p>
         </div>
 
@@ -104,7 +103,7 @@ export function StyleRoute() {
             onClick={() => setStage("export")}
             style={{ width: "100%" }}
           >
-            Generate quotation →
+            Build the quotation →
           </button>
           <button
             className="btn-ghost"

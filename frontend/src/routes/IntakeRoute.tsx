@@ -53,7 +53,7 @@ const PAGES = [
   {
     titleMain: "Who lives",
     titleAccent: "here with you",
-    sub: "Tell us in your own words. The more specific you are, the more personal the drawing becomes.",
+    sub: "Tell us in your own words. The more we know, the more the room becomes yours.",
     kind: "who" as const,
   },
   {

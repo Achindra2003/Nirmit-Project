@@ -103,7 +103,7 @@ export function LoginRoute() {
               <span className="eyebrow">Welcome back</span>
             </div>
             <h1 style={{ fontFamily: "var(--fd)", fontSize: "clamp(34px, 3.6vw, 44px)", fontWeight: 600, lineHeight: 1.1, letterSpacing: "-0.018em", color: "var(--ink)" }}>
-              Sign in to <em style={{ fontStyle: "italic", fontWeight: 400, color: "var(--terra)" }}>your room.</em>
+              Pick up <em style={{ fontStyle: "italic", fontWeight: 400, color: "var(--terra)" }}>where you left off.</em>
             </h1>
           </div>
 

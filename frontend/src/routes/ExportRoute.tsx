@@ -186,7 +186,7 @@ export function ExportRoute() {
     try {
       const r = await api.saveDesign({ name: vision.name, philosophy: vision.philosophy, room_state: vision.room_state, existing_id: savedId });
       setSavedId(r.id);
-      setSaveMsg("Saved · find it on your home page.");
+      setSaveMsg("Saved to your archive.");
       // Clear the success message after a beat so the bar doesn't stay
       // shouting "saved!" forever.
       setTimeout(() => setSaveMsg(null), 4500);
@@ -244,9 +244,9 @@ export function ExportRoute() {
     },
   ];
 
-  const downloadLabel = selected === "whatsapp" ? "Download Image →"
-                     : selected === "contractor" ? "Download Contractor PDF →"
-                     : "Download PDF →";
+  const downloadLabel = selected === "whatsapp" ? "Get the image →"
+                     : selected === "contractor" ? "Get the contractor PDF →"
+                     : "Get your PDF →";
 
   return (
     <div className="paper" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
@@ -271,7 +271,7 @@ export function ExportRoute() {
             disabled={downloading || !boq}
             style={{ padding: "8px 20px" }}
           >
-            {downloading ? "Preparing…" : !boq ? "Loading…" : downloadLabel}
+            {downloading ? "Preparing…" : !boq ? "One moment…" : downloadLabel}
           </button>
         }
       />
@@ -334,7 +334,7 @@ export function ExportRoute() {
         <div style={{ overflow: "auto", padding: "40px 48px" }}>
           {!boq ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 16 }}>
-              <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 20, color: "var(--ink-3)" }}>Computing quotation…</div>
+              <div style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 20, color: "var(--ink-3)" }}>Drawing up your quotation…</div>
               <div style={{ width: 32, height: 32, border: "2px solid var(--line)", borderTopColor: "var(--terra)", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
             </div>
           ) : selected === "whatsapp" ? (
