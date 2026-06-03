@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.domain.suggest import suggest_for_room
 from app.graph.collaborator_graph import build_collaborator_graph
 from app.schemas.state import ChatRequest, ChatResponse
 
@@ -29,14 +30,19 @@ async def chat(req: ChatRequest) -> ChatResponse:
 
 @router.post("/chat/first-look", response_model=ChatResponse)
 async def chat_first_look(req: ChatRequest) -> ChatResponse:
-    """Fire on PlannerRoute mount. Returns 3 opinionated suggestions but does NOT apply them."""
-    result = await _graph.ainvoke(
-        {
-            "room_state": req.room_state,
-            "history": [],
-            "message": "__FIRST_LOOK__",
-            "available_visions": req.available_visions,
-            "first_look_mode": True,
-        }
+    """Fire on PlannerRoute mount. Returns up to 3 cross-sell / up-sell ideas
+    (does NOT apply them). Deterministic — rules over the room + household +
+    all-in budget headroom — so it never hangs on an LLM rate limit, and never
+    suggests anything that breaks budget or doesn't suit the family."""
+    suggestions = suggest_for_room(req.room_state)
+    reply = (
+        "A couple of ways to finish the room — all within your budget:"
+        if suggestions
+        else "This room's looking complete to me — but tell me what you'd change."
     )
-    return result["response"]
+    return ChatResponse(
+        reply=reply,
+        intents=[s.intent for s in suggestions],
+        proposed_room_state=None,
+        cost_delta_inr=0,
+    )

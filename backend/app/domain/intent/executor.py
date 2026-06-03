@@ -302,9 +302,19 @@ def _replace(room: RoomState, target_id: str | None, params: dict) -> RoomState 
         return None
     sku = params.get("sku")
     sub = params.get("sub_category")
-    catalog = get_catalog()
     new_catalog_item = None
+    # Prefer the curated philosophy menu (same source as _add / the drawer) so
+    # an up-sell to a menu SKU like LIVING-GATHERING-SOFA_L resolves to a real
+    # curated GLB instead of failing the hero-catalog lookup.
+    menu = get_menu(room.intake.room_type.value, room.philosophy) if room.philosophy else {}
     if isinstance(sku, str):
+        new_catalog_item = next((e for e in menu.values() if e.sku == sku), None)
+    if new_catalog_item is None and isinstance(sub, str):
+        new_catalog_item = menu.get(sub)
+    catalog = get_catalog()
+    if new_catalog_item is not None:
+        pass
+    elif isinstance(sku, str):
         new_catalog_item = catalog.get(sku)
     elif isinstance(sub, str):
         candidates = catalog.query(

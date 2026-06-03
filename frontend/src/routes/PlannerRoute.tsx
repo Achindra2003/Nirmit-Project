@@ -1000,9 +1000,16 @@ export function PlannerRoute() {
               // raw SKU "blendswap_cc_0_bookcase". skuName resolves SKUs to
               // their human name_en when the AI omits sub_category.
               const label = humanLabel(intent, room.items, skuName);
+              // The deterministic suggestion engine ships a `note` — the reason
+              // this piece earns its place (and that it's within budget). Lead
+              // with the action, then the why.
+              const note = typeof intent.parameters.note === "string" ? intent.parameters.note : null;
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "var(--paper-3)", border: "1px solid var(--line)", borderLeft: "3px solid var(--terra)" }}>
-                  <span style={{ flex: 1, fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.4 }}>{label}</span>
+                  <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                    <span style={{ fontFamily: "var(--fb)", fontSize: 12.5, fontWeight: 600, color: "var(--ink)", lineHeight: 1.3 }}>{label}</span>
+                    {note && <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12, color: "var(--ink-2)", lineHeight: 1.4 }}>{note}</span>}
+                  </span>
                   <button
                     onClick={() => { void applyOneIntent(intent); setDismissedSuggestions((s) => new Set([...s, i])); }}
                     style={{ background: "var(--terra)", border: "none", color: "var(--paper)", fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.1em", padding: "4px 10px", cursor: "pointer" }}
