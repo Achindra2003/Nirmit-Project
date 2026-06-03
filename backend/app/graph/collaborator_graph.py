@@ -35,6 +35,7 @@ from app.domain.catalog.presets import get_menu
 from app.domain.costing import build_cost_breakdown
 from app.domain.intent import IntentExecutionError, apply_intents
 from app.llm import get_llm
+from app.llm.guard import LlmQuotaGate, is_rate_limit_error
 from app.prompts import COLLABORATOR_SYSTEM, build_collaborator_prompt, build_diff_context
 from app.schemas.state import (
     ChatResponse,
@@ -66,6 +67,10 @@ class CollabState(TypedDict, total=False):
 def _generate(state: CollabState) -> CollabState:
     intake = state["room_state"].intake
     room = state["room_state"]
+    # Rate-limit circuit breaker: if a recent call tripped the gate, don't
+    # hammer the provider again — answer in-character and let the window pass.
+    if LlmQuotaGate.is_open():
+        return {**state, "raw_llm_text": json.dumps(_deterministic_fallback(state, reason="rate_limit"))}
     # Prefer the curated menu (sku/name/asset_url all match what the planner
     # drawer serves and what executor._add can resolve). Falls back to the
     # global hero catalog if the room has no philosophy attached.
@@ -100,12 +105,18 @@ def _generate(state: CollabState) -> CollabState:
         if not isinstance(text, str):
             text = str(text)
     except Exception as exc:
-        log.error(
-            "LLM call failed in collaborator (%s: %s) — falling back to stub",
-            type(exc).__name__, exc,
-            exc_info=True,
-        )
-        text = json.dumps(_deterministic_fallback(state, error=exc))
+        if is_rate_limit_error(exc):
+            LlmQuotaGate.trip(exc)
+            log.warning("collaborator: rate limited — answering in-character until the window passes")
+            reason = "rate_limit"
+        else:
+            log.error(
+                "LLM call failed in collaborator (%s: %s) — falling back to stub",
+                type(exc).__name__, exc,
+                exc_info=True,
+            )
+            reason = "error"
+        text = json.dumps(_deterministic_fallback(state, reason=reason))
     return {**state, "raw_llm_text": text}
 
 
@@ -116,13 +127,13 @@ def _parse(state: CollabState) -> CollabState:
     m = _JSON_BLOCK.search(text)
     if not m:
         log.error("collaborator: no JSON block in LLM response — raw: %r", text[:300])
-        parsed = _deterministic_fallback(state)
+        parsed = _deterministic_fallback(state, reason="garbled")
     else:
         try:
             parsed = json.loads(m.group(0))
         except json.JSONDecodeError as exc:
             log.error("collaborator: JSON decode failed (%s) — raw: %r", exc, text[:300])
-            parsed = _deterministic_fallback(state)
+            parsed = _deterministic_fallback(state, reason="garbled")
     return {**state, "parsed": parsed}
 
 
@@ -202,18 +213,72 @@ def _coerce_intent(raw: dict[str, Any]) -> Intent:
     return Intent(kind=IntentKind(kind), target_item_id=target, parameters=cleaned)
 
 
-def _deterministic_fallback(state: CollabState, *, error: Exception | None = None) -> dict[str, Any]:
-    """Used when the LLM is unavailable or returns garbage."""
+# Natural-language room labels for the fallback copy — "bedroom" already reads
+# as a room, "living"/"dining" need the noun. Falls back to "room" for anything
+# unmapped so the copy never reads "kitchen room" awkwardly.
+_ROOM_LABELS: dict[str, str] = {
+    "living": "living room",
+    "dining": "dining room",
+    "bedroom": "bedroom",
+    "kitchen": "kitchen",
+    "pooja": "pooja room",
+    "study": "study",
+    "bathroom": "bathroom",
+    "kids": "kids' room",
+}
+
+
+def _room_label(state: CollabState) -> str:
+    room = state.get("room_state")
+    if room is None:
+        return "room"
+    return _ROOM_LABELS.get(room.intake.room_type.value, "room")
+
+
+# In-character fallback lines. Nirmit stays a designer even when the model is
+# unreachable: warm, present in THIS room, never leaking error types/HTTP codes/
+# "check the logs" at the homeowner. Each reason has a few phrasings so a user
+# who retries doesn't see the exact same sentence twice. The `{room}` slot is
+# filled with the room type ("living room", "bedroom") to keep it grounded.
+_FALLBACK_LINES: dict[str, list[str]] = {
+    # Provider throttled us. Be honest that it's a "give me a beat" moment,
+    # never that something is broken — and tell them retrying will work.
+    "rate_limit": [
+        "Give me a beat, yaar — I'm sketching a few {room}s at once and need to catch up. Ask me again in a moment and I'll pick up right here.",
+        "I'm juggling a couple of rooms this second and don't want to give you a half-thought on your {room}. Try me again in a few seconds — I'll be right with you.",
+        "Hang on — let me finish the table I'm in the middle of before I turn back to your {room}. Nudge me again shortly and I'll dig in properly.",
+    ],
+    # Transient backend error. Reassure it's our side, not their request.
+    "error": [
+        "Hmm — that didn't quite reach my desk. Nothing wrong with what you asked; something hiccuped on my end. Try once more and I'll take a proper look at the {room}.",
+        "That one slipped past me — my side, not yours. Send it again and I'll give your {room} the attention it deserves.",
+        "Lost that for a second there. Give it another go and I'll get straight back to your {room}.",
+    ],
+    # Model replied but we couldn't read it. Frame as "lost my thread", ask again.
+    "garbled": [
+        "I started forming a take on that and lost my thread halfway. Mind asking me once more? I want to get your {room} right.",
+        "Sorry — I talked myself in a circle there. Say it again and I'll give you a clean answer for the {room}.",
+        "That came out muddled in my head. One more time? I've got a clear idea forming for the {room}.",
+    ],
+}
+
+
+def _deterministic_fallback(state: CollabState, *, reason: str = "garbled") -> dict[str, Any]:
+    """In-character reply for when the model is unreachable, throttled, or
+    returns something we can't parse.
+
+    Stays in Nirmit's designer voice and never surfaces error types, HTTP
+    codes, or "check the logs" to the homeowner — those go to the server log,
+    not the chat. `reason` selects the tone:
+      - "rate_limit": provider throttled — ask them to retry in a moment
+      - "error":      transient backend failure — reassure it's our side
+      - "garbled":    model replied but unparseable — ask them to rephrase
+    Applies no intents and no cost change, so the room is never mutated on a
+    failed turn."""
     msg = state.get("message", "")
-    if error is not None:
-        reason = f"{type(error).__name__}: {error}"
-        reply = (
-            f"I hit a snag trying to respond — the AI backend returned an error ({reason}). "
-            f"Check the server logs for details. Your request was: '{msg}'."
-        )
-    else:
-        reply = (
-            "I couldn't parse the AI response for your request. "
-            f"The backend logs will show what the model returned. Your request was: '{msg}'."
-        )
-    return {"reply": reply, "intents": [], "cost_delta_inr": 0}
+    room_label = _room_label(state)
+    lines = _FALLBACK_LINES.get(reason, _FALLBACK_LINES["garbled"])
+    # Pick a phrasing by message hash so a retry of the SAME text is stable,
+    # but different requests rotate through the variants.
+    line = lines[abs(hash(msg)) % len(lines)]
+    return {"reply": line.format(room=room_label), "intents": [], "cost_delta_inr": 0}

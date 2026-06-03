@@ -153,33 +153,70 @@ def _scale(room: RoomState, target_id: str | None, *, factor: float) -> RoomStat
         new_w = min(new_w, room.intake.room_dimensions.width_mm)
         new_d = min(new_d, room.intake.room_dimensions.depth_mm)
         new_dims = Dimensions(width_mm=new_w, depth_mm=new_d, height_mm=i.dimensions.height_mm)
-        out.append(i.model_copy(update={"dimensions": new_dims}))
+        # A grown piece can now poke through a wall or into a neighbour from a
+        # centre that was fine at the old size — re-place it safely.
+        eff_w, eff_d = _effective_footprint(new_w, new_d, i.position.rotation_deg)
+        nx, nz = _find_clear_centre(room, target_id, i.position.x_mm, i.position.z_mm, eff_w, eff_d)
+        new_pos = i.position.model_copy(update={"x_mm": nx, "z_mm": nz})
+        out.append(i.model_copy(update={"dimensions": new_dims, "position": new_pos}))
         found = True
     if not found:
         return None
     return room.model_copy(update={"items": out})
 
 
+def _coord(params: dict, *keys, default: int = 0) -> int:
+    """First parseable int among `keys`, else `default`. Accepts numeric
+    strings since the intent coercer stringifies non-scalar params."""
+    for k in keys:
+        if k in params and params[k] is not None:
+            try:
+                return int(round(float(params[k])))
+            except (TypeError, ValueError):
+                continue
+    return default
+
+
 def _move(room: RoomState, target_id: str | None, params: dict) -> RoomState | None:
-    """Move an item. (x_mm, z_mm) is the new footprint CENTRE."""
+    """Re-place an item. The result is always bounds-safe and slid clear of
+    other pieces — the LLM's numbers are treated as a request, not gospel.
+
+    Three ways to express the move (in priority order):
+      1. wall:    "N|S|E|W" (or "opp_entrance") — snap flush to that wall,
+                  facing into the room. Best for "put the sofa on the north
+                  wall"; the LLM never has to compute coordinates.
+      2. nudge:   dx_mm / dz_mm — shift relative to the current centre.
+      3. absolute: x_mm / z_mm — explicit footprint centre (last resort).
+
+    Whatever path is taken, the final centre is clamped inside the room and
+    nudged to the nearest non-overlapping slot. Other items never move."""
     if not target_id:
         return None
-    try:
-        x = int(params.get("x_mm") or params.get("x") or 0)
-        z = int(params.get("z_mm") or params.get("z") or 0)
-    except (TypeError, ValueError):
+    target = next((i for i in room.items if i.id == target_id), None)
+    if target is None:
         return None
-    out: list[PlacedItem] = []
-    found = False
-    for i in room.items:
-        if i.id != target_id:
-            out.append(i)
-            continue
-        new_pos = i.position.model_copy(update={"x_mm": x, "z_mm": z})
-        out.append(i.model_copy(update={"position": new_pos}))
-        found = True
-    if not found:
-        return None
+
+    wall = _norm_wall(params.get("wall"), room)
+    if wall is not None:
+        new_pos = _wall_slot(room, wall, target.dimensions, exclude_id=target_id) \
+            or _wall_flush_centre(room, wall, target.dimensions)
+    else:
+        if "dx_mm" in params or "dz_mm" in params or "dx" in params or "dz" in params:
+            cx = target.position.x_mm + _coord(params, "dx_mm", "dx")
+            cz = target.position.z_mm + _coord(params, "dz_mm", "dz")
+        else:
+            cx = _coord(params, "x_mm", "x", default=target.position.x_mm)
+            cz = _coord(params, "z_mm", "z", default=target.position.z_mm)
+        eff_w, eff_d = _effective_footprint(
+            target.dimensions.width_mm, target.dimensions.depth_mm, target.position.rotation_deg
+        )
+        nx, nz = _find_clear_centre(room, target_id, cx, cz, eff_w, eff_d)
+        new_pos = target.position.model_copy(update={"x_mm": nx, "z_mm": nz})
+
+    out = [
+        i.model_copy(update={"position": new_pos}) if i.id == target_id else i
+        for i in room.items
+    ]
     return room.model_copy(update={"items": out})
 
 
@@ -197,7 +234,13 @@ def _rotate(room: RoomState, target_id: str | None, params: dict) -> RoomState |
             out.append(i)
             continue
         new_rot = (i.position.rotation_deg + delta) % 360
-        out.append(i.model_copy(update={"position": i.position.model_copy(update={"rotation_deg": new_rot})}))
+        # Rotating swaps the footprint's room-axis extents — a long piece that
+        # fit flush against a wall can now poke through it. Re-clamp the centre
+        # for the new orientation (excluding itself from the collision check).
+        eff_w, eff_d = _effective_footprint(i.dimensions.width_mm, i.dimensions.depth_mm, new_rot)
+        nx, nz = _find_clear_centre(room, target_id, i.position.x_mm, i.position.z_mm, eff_w, eff_d)
+        new_pos = i.position.model_copy(update={"rotation_deg": new_rot, "x_mm": nx, "z_mm": nz})
+        out.append(i.model_copy(update={"position": new_pos}))
         found = True
     return room.model_copy(update={"items": out}) if found else None
 
@@ -208,11 +251,17 @@ def _duplicate(room: RoomState, target_id: str | None) -> RoomState | None:
     src = next((i for i in room.items if i.id == target_id), None)
     if src is None:
         return None
-    # Offset the copy 400mm along +x, clamped, so it doesn't perfectly overlap.
-    new_x = min(src.position.x_mm + 400, room.intake.room_dimensions.width_mm - 200)
+    # Offset the copy along +x, then slide it to the nearest clear, in-bounds
+    # slot so it doesn't clip a wall or sit on top of its source.
+    eff_w, eff_d = _effective_footprint(
+        src.dimensions.width_mm, src.dimensions.depth_mm, src.position.rotation_deg
+    )
+    nx, nz = _find_clear_centre(
+        room, None, src.position.x_mm + 400, src.position.z_mm, eff_w, eff_d
+    )
     clone = src.model_copy(update={
         "id": f"{src.category}-{uuid.uuid4().hex[:6]}",
-        "position": src.position.model_copy(update={"x_mm": new_x}),
+        "position": src.position.model_copy(update={"x_mm": nx, "z_mm": nz}),
     })
     return room.model_copy(update={"items": [*room.items, clone]})
 
@@ -514,6 +563,30 @@ def _opposite_wall(d: str) -> str:
     return {"N": "S", "S": "N", "E": "W", "W": "E"}.get(d, "N")
 
 
+def _effective_footprint(width_mm: int, depth_mm: int, rotation_deg: float) -> tuple[int, int]:
+    """Footprint extents as they sit in room coords after rotation.
+
+    A piece rotated 90°/270° has its width and depth swapped relative to the
+    room's x/z axes. Every bounds/collision check below works in room coords,
+    so it must use these effective extents — not the raw catalog dims."""
+    if int(round(rotation_deg)) % 180 == 90:
+        return depth_mm, width_mm
+    return width_mm, depth_mm
+
+
+def _clamp_centre(cx: int, cz: int, eff_w: int, eff_d: int, rw: int, rd: int) -> tuple[int, int]:
+    """Pull a footprint CENTRE inside the room so no edge pokes through a wall.
+
+    This is the guard the AI move path was missing — it mirrors the frontend's
+    manual-drag clamp (`Planner2D.snapCentre`). If the piece is somehow larger
+    than the room on an axis, we centre it on that axis rather than emit a
+    nonsensical clamp."""
+    half_w, half_d = eff_w / 2, eff_d / 2
+    x = rw // 2 if eff_w >= rw else int(round(max(half_w, min(cx, rw - half_w))))
+    z = rd // 2 if eff_d >= rd else int(round(max(half_d, min(cz, rd - half_d))))
+    return x, z
+
+
 def _aabb_overlaps(
     cx1: int, cz1: int, w1: int, d1: int,
     cx2: int, cz2: int, w2: int, d2: int,
@@ -529,24 +602,122 @@ def _slot_clear(
     items: list[PlacedItem],
     cx: int, cz: int,
     new_w: int, new_d: int,
+    *,
+    exclude_id: str | None = None,
 ) -> bool:
+    """True if a footprint at (cx, cz) clears every item except `exclude_id`.
+
+    `exclude_id` matters for MOVE/SCALE/ROTATE: the piece being re-placed must
+    not be tested against its own old footprint, or it would always read as
+    "blocked by itself"."""
     for i in items:
-        iw, id_ = i.dimensions.width_mm, i.dimensions.depth_mm
-        if int(i.position.rotation_deg) % 180 == 90:
-            iw, id_ = id_, iw
+        if exclude_id is not None and i.id == exclude_id:
+            continue
+        iw, id_ = _effective_footprint(i.dimensions.width_mm, i.dimensions.depth_mm, i.position.rotation_deg)
         if _aabb_overlaps(cx, cz, new_w, new_d, i.position.x_mm, i.position.z_mm, iw, id_):
             return False
     return True
 
 
-def _wall_snap_place(room: RoomState, category: str, dims: Dimensions) -> Position:
-    """Return a Position along a preferred wall where the item fits without overlapping
-    existing items. Existing items are never moved."""
+def _find_clear_centre(
+    room: RoomState,
+    target_id: str | None,
+    cx: int, cz: int,
+    eff_w: int, eff_d: int,
+) -> tuple[int, int]:
+    """Clamp (cx, cz) into bounds, then slide to the nearest non-overlapping
+    centre if it lands on another piece. Existing items are never moved.
+
+    Returns the clamped centre even if no clear slot is found within range —
+    better to land a slightly-overlapping piece than to throw the user's move
+    away. The caller has already been told this is a best-effort placement."""
     rw = room.intake.room_dimensions.width_mm
     rd = room.intake.room_dimensions.depth_mm
-    entrance = room.intake.entrance_direction.value if hasattr(room.intake.entrance_direction, "value") else str(room.intake.entrance_direction)
-    iw, id_ = dims.width_mm, dims.depth_mm
+    cx, cz = _clamp_centre(cx, cz, eff_w, eff_d, rw, rd)
+    if _slot_clear(room.items, cx, cz, eff_w, eff_d, exclude_id=target_id):
+        return cx, cz
+    # Expanding ring search in the 8 compass directions — finds the closest
+    # clear pocket without scanning the whole floor.
+    dirs = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+    for r in range(_SCAN_STEP_MM, max(rw, rd) + _SCAN_STEP_MM, _SCAN_STEP_MM):
+        for ux, uz in dirs:
+            nx, nz = _clamp_centre(cx + ux * r, cz + uz * r, eff_w, eff_d, rw, rd)
+            if _slot_clear(room.items, nx, nz, eff_w, eff_d, exclude_id=target_id):
+                return nx, nz
+    return cx, cz
 
+
+def _norm_wall(value, room: RoomState) -> str | None:
+    """Normalise an LLM-supplied wall hint to N/S/E/W, or None if unusable.
+
+    Accepts the four compass letters (any case) plus the convenience tokens
+    'opp_entrance' / 'opposite' (resolved against the room's entrance)."""
+    if not isinstance(value, str):
+        return None
+    v = value.strip().upper()
+    if v in ("N", "S", "E", "W"):
+        return v
+    if v in ("OPP_ENTRANCE", "OPPOSITE", "OPP"):
+        entrance = room.intake.entrance_direction
+        entrance = entrance.value if hasattr(entrance, "value") else str(entrance)
+        return _opposite_wall(entrance)
+    return None
+
+
+def _wall_slot(
+    room: RoomState,
+    wall: str,
+    dims: Dimensions,
+    *,
+    exclude_id: str | None = None,
+) -> Position | None:
+    """Scan `wall` for a clear, in-bounds Position flush against it, depth
+    facing into the room. Returns None if the wall has no clear slot."""
+    rw = room.intake.room_dimensions.width_mm
+    rd = room.intake.room_dimensions.depth_mm
+    iw, id_ = dims.width_mm, dims.depth_mm
+    m = _WALL_MARGIN_MM
+    if wall in ("S", "N"):
+        eff_w, eff_d = iw, id_
+        z = m + eff_d // 2 if wall == "S" else rd - m - eff_d // 2
+        rot = 0 if wall == "S" else 180
+        for x in range(eff_w // 2 + 200, rw - eff_w // 2 - 200, _SCAN_STEP_MM):
+            if _slot_clear(room.items, x, z, eff_w, eff_d, exclude_id=exclude_id):
+                return Position(x_mm=x, z_mm=z, rotation_deg=rot)
+    else:  # W or E — depth runs wall-parallel, so width sticks into the room
+        eff_w, eff_d = id_, iw
+        x = m + eff_w // 2 if wall == "W" else rw - m - eff_w // 2
+        rot = 270 if wall == "W" else 90
+        for z in range(eff_d // 2 + 200, rd - eff_d // 2 - 200, _SCAN_STEP_MM):
+            if _slot_clear(room.items, x, z, eff_w, eff_d, exclude_id=exclude_id):
+                return Position(x_mm=x, z_mm=z, rotation_deg=rot)
+    return None
+
+
+def _wall_flush_centre(room: RoomState, wall: str, dims: Dimensions) -> Position:
+    """Flush midpoint of `wall` — the fallback when no clear slot exists."""
+    rw = room.intake.room_dimensions.width_mm
+    rd = room.intake.room_dimensions.depth_mm
+    m = _WALL_MARGIN_MM
+    if wall == "S":
+        return Position(x_mm=rw // 2, z_mm=m + dims.depth_mm // 2, rotation_deg=0)
+    if wall == "N":
+        return Position(x_mm=rw // 2, z_mm=rd - m - dims.depth_mm // 2, rotation_deg=180)
+    if wall == "W":
+        return Position(x_mm=m + dims.depth_mm // 2, z_mm=rd // 2, rotation_deg=270)
+    return Position(x_mm=rw - m - dims.depth_mm // 2, z_mm=rd // 2, rotation_deg=90)
+
+
+def _wall_snap_place(
+    room: RoomState,
+    category: str,
+    dims: Dimensions,
+    *,
+    exclude_id: str | None = None,
+) -> Position:
+    """Return a Position along a preferred wall where the item fits without
+    overlapping existing items. Existing items are never moved."""
+    entrance = room.intake.entrance_direction.value if hasattr(room.intake.entrance_direction, "value") else str(room.intake.entrance_direction)
     wall_order = _WALL_PREFS.get(category, ["S", "N", "W", "E"])
     resolved_walls = [
         _opposite_wall(entrance) if w == "opp_entrance" else w
@@ -554,29 +725,15 @@ def _wall_snap_place(room: RoomState, category: str, dims: Dimensions) -> Positi
     ]
 
     fallback: Position | None = None
-    m = _WALL_MARGIN_MM
-
     for wall in resolved_walls:
-        if wall in ("S", "N"):
-            # Item long-axis runs along x; depth sticks into the room.
-            eff_w, eff_d = iw, id_
-            z = m + eff_d // 2 if wall == "S" else rd - m - eff_d // 2
-            rot = 0 if wall == "S" else 180
-            for x in range(eff_w // 2 + 200, rw - eff_w // 2 - 200, _SCAN_STEP_MM):
-                if _slot_clear(room.items, x, z, eff_w, eff_d):
-                    return Position(x_mm=x, z_mm=z, rotation_deg=rot)
-            if fallback is None:
-                fallback = Position(x_mm=rw // 2, z_mm=z, rotation_deg=rot)
-        else:  # W or E
-            eff_w, eff_d = id_, iw  # rotated 90° — depth becomes wall-parallel
-            x = m + eff_w // 2 if wall == "W" else rw - m - eff_w // 2
-            rot = 270 if wall == "W" else 90
-            for z in range(eff_d // 2 + 200, rd - eff_d // 2 - 200, _SCAN_STEP_MM):
-                if _slot_clear(room.items, x, z, eff_w, eff_d):
-                    return Position(x_mm=x, z_mm=z, rotation_deg=rot)
-            if fallback is None:
-                fallback = Position(x_mm=x, z_mm=rd // 2, rotation_deg=rot)
+        slot = _wall_slot(room, wall, dims, exclude_id=exclude_id)
+        if slot is not None:
+            return slot
+        if fallback is None:
+            fallback = _wall_flush_centre(room, wall, dims)
 
+    rw = room.intake.room_dimensions.width_mm
+    rd = room.intake.room_dimensions.depth_mm
     return fallback or Position(x_mm=rw // 2, z_mm=rd // 2, rotation_deg=0)
 
 

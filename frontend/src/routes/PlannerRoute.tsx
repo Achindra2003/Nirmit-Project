@@ -373,8 +373,15 @@ export function PlannerRoute() {
       const res = await api.chat({ room_state: room, history: chat, message: turn.content, available_visions: visions });
       setChat((c) => [...c, { role: "assistant", content: res.reply }]);
       if (res.proposed_room_state) setPending(res);
-    } catch (e) {
-      setChat((c) => [...c, { role: "assistant", content: `(error: ${e instanceof Error ? e.message : String(e)})` }]);
+    } catch {
+      // Network/transport failure (server down, dropped connection). The
+      // backend's own fallbacks handle model/rate-limit errors in-voice and
+      // still return 200 — this branch only fires when the request never
+      // reached it. Stay in character; don't surface a stack message.
+      setChat((c) => [...c, {
+        role: "assistant",
+        content: "Looks like I lost our connection for a second there — I'm not reaching the studio. Give it another go in a moment and I'll be right back at the table.",
+      }]);
     } finally {
       setSending(false);
     }
