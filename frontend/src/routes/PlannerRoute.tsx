@@ -189,6 +189,11 @@ export function PlannerRoute() {
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<number>>(new Set());
   const [showRoomEdit, setShowRoomEdit] = useState(false);
   const [showCatalogue, setShowCatalogue] = useState(false);
+  // Bill of Items — the live, itemized list of everything in the room with a
+  // running subtotal. Lets the user see "what do I have so far" and change it
+  // mid-design, instead of meeting the line-item bill for the first time on the
+  // final export screen (and having to walk back here to edit).
+  const [showBill, setShowBill] = useState(false);
   // AI collaborator panel is collapsible to the right edge so the canvas can
   // breathe when the user wants to focus on the room itself.
   const [aiOpen, setAiOpen] = useState(true);
@@ -780,6 +785,21 @@ export function PlannerRoute() {
               onClose={() => setShowCatalogue(false)}
             />
           )}
+
+          {/* Bill of Items — itemized, live, editable. Anchored bottom-left so
+              it sits above the footer's estimate that opens it. Reads
+              cost.line_items, which patchActiveVision keeps current on every
+              edit, so it can never drift from the canvas. */}
+          {showBill && (
+            <BillOfItems
+              lineItems={baseVision.cost.line_items}
+              story={baseVision.cost.story}
+              selectedId={selectedId}
+              onSelect={(id) => setSelectedId(id)}
+              onRemove={(id) => void applyOneIntent({ kind: "remove", target_item_id: id, parameters: {} })}
+              onClose={() => setShowBill(false)}
+            />
+          )}
         </div>
 
         {/* Canvas footer — room identity + live cost + next-stage CTA.
@@ -813,6 +833,32 @@ export function PlannerRoute() {
                   · ₹{Math.round(Math.abs(baseVision.cost.story.remaining_inr) / 1000)}k OVER
                 </span>
               )}
+              {/* Opens the itemized Bill of Items — turns the bare total into a
+                  list the user can review and edit without leaving the planner. */}
+              <button
+                onClick={() => setShowBill((v) => !v)}
+                title="See every piece in the room and its price"
+                style={{
+                  marginLeft: 6,
+                  background: showBill ? "var(--terra)" : "rgba(242,235,221,.08)",
+                  border: `1px solid ${showBill ? "var(--terra)" : "rgba(242,235,221,.26)"}`,
+                  color: showBill ? "var(--paper)" : "rgba(242,235,221,.82)",
+                  fontFamily: "var(--fm)",
+                  fontSize: 10,
+                  letterSpacing: "0.08em",
+                  padding: "5px 11px",
+                  borderRadius: 3,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all .18s",
+                }}
+              >
+                <span aria-hidden>▤</span>
+                {baseVision.cost.line_items.length} {baseVision.cost.line_items.length === 1 ? "item" : "items"}
+                <span aria-hidden style={{ fontSize: 8 }}>{showBill ? "▲" : "▼"}</span>
+              </button>
             </div>
           </div>
           <button
@@ -1182,6 +1228,116 @@ function CBtn({ children, onClick, danger, accent, bold }: { children: React.Rea
     >
       {children}
     </button>
+  );
+}
+
+/* ── Bill of Items ──
+ * Live, itemized list of everything currently in the room with a running
+ * subtotal vs budget. Reads cost.line_items (kept current by patchActiveVision
+ * after every edit) so it never drifts from the canvas. Each row is
+ * click-to-focus — selecting the piece in the scene surfaces the existing
+ * floating item-controls (Move / Rotate / Style / Remove) — and carries its own
+ * inline remove. This is the "know what you have, change it while you see it"
+ * surface that previously only existed (read-only) on the final export bill. */
+function BillOfItems({
+  lineItems,
+  story,
+  selectedId,
+  onSelect,
+  onRemove,
+  onClose,
+}: {
+  lineItems: import("@/api/types").CostLineItem[];
+  story: import("@/api/types").BudgetStory;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onRemove: (id: string) => void;
+  onClose: () => void;
+}) {
+  const over = story.remaining_inr < 0;
+  return (
+    <div
+      className="pane-animated-entrance"
+      style={{
+        position: "absolute",
+        left: "var(--s-4)",
+        bottom: "var(--s-4)",
+        width: 320,
+        maxHeight: "calc(100% - 120px)",
+        background: "var(--paper)",
+        border: "1px solid var(--line)",
+        boxShadow: "0 18px 48px rgba(0,0,0,.28)",
+        display: "flex",
+        flexDirection: "column",
+        zIndex: 7,
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ padding: "12px 16px 10px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <span className="eyebrow">Bill of Items · {lineItems.length}</span>
+        <button onClick={onClose} aria-label="Close bill of items" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-3)", fontSize: 16, lineHeight: 1 }}>×</button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {lineItems.length === 0 ? (
+          <div style={{ padding: "24px 16px", fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 13, color: "var(--ink-3)", lineHeight: 1.5 }}>
+            Nothing in the room yet — add a piece from the catalogue, or ask the collaborator.
+          </div>
+        ) : lineItems.map((li) => {
+          const sel = li.item_id === selectedId;
+          return (
+            <div
+              key={li.item_id}
+              onClick={() => onSelect(li.item_id)}
+              style={{
+                padding: "10px 12px 10px 13px",
+                borderBottom: "1px solid var(--line)",
+                borderLeft: `3px solid ${sel ? "var(--terra)" : "transparent"}`,
+                background: sel ? "var(--paper-3)" : "transparent",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                transition: "background .15s",
+              }}
+              onMouseEnter={(e) => { if (!sel) e.currentTarget.style.background = "rgba(242,235,221,.5)"; }}
+              onMouseLeave={(e) => { if (!sel) e.currentTarget.style.background = "transparent"; }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "var(--fd)", fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.3, whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{li.name}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
+                  <span style={{ fontFamily: "var(--fm)", fontSize: 8, letterSpacing: "0.1em", padding: "2px 5px", border: `1px solid ${li.is_buy ? "var(--terra)" : "var(--leaf)"}`, color: li.is_buy ? "var(--terra)" : "var(--leaf)" }}>
+                    {li.is_buy ? "BUY" : "BUILD"}
+                  </span>
+                  <span style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--ink-2)" }}>₹{Math.round(li.price_inr / 1000)}k</span>
+                </div>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); onRemove(li.item_id); }}
+                title={`Remove ${li.name}`}
+                aria-label={`Remove ${li.name}`}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--ink-3)", fontSize: 14, lineHeight: 1, padding: "4px 2px", flexShrink: 0 }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--terra)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--ink-3)"; }}
+              >✕</button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)", background: "var(--paper-2)", flexShrink: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)" }}>SUBTOTAL</span>
+          <span style={{ fontFamily: "var(--fd)", fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>₹{Math.round(story.total_inr / 1000)}k</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
+          <span style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12, color: "var(--ink-3)" }}>of ₹{Math.round(story.budget_inr / 1000)}k budget</span>
+          <span style={{ fontFamily: "var(--fm)", fontSize: 11, color: over ? "#c25a3a" : "var(--leaf)", letterSpacing: "0.04em" }}>
+            {over ? `₹${Math.round(Math.abs(story.remaining_inr) / 1000)}k over` : `₹${Math.round(story.remaining_inr / 1000)}k left`}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 

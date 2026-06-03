@@ -601,6 +601,16 @@ export function ExportRoute() {
                   ? "Saved ✓"
                   : "Save design"}
           </button>
+          {/* Back-link to the planner so the bill isn't a dead end — a user
+              reading the line items here can return to change a piece (and the
+              live Bill of Items there) instead of feeling stuck on the export. */}
+          <button
+            onClick={() => setStage("planner")}
+            className="tool-action-lnk"
+            style={{ padding: 0, flexShrink: 0 }}
+          >
+            ← Adjust items
+          </button>
           <button
             onClick={reset}
             className="tool-action-lnk"
