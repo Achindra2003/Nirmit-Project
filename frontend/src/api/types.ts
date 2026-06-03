@@ -157,9 +157,13 @@ export interface BudgetStory {
 export interface CostBreakdown {
   story: BudgetStory;
   line_items: CostLineItem[];
-  /** Wall paint + floor finish cost for the selected finishes. Included in
-   *  story.total_inr, so changing a finish moves the budget. */
+  /** story.total_inr is the ALL-IN total = furniture + materials + labour +
+   *  taxes, matching the downloadable quotation's grand total. */
   materials_inr?: number;
+  /** Installation labour — carpentry, painting, flooring, electrical. */
+  labor_inr?: number;
+  /** Contingency (10%) + GST. */
+  taxes_inr?: number;
 }
 
 export type VisionPhilosophy = "gathering" | "breath" | "keeper";

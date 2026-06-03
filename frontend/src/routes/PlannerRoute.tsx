@@ -321,7 +321,11 @@ export function PlannerRoute() {
       // change on the floor (state stays as before; the api.apply round
       // trip is wasted but harmless). Drag / rotate / style swaps almost
       // never trigger the guard, so the common path is unchanged.
-      const concern = checkRoomChange(before, res.room_state);
+      const concern = checkRoomChange(before, res.room_state, {
+        budget_inr: res.cost.story.budget_inr,
+        beforeRemaining: baseVision.cost.story.remaining_inr,
+        afterRemaining: res.cost.story.remaining_inr,
+      });
       if (concern) {
         setGuardModal({
           concern,
@@ -410,7 +414,12 @@ export function PlannerRoute() {
     // large rearrangements). Run the same guard the per-intent applies
     // use — better to ask "are you sure?" than to wipe out the only
     // sofa via a chat reply the user didn't fully read.
-    const concern = checkRoomChange(before, proposed);
+    const concern = checkRoomChange(before, proposed, {
+      budget_inr: baseVision.cost.story.budget_inr,
+      beforeRemaining: baseVision.cost.story.remaining_inr,
+      // The chat round-trip gives the all-in cost delta; remaining shifts by it.
+      afterRemaining: baseVision.cost.story.remaining_inr - pending.cost_delta_inr,
+    });
     if (concern) {
       setGuardModal({
         concern,
@@ -795,6 +804,8 @@ export function PlannerRoute() {
               lineItems={baseVision.cost.line_items}
               story={baseVision.cost.story}
               materialsInr={baseVision.cost.materials_inr ?? 0}
+              laborInr={baseVision.cost.labor_inr ?? 0}
+              taxesInr={baseVision.cost.taxes_inr ?? 0}
               selectedId={selectedId}
               onSelect={(id) => setSelectedId(id)}
               onRemove={(id) => void applyOneIntent({ kind: "remove", target_item_id: id, parameters: {} })}
@@ -1244,6 +1255,8 @@ function BillOfItems({
   lineItems,
   story,
   materialsInr,
+  laborInr,
+  taxesInr,
   selectedId,
   onSelect,
   onRemove,
@@ -1252,6 +1265,8 @@ function BillOfItems({
   lineItems: import("@/api/types").CostLineItem[];
   story: import("@/api/types").BudgetStory;
   materialsInr: number;
+  laborInr: number;
+  taxesInr: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
@@ -1330,20 +1345,27 @@ function BillOfItems({
         {/* Walls & floor finishes — priced from the Materials screen. Shown as
             a single line (not removable here) so the rows above + this line
             reconcile to the subtotal below. */}
-        {materialsInr > 0 && (
-          <div style={{ padding: "10px 12px 10px 13px", borderBottom: "1px solid var(--line)", borderLeft: "3px solid transparent", display: "flex", alignItems: "center", gap: 10 }}>
+        {/* The costs beyond the furniture itself — what makes the number the
+            real all-in (not a furniture sticker that overshoots once the
+            carpenter is priced). These reconcile the rows to the total. */}
+        {([
+          ["Walls & floor finishes", "MATERIALS", materialsInr],
+          ["Installation & labour", "CARPENTRY · PAINTING · FITTING", laborInr],
+          ["Contingency & GST", "10% + GST", taxesInr],
+        ] as const).filter(([, , v]) => v > 0).map(([label, sub, v]) => (
+          <div key={label} style={{ padding: "10px 12px 10px 13px", borderBottom: "1px solid var(--line)", borderLeft: "3px solid transparent", display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--fd)", fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.3 }}>Walls &amp; floor finishes</div>
-              <div style={{ fontFamily: "var(--fm)", fontSize: 8, letterSpacing: "0.1em", color: "var(--ink-3)", marginTop: 3 }}>SET ON MATERIALS</div>
+              <div style={{ fontFamily: "var(--fd)", fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.3 }}>{label}</div>
+              <div style={{ fontFamily: "var(--fm)", fontSize: 8, letterSpacing: "0.1em", color: "var(--ink-3)", marginTop: 3 }}>{sub}</div>
             </div>
-            <span style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--ink-2)", flexShrink: 0 }}>₹{Math.round(materialsInr / 1000)}k</span>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--ink-2)", flexShrink: 0 }}>₹{Math.round(v / 1000)}k</span>
           </div>
-        )}
+        ))}
       </div>
 
       <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)", background: "var(--paper-2)", flexShrink: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)" }}>SUBTOTAL</span>
+          <span style={{ fontFamily: "var(--fm)", fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-3)" }}>ALL-IN TOTAL</span>
           <span style={{ fontFamily: "var(--fd)", fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>₹{Math.round(story.total_inr / 1000)}k</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>

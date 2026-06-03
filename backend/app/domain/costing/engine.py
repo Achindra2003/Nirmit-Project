@@ -1,6 +1,7 @@
 """Pure cost math. No LLM, no IO."""
 from __future__ import annotations
 
+from app.domain.boq.boq import BUILD_CATEGORIES, build_boq
 from app.domain.finishing import (
     DEFAULT_FLOOR_RATE_SQFT,
     DEFAULT_WALL_RATE_SQFT,
@@ -11,6 +12,7 @@ from app.schemas.state import (
     BudgetStory,
     CostBreakdown,
     CostLineItem,
+    PlacedItem,
     RoomState,
 )
 
@@ -52,21 +54,36 @@ def materials_cost(room: RoomState) -> int:
     return int(round(wall_sqft * wall_rate + floor_sqft * floor_rate))
 
 
+def effective_price(item: PlacedItem) -> int:
+    """What this piece actually costs in the quotation: build items at their
+    carpenter build price, bought items at retail. Mirrors the BOQ so the live
+    estimate and the downloadable quote price every piece identically."""
+    is_build = item.category in BUILD_CATEGORIES or not item.is_buy
+    return (item.build_price_inr or item.price_inr) if is_build else item.price_inr
+
+
 def build_cost_breakdown(room: RoomState) -> CostBreakdown:
     line_items = [
         CostLineItem(
             item_id=item.id,
             name=item.name_en,
             category=item.category,
-            price_inr=item.price_inr,
+            price_inr=effective_price(item),
             build_alternative_inr=item.build_price_inr,
             is_buy=item.is_buy,
         )
         for item in room.items
     ]
-    furniture_total = sum(li.price_inr for li in line_items)
-    materials = materials_cost(room)
-    total = furniture_total + materials
+    # The ONE all-in number. We total it the way the carpenter's quotation does
+    # — furniture + materials + installation labour + contingency + GST — so the
+    # estimate the user sees IS what they'll pay, and every add / up-sell is
+    # checked against the real cost (the carpenter's labour included), never a
+    # furniture-only sticker that quietly overshoots once the work is priced.
+    boq = build_boq(room, city=room.intake.city)
+    materials = sum(l.amount_inr for l in boq.materials)
+    labor = sum(l.amount_inr for l in boq.labor)
+    taxes = boq.contingency_inr + boq.gst_inr
+    total = boq.grand_total_inr
     budget = room.intake.budget_inr
     remaining = budget - total
     livspace_pct = round(100 * total / max(int(budget * _LIVSPACE_MULTIPLIER), 1))
@@ -83,6 +100,8 @@ def build_cost_breakdown(room: RoomState) -> CostBreakdown:
         ),
         line_items=line_items,
         materials_inr=materials,
+        labor_inr=labor,
+        taxes_inr=taxes,
     )
 
 

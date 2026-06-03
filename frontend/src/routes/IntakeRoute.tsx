@@ -134,7 +134,7 @@ const PAGES = [
   {
     titleMain: "Your budget",
     titleAccent: "and city",
-    sub: "Furniture and finishing only — installation and civil work stay separate.",
+    sub: "Your all-in for this room — furniture, finishes, and the carpentry to build and fit it. We'll keep the design honest to this number.",
     kind: "budget" as const,
   },
 ];
@@ -565,12 +565,12 @@ function BudgetAnswer({ budget, setBudget, city, setCity, otherCity, setOtherCit
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
       <div>
-        <span className="eyebrow">Budget — furniture and finishing</span>
+        <span className="eyebrow">Budget — all-in for this room</span>
         <div style={{ display: "flex", alignItems: "baseline", gap: 18, marginTop: 18, marginBottom: 28 }}>
           <span style={{ fontFamily: "var(--fd)", fontSize: "clamp(56px, 6vw, 88px)", fontWeight: 600, lineHeight: 1, color: "var(--terra)", letterSpacing: "-0.025em" }}>
             {formatBudget(budget)}
           </span>
-          <span style={{ fontFamily: "var(--fb)", fontSize: 15, color: "var(--ink-3)" }}>furniture + finishing</span>
+          <span style={{ fontFamily: "var(--fb)", fontSize: 15, color: "var(--ink-3)" }}>all-in, built &amp; fitted</span>
         </div>
         <input type="range" min={75000} max={500000} step={25000} value={budget} onChange={(e) => setBudget(+e.target.value)} />
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14, fontFamily: "var(--fm)", fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.08em" }}>

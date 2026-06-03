@@ -86,12 +86,22 @@ def test_materials_cost_tracks_selected_floor_rate():
     assert materials_cost(pricey) > materials_cost(cheap)
 
 
-def test_total_includes_materials():
+def test_total_is_all_in():
     room = _room(wall_finish_rate_inr_sqft=50, floor_rate_inr_sqft=135)
     cost = build_cost_breakdown(room)
     furniture = sum(li.price_inr for li in cost.line_items)
-    assert cost.materials_inr > 0
-    assert cost.story.total_inr == furniture + cost.materials_inr
+    # The estimate is the real all-in: furniture + materials + labour + taxes.
+    assert cost.materials_inr > 0 and cost.labor_inr > 0 and cost.taxes_inr > 0
+    assert cost.story.total_inr == furniture + cost.materials_inr + cost.labor_inr + cost.taxes_inr
+
+
+def test_all_in_matches_boq_grand_total():
+    from app.domain.boq.boq import build_boq
+    room = _room()
+    cost = build_cost_breakdown(room)
+    boq = build_boq(room, city=room.intake.city)
+    # The live estimate and the downloadable quotation must agree to the rupee.
+    assert cost.story.total_inr == boq.grand_total_inr
 
 
 def test_recolor_stores_rate_and_moves_cost():

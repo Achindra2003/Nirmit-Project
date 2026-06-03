@@ -35,9 +35,17 @@
  */
 import type { PlacedItem, RoomState, RoomType } from "@/api/types";
 
+/** Cost context for the budget guard. The all-in remaining (budget − the real
+ *  cost incl. carpentry + GST) before and after the edit. */
+export interface CostCheck {
+  budget_inr: number;
+  beforeRemaining: number;
+  afterRemaining: number;
+}
+
 export interface GuardConcern {
   /** Stable rule id — useful for logging / future a/b tweaks. */
-  rule: "missing_essential" | "too_many" | "room_cramped";
+  rule: "over_budget" | "missing_essential" | "too_many" | "room_cramped";
   /** Short headline shown as the modal title (italic Playfair). */
   title: string;
   /** Single-paragraph explanation in plain language. */
@@ -192,9 +200,28 @@ function asWord(n: number): string {
 export function checkRoomChange(
   before: RoomState,
   after: RoomState,
+  cost?: CostCheck,
 ): GuardConcern | null {
   const beforeCounts = countBy(before.items);
   const afterCounts  = countBy(after.items);
+
+  // ── 0. Over budget ───────────────────────────────────────────────
+  // The money constraint comes first — it's the one the user set. The
+  // remaining is against the REAL all-in (furniture + finishes + the
+  // carpenter's labour + GST), so we only flag a genuine overshoot, not
+  // a furniture sticker that looks fine until the work is priced. Fires
+  // when this edit is what tips an in-budget room over.
+  if (cost && cost.beforeRemaining >= 0 && cost.afterRemaining < 0) {
+    const total = cost.budget_inr - cost.afterRemaining;
+    const over = -cost.afterRemaining;
+    return {
+      rule: "over_budget",
+      title: "This takes you over budget.",
+      body: `That brings the all-in to about ₹${Math.round(total / 1000)}k — roughly ₹${Math.round(over / 1000)}k past your ₹${Math.round(cost.budget_inr / 1000)}k budget, with the carpentry and GST counted. Add it anyway, or keep to budget?`,
+      confirmLabel: "Add it anyway",
+      cancelLabel: "Keep to budget",
+    };
+  }
 
   // ── 1. Essential coverage ────────────────────────────────────────
   const essentialGroups = ESSENTIAL_BY_ROOM[after.intake.room_type] ?? [];

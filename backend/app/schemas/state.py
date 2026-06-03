@@ -305,8 +305,18 @@ class CostBreakdown(StrictModel):
     line_items: list[CostLineItem]
     materials_inr: int = Field(
         default=0,
-        description="Wall paint + floor finish cost for the selected finishes (area × ₹/sqft). Included in story.total_inr so changing a finish moves the budget.",
+        description="Materials (paint, putty, flooring, skirting, polish) for the room.",
     )
+    labor_inr: int = Field(
+        default=0,
+        description="Installation labour — carpentry/assembly, painting, flooring, electrical. The 'carpenter cost' that must count against the budget.",
+    )
+    taxes_inr: int = Field(
+        default=0,
+        description="Contingency (10%) + GST. The rest of the all-in number.",
+    )
+    # story.total_inr is the ALL-IN total = furniture + materials_inr + labor_inr
+    # + taxes_inr, matching the downloadable quotation's grand total exactly.
 
 
 # ---------- Visions ----------
