@@ -19,17 +19,24 @@ interface Props {
   room: RoomState;
   onApply: (intent: Intent) => Promise<void>;
   activeSection?: "paint" | "flooring" | "lighting";
+  philosophy?: string;
 }
 
-export function FinishingPanel({ room, onApply, activeSection }: Props) {
+export function FinishingPanel({ room, onApply, activeSection, philosophy }: Props) {
   const [options, setOptions] = useState<FinishingOptions | null>(null);
 
+  // Finishes are curated for THIS room — room type sets the mood (a bedroom
+  // leans darker/restful, a living room lighter/welcoming) and philosophy
+  // nudges within it. Re-fetch when any of those change.
   useEffect(() => {
-    fetch("/api/finishing/options")
+    const params = new URLSearchParams({ room_type: room.intake.room_type });
+    if (philosophy) params.set("philosophy", philosophy);
+    if (room.intake.vibe) params.set("vibe", room.intake.vibe);
+    fetch(`/api/finishing/options?${params}`)
       .then((r) => r.json())
       .then(setOptions)
       .catch(() => setOptions(null));
-  }, []);
+  }, [room.intake.room_type, room.intake.vibe, philosophy]);
 
   if (!options) {
     return <div style={loading}>Loading finishes…</div>;
@@ -39,14 +46,15 @@ export function FinishingPanel({ room, onApply, activeSection }: Props) {
     void onApply({
       kind: "recolor_room",
       target_item_id: null,
-      parameters: { wall: s.hex, wall_finish: `${s.brand} ${s.product} (${s.color_name})` },
+      // Carry the ₹/sqft rate so the cost engine + BOQ re-price on selection.
+      parameters: { wall: s.hex, wall_finish: `${s.brand} ${s.product} (${s.color_name})`, wall_finish_rate_inr_sqft: s.rate_inr_sqft },
     });
   }
   function applyFloor(f: FinishingFlooringOption) {
     void onApply({
       kind: "recolor_room",
       target_item_id: null,
-      parameters: { floor: f.hex, flooring: `${f.brand} ${f.product} (${f.label})` },
+      parameters: { floor: f.hex, flooring: `${f.brand} ${f.product} (${f.label})`, floor_rate_inr_sqft: f.rate_inr_sqft },
     });
   }
   function applyWarmth(k: number) {
@@ -108,6 +116,7 @@ export function FinishingPanel({ room, onApply, activeSection }: Props) {
                     <div style={paintMeta}>
                       <span style={paintName}>{s.color_name}</span>
                       <span style={paintBrand}>{s.brand} · {s.finish}</span>
+                      <span style={paintRate}>₹{s.rate_inr_sqft}/sqft</span>
                     </div>
                   </button>
                 );
@@ -158,6 +167,7 @@ export function FinishingPanel({ room, onApply, activeSection }: Props) {
                     <div style={paintMeta}>
                       <span style={paintName}>{f.label}</span>
                       <span style={paintBrand}>{f.brand}</span>
+                      <span style={paintRate}>₹{f.rate_inr_sqft}/sqft</span>
                     </div>
                   </button>
                 );
@@ -432,6 +442,13 @@ const paintBrand = {
   letterSpacing: "0.1em",
   textTransform: "uppercase" as const,
   color: "var(--ink-3)",
+} as const;
+const paintRate = {
+  fontFamily: "var(--fm)",
+  fontSize: 10,
+  letterSpacing: "0.04em",
+  color: "var(--terra)",
+  marginTop: 1,
 } as const;
 
 const floorGrid = paintGrid;

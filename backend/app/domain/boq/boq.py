@@ -11,6 +11,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from app.domain.finishing import (
+    DEFAULT_FLOOR_RATE_SQFT,
+    DEFAULT_WALL_RATE_SQFT,
+    floor_rate_for_hex,
+    paint_rate_for_hex,
+)
 from app.schemas.state import RoomState
 
 # ---------- Tax / labor rates ----------
@@ -120,10 +126,25 @@ def build_boq(room: RoomState, *, city: str = DEFAULT_CITY) -> BOQ:
     perimeter_rft = int(round(2 * (width_m + depth_m) * 3.2808))
     item_count = max(len(room.items), 1)
 
+    # Rate for the *selected* finish (stored on the room), falling back to the
+    # finishing-catalog hex lookup, then the legacy flat default. This is the
+    # same source the live cost engine reads, so the quotation a user downloads
+    # matches the estimate they were just looking at — choose Italian marble and
+    # both the estimate and this line move together.
+    wall_rate = (
+        room.wall_finish_rate_inr_sqft
+        if room.wall_finish_rate_inr_sqft is not None
+        else paint_rate_for_hex(room.palette.get("wall")) or DEFAULT_WALL_RATE_SQFT
+    )
+    floor_rate = (
+        room.floor_rate_inr_sqft
+        if room.floor_rate_inr_sqft is not None
+        else floor_rate_for_hex(room.palette.get("floor")) or DEFAULT_FLOOR_RATE_SQFT
+    )
     materials_inputs = [
-        (f"Wall Paint - {room.wall_finish or 'Asian Paints Royale Emulsion'}", wall_sqft, "sqft", 38),
+        (f"Wall Paint - {room.wall_finish or 'Asian Paints Royale Emulsion'}", wall_sqft, "sqft", wall_rate),
         ("Wall Putty + Primer", wall_sqft, "sqft", 12),
-        (f"Flooring - {room.flooring or 'engineered laminate'}", floor_sqft, "sqft", 95),
+        (f"Flooring - {room.flooring or 'engineered laminate'}", floor_sqft, "sqft", floor_rate),
         ("Skirting", perimeter_rft, "rft", 120),
         ("Wood Finish + Polish", item_count, "items", 800),
     ]

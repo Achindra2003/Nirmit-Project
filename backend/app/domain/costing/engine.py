@@ -1,6 +1,12 @@
 """Pure cost math. No LLM, no IO."""
 from __future__ import annotations
 
+from app.domain.finishing import (
+    DEFAULT_FLOOR_RATE_SQFT,
+    DEFAULT_WALL_RATE_SQFT,
+    floor_rate_for_hex,
+    paint_rate_for_hex,
+)
 from app.schemas.state import (
     BudgetStory,
     CostBreakdown,
@@ -12,6 +18,38 @@ from app.schemas.state import (
 # 2-3x what a curated middle-path design costs. This is a coarse anchor used only
 # for the "comparison" line — exact value tunable per room type later.
 _LIVSPACE_MULTIPLIER = 2.4
+
+_SQM_TO_SQFT = 10.7639
+
+
+def materials_cost(room: RoomState) -> int:
+    """Cost of the user-selectable wall + floor finishes (area × ₹/sqft).
+
+    This is the piece that was previously missing entirely from the live
+    estimate — which is why changing a paint or floor never moved the number.
+    The rate comes from the selected finish (stored on the room), falling back
+    to the catalog default for an untouched room. Putty/skirting/polish are
+    fixed overhead and stay in the BOQ only, so this stays a clean read of
+    "what the chosen finishes cost".
+    """
+    dims = room.intake.room_dimensions
+    width_m = dims.width_mm / 1000
+    depth_m = dims.depth_mm / 1000
+    height_m = dims.height_mm / 1000
+    wall_sqft = 2 * (width_m + depth_m) * height_m * _SQM_TO_SQFT
+    floor_sqft = width_m * depth_m * _SQM_TO_SQFT
+
+    wall_rate = (
+        room.wall_finish_rate_inr_sqft
+        if room.wall_finish_rate_inr_sqft is not None
+        else paint_rate_for_hex(room.palette.get("wall")) or DEFAULT_WALL_RATE_SQFT
+    )
+    floor_rate = (
+        room.floor_rate_inr_sqft
+        if room.floor_rate_inr_sqft is not None
+        else floor_rate_for_hex(room.palette.get("floor")) or DEFAULT_FLOOR_RATE_SQFT
+    )
+    return int(round(wall_sqft * wall_rate + floor_sqft * floor_rate))
 
 
 def build_cost_breakdown(room: RoomState) -> CostBreakdown:
@@ -26,7 +64,9 @@ def build_cost_breakdown(room: RoomState) -> CostBreakdown:
         )
         for item in room.items
     ]
-    total = sum(li.price_inr for li in line_items)
+    furniture_total = sum(li.price_inr for li in line_items)
+    materials = materials_cost(room)
+    total = furniture_total + materials
     budget = room.intake.budget_inr
     remaining = budget - total
     livspace_pct = round(100 * total / max(int(budget * _LIVSPACE_MULTIPLIER), 1))
@@ -42,6 +82,7 @@ def build_cost_breakdown(room: RoomState) -> CostBreakdown:
             headline=headline,
         ),
         line_items=line_items,
+        materials_inr=materials,
     )
 
 
@@ -49,7 +90,7 @@ def _budget_headline(*, total: int, budget: int, remaining: int) -> str:
     if remaining >= 0:
         pct_used = round(100 * total / max(budget, 1))
         if pct_used <= 80:
-            return f"Comfortably within your ₹{budget // 1000}k budget — ₹{remaining // 1000}k still in hand for cushions, curtains, paint."
+            return f"Comfortably within your ₹{budget // 1000}k budget — ₹{remaining // 1000}k still in hand for cushions, curtains, styling."
         return f"Inside budget at ₹{total // 1000}k — ₹{remaining // 1000}k left for the finishing layer."
     over_by = -remaining
     return f"₹{over_by // 1000}k over budget — I have a few quick swaps in mind to bring this back."

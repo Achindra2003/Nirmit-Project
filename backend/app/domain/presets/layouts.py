@@ -68,9 +68,26 @@ LIVING_GATHERING_0 = PresetLayout(
         # explicitly).
         A("pouffe",       anchor_x="E", offset_x_mm=-1310,anchor_z="C", offset_z_mm=-1100,rotation_deg=0,   optional=True),
         A("bookshelf",    anchor_x="W", offset_x_mm=900,  anchor_z="N", offset_z_mm=-260, rotation_deg=180, optional=True),
-        # Lamp dropped — the NW corner conflicts with the sofa's north end
-        # (lamp eff-extent at rot=135 is 708×708 and the sofa runs to z≈2837).
-        # User can pull a floor lamp from the catalog if they want one.
+        # ── Soft / decor layer ──────────────────────────────────────────────
+        # What turns a CAD-looking box of furniture into a room that reads as
+        # *designed*. These already live in the menu but were never placed.
+        # All optional: the engine drops any that can't fit (e.g. a smaller
+        # room) without failing the whole preset.
+        #
+        # Rug under the seating cluster — the single strongest "this is designed"
+        # cue. Centred between sofa (W) and TV (E); flat, sits beneath the
+        # coffee table.
+        A("rug",           anchor_x="C", offset_x_mm=-150, anchor_z="C", offset_z_mm=0,    rotation_deg=90,  optional=True),
+        # Pendant over the coffee table — ceiling-mounted, so it never fights a
+        # floor footprint. Reads instantly as intentional lighting.
+        A("pendant_light", anchor_x="C", offset_x_mm=-300, anchor_z="C", offset_z_mm=0,    rotation_deg=0,   optional=True),
+        # Framed art on the north wall, above the bookshelf line.
+        A("wall_art",      anchor_x="C", offset_x_mm=300,  anchor_z="N", offset_z_mm=-40,  rotation_deg=180, optional=True),
+        # A potted plant softens the SE corner near the entrance.
+        A("plant",         anchor_x="E", offset_x_mm=-340, anchor_z="S", offset_z_mm=460,  rotation_deg=0,   optional=True),
+        # Floor lamp anchors the NE corner (the earlier NW spot fought the
+        # sofa's north end; NE is clear of both sofa and TV).
+        A("lamp",          anchor_x="E", offset_x_mm=-360, anchor_z="N", offset_z_mm=-360, rotation_deg=0,   optional=True),
     ),
 )
 

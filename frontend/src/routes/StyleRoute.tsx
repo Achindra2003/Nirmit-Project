@@ -93,7 +93,7 @@ export function StyleRoute() {
 
         {/* Content area — only the active tab, no scrolling between sections */}
         <div style={{ flex: 1, overflow: "auto" }}>
-          <FinishingPanel room={room} onApply={applyFinishing} activeSection={tab} />
+          <FinishingPanel room={room} onApply={applyFinishing} activeSection={tab} philosophy={baseVision.philosophy} />
         </div>
 
         {/* Footer CTA */}
@@ -152,6 +152,13 @@ export function StyleRoute() {
             <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.08em" }}>
               of ₹{Math.round((baseVision.cost.story.budget_inr || 0) / 1000)}k
             </span>
+            {/* Finishes line — makes the "this floor costs more than that one"
+                feedback explicit, so the cost movement isn't a mystery. */}
+            {(baseVision.cost.materials_inr ?? 0) > 0 && (
+              <span style={{ fontFamily: "var(--fm)", fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.08em", paddingLeft: 10, borderLeft: "1px solid var(--line)" }}>
+                walls + floor ₹{Math.round((baseVision.cost.materials_inr ?? 0) / 1000)}k
+              </span>
+            )}
           </div>
           </div>
         </div>

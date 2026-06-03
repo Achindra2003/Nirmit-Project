@@ -1,17 +1,20 @@
 /**
- * Warm, layered lighting that simulates an Indian afternoon through an
- * east/west-facing window — the quality of light VISION.md asks for.
+ * Warm, layered lighting that simulates daylight pouring through the room's
+ * actual window — the quality of light VISION.md asks for.
  *
  * Three layers:
- *  - Sun: a strong directional light coming through the window wall.
+ *  - Sun: a strong directional light coming through the WINDOW wall (read from
+ *    the room's openings; falls back to the wall opposite the entrance when a
+ *    room carries no window data). Offset along the wall by the window's own
+ *    position, so a window in the corner throws light from the corner.
  *  - Sky fill: a soft hemispheric light filling shadowed areas.
  *  - Bounce: a low-intensity warm point light from the floor reflecting up.
  *
- * Intensity / colour are tuned per entrance direction so a north-entrance
- * room (south light) feels different from a south-entrance room (north light).
+ * Intensity / colour are tuned to the warmth (kelvin) so candlelight reads dim
+ * and warm, daylight reads bright and cool.
  */
 import { useMemo } from "react";
-import type { Direction } from "@/api/types";
+import type { Direction, Opening } from "@/api/types";
 import { mmToM } from "./units";
 
 interface Props {
@@ -19,7 +22,23 @@ interface Props {
   roomDmm: number;
   roomHmm: number;
   entrance: Direction;
+  openings?: readonly Opening[];
   warmthK?: number; // 2700 (warm) - 4000 (cool)
+}
+
+type Cardinal = "N" | "S" | "E" | "W";
+
+// Collapse any Direction (incl. diagonals like NE) to the dominant cardinal so
+// the sun has a single wall to come from.
+function toCardinal(dir: Direction): Cardinal {
+  if (dir === "N" || dir === "S" || dir === "E" || dir === "W") return dir;
+  if (dir.startsWith("N")) return "N";
+  if (dir.startsWith("S")) return "S";
+  return dir.includes("E") ? "E" : "W";
+}
+
+function opposite(c: Cardinal): Cardinal {
+  return c === "N" ? "S" : c === "S" ? "N" : c === "E" ? "W" : "E";
 }
 
 // Sun ("hero" key light) is the only strong directional. Everything else fills.
@@ -55,10 +74,25 @@ function hemiStrength(k: number): number {
   return 0.18 + t * 0.32;
 }
 
-export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, warmthK = 3200 }: Props) {
+export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, openings, warmthK = 3200 }: Props) {
   const w = mmToM(roomWmm);
   const d = mmToM(roomDmm);
   const h = mmToM(roomHmm);
+
+  // Which wall the daylight comes through: the room's largest window if it has
+  // one, else the wall opposite the entrance (the old assumption, kept as a
+  // sane fallback). `frac` (0..1 along the wall) offsets the sun so an
+  // off-centre window lights the room from that side.
+  const light = useMemo(() => {
+    const windows = (openings ?? []).filter((o) => o.kind === "window");
+    if (windows.length > 0) {
+      const primary = windows.reduce((a, b) =>
+        b.width_mm * b.height_mm > a.width_mm * a.height_mm ? b : a,
+      );
+      return { wall: toCardinal(primary.wall), frac: primary.center_frac };
+    }
+    return { wall: opposite(toCardinal(entrance)), frac: 0.5 };
+  }, [openings, entrance]);
 
   const sunColor = useMemo(() => kelvinToHex(warmthK), [warmthK]);
   // Sky is always cooler than the sun, but the gap shrinks at the warm end
@@ -76,17 +110,18 @@ export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, warmthK = 3200 }
     return "#e6ecf2";                           // daylight
   }, [warmthK]);
 
-  // Sun position: opposite the entrance wall (light comes through the window).
+  // Sun position: outside the window wall, pointing in. The along-wall offset
+  // (ox) places the light at the window's actual position on that wall.
   const sunPos = useMemo(() => {
     const reach = Math.max(w, d) * 1.5;
-    switch (entrance) {
-      case "S": return [0, h * 1.8, reach] as const;
-      case "N": return [0, h * 1.8, -reach] as const;
-      case "W": return [reach, h * 1.8, 0] as const;
-      case "E": return [-reach, h * 1.8, 0] as const;
-      default:  return [0, h * 1.8, reach] as const;
+    const ox = light.frac - 0.5;
+    switch (light.wall) {
+      case "N": return [ox * w, h * 1.8, reach] as const;
+      case "S": return [ox * w, h * 1.8, -reach] as const;
+      case "E": return [reach, h * 1.8, ox * d] as const;
+      case "W": return [-reach, h * 1.8, ox * d] as const;
     }
-  }, [entrance, w, d, h]);
+  }, [light, w, d, h]);
 
   const sunIntensity = sunStrength(warmthK);
   const bounceIntensity = bounceStrength(warmthK);

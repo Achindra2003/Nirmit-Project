@@ -326,7 +326,7 @@ def _build_vision(
     # Variant 1 is used for the Breath philosophy to give each set a distinct
     # spatial rhythm; Gathering and Keeper use the primary (variant 0).
     variant = 1 if philosophy is VisionPhilosophy.BREATH else 0
-    engine_result = resolve_preset_via_engine(intake, philosophy, variant=variant)
+    engine_result = resolve_preset_via_engine(intake, philosophy, variant=variant, brief=brief)
     if engine_result is not None:
         placed_items, default_openings = engine_result
     else:

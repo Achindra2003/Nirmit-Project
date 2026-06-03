@@ -61,8 +61,19 @@ def _assert_in_bounds(room: RoomState) -> None:
             assert abs(it.position.z_mm - rd / 2) <= 1, f"{it.id} oversized on z but not centred"
 
 
+def _collidable(it) -> bool:
+    # Mirrors executor._is_floor_obstacle: wall/ceiling pieces and flat mats
+    # (rugs, height ≤ 60mm) are not floor obstacles — furniture is meant to sit
+    # over a rug, so that's not an "overlap".
+    if it.catalog.placement_type in ("wall", "ceiling"):
+        return False
+    if it.dimensions.height_mm <= 60:
+        return False
+    return True
+
+
 def _assert_no_overlap(room: RoomState) -> None:
-    items = room.items
+    items = [i for i in room.items if _collidable(i)]
     for a_idx, a in enumerate(items):
         aw, ad = _effective_footprint(
             a.dimensions.width_mm, a.dimensions.depth_mm, a.position.rotation_deg

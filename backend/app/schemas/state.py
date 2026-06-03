@@ -225,6 +225,12 @@ class RoomState(StrictModel):
     )
     flooring: str | None = None
     wall_finish: str | None = None
+    # Material rates (₹/sqft) for the *selected* finish. Set when the user picks
+    # a curated paint/floor; None on a freshly generated room (the cost engine
+    # falls back to the catalog defaults). This is what makes a finish choice
+    # actually move the budget — and keeps the live estimate and the BOQ in step.
+    wall_finish_rate_inr_sqft: int | None = Field(default=None, ge=0)
+    floor_rate_inr_sqft: int | None = Field(default=None, ge=0)
     lighting_kelvin: int = Field(
         default=3200,
         ge=2200,
@@ -293,6 +299,10 @@ class BudgetStory(StrictModel):
 class CostBreakdown(StrictModel):
     story: BudgetStory
     line_items: list[CostLineItem]
+    materials_inr: int = Field(
+        default=0,
+        description="Wall paint + floor finish cost for the selected finishes (area × ₹/sqft). Included in story.total_inr so changing a finish moves the budget.",
+    )
 
 
 # ---------- Visions ----------

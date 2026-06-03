@@ -794,6 +794,7 @@ export function PlannerRoute() {
             <BillOfItems
               lineItems={baseVision.cost.line_items}
               story={baseVision.cost.story}
+              materialsInr={baseVision.cost.materials_inr ?? 0}
               selectedId={selectedId}
               onSelect={(id) => setSelectedId(id)}
               onRemove={(id) => void applyOneIntent({ kind: "remove", target_item_id: id, parameters: {} })}
@@ -1242,6 +1243,7 @@ function CBtn({ children, onClick, danger, accent, bold }: { children: React.Rea
 function BillOfItems({
   lineItems,
   story,
+  materialsInr,
   selectedId,
   onSelect,
   onRemove,
@@ -1249,6 +1251,7 @@ function BillOfItems({
 }: {
   lineItems: import("@/api/types").CostLineItem[];
   story: import("@/api/types").BudgetStory;
+  materialsInr: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
@@ -1323,6 +1326,19 @@ function BillOfItems({
             </div>
           );
         })}
+
+        {/* Walls & floor finishes — priced from the Materials screen. Shown as
+            a single line (not removable here) so the rows above + this line
+            reconcile to the subtotal below. */}
+        {materialsInr > 0 && (
+          <div style={{ padding: "10px 12px 10px 13px", borderBottom: "1px solid var(--line)", borderLeft: "3px solid transparent", display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "var(--fd)", fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.3 }}>Walls &amp; floor finishes</div>
+              <div style={{ fontFamily: "var(--fm)", fontSize: 8, letterSpacing: "0.1em", color: "var(--ink-3)", marginTop: 3 }}>SET ON MATERIALS</div>
+            </div>
+            <span style={{ fontFamily: "var(--fd)", fontSize: 13, color: "var(--ink-2)", flexShrink: 0 }}>₹{Math.round(materialsInr / 1000)}k</span>
+          </div>
+        )}
       </div>
 
       <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)", background: "var(--paper-2)", flexShrink: 0 }}>

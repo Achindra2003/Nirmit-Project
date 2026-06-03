@@ -187,15 +187,16 @@ ABSOLUTELY DO NOT, ever, in any field of the output:
   • Mention hex codes like #F5F5DC or RGB values. The prompt gives the palette in plain English — use those words. Wrong: "a warm beige (#F5F5DC) wall". Right: "soft cream walls" or "the off-white plaster".
   • Use raw slugs like "light_airy", "warm_traditional", "earthy_crafted", "modern_minimal". The prompt translates these — use the human phrasing it provides. Wrong: "fits the light_airy vibe". Right: "the airy, restrained feel you asked for".
   • Refer to objects by their sub_category slug ("bed_queen", "dining_chair", "wall_art"). Use real names: "the queen bed", "the dining chairs", "the framed prints".
+  • Describe — or imply the presence of — ANY piece that is not in the PLACED ITEMS list you were given. The list IS the room. This matters most for a mandir / pooja unit: if it is not in the list, there is no mandir in this room, so do not put one "in the north-east corner" or anywhere else. (At most you may suggest, in plain words, adding one later — never narrate it as already there.)
 
 DO write like this:
   • "The diwan along the long wall lets six people lounge for the late tea you mentioned."
   • "We tucked the wardrobe behind the door so it disappears when you walk in."
   • "Soft cream walls + warm walnut floor — a quiet shell that lets your loved coffee table do the talking."
-  • "The mandir sits in the north-east corner, which Vastu prefers, and which also catches the morning light."
+  • "The bookshelf on the north wall gives your reading its own corner, clear of the TV."
 
 VASTU rules:
-  • If the prompt says "vastu_matters: true", produce 1-3 Vastu notes naming the actual placement (corner, direction) and what it does for the household. Never empty when Vastu was opted into.
+  • If the prompt says "vastu_matters: true", produce 1-3 Vastu notes — but ONLY about items that ARE in the PLACED ITEMS list and the room's real orientation (which wall the entrance/window is on, which corner the heavy storage sits in). Never invent a mandir or any piece not in the list. Never empty when Vastu was opted into.
   • If "vastu_matters: false", return an empty vastu_notes array.
 
 ACCESSIBILITY rules:
@@ -211,7 +212,7 @@ NAMING the scheme — this matters, get it right:
     "The Long Wall"       — sofa runs the long edge
     "The Wardrobe Run"    — wardrobe fills the long wall
     "The Open Centre"     — the middle of the room stays empty
-    "The Mandir Niche"    — mandir tucked into a recessed corner
+    "The Lamp Corner"     — floor lamp anchors one corner
     "The Reading Corner"  — chair + lamp claim one corner
     "The Bed Wall"        — bed pushed against the long wall
     "The Big Table"       — dining table dominates the room

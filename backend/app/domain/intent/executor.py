@@ -277,6 +277,15 @@ def _recolor(room: RoomState, params: dict) -> RoomState:
         update["flooring"] = params["flooring"]
     if isinstance(params.get("wall_finish"), str):
         update["wall_finish"] = params["wall_finish"]
+    # Material rates (₹/sqft) for the chosen finish — these are what make the
+    # selection flow through to the cost engine and BOQ. Stored alongside the
+    # label so price and name can never drift apart.
+    wall_rate = params.get("wall_finish_rate_inr_sqft")
+    if isinstance(wall_rate, (int, float)) and wall_rate >= 0:
+        update["wall_finish_rate_inr_sqft"] = int(wall_rate)
+    floor_rate = params.get("floor_rate_inr_sqft")
+    if isinstance(floor_rate, (int, float)) and floor_rate >= 0:
+        update["floor_rate_inr_sqft"] = int(floor_rate)
     kelvin = params.get("lighting_kelvin")
     if isinstance(kelvin, (int, float)) and 2200 <= kelvin <= 6500:
         update["lighting_kelvin"] = int(kelvin)
@@ -598,6 +607,23 @@ def _aabb_overlaps(
     )
 
 
+def _is_floor_obstacle(item: PlacedItem) -> bool:
+    """Whether a placed item occupies floor space that another piece must avoid.
+
+    Excludes things furniture is *meant* to coexist with: wall-mounted and
+    ceiling pieces (art, mirrors, pendants — different vertical plane) and flat
+    floor mats like rugs (height ≤ 60mm), which deliberately sit *under* the
+    sofa and coffee table. Treating a rug as a solid obstacle made the move
+    slide-clear unable to place anything over it — wrong, and it broke once the
+    hero room gained a room-spanning rug."""
+    pt = item.catalog.placement_type
+    if pt in ("wall", "ceiling"):
+        return False
+    if item.dimensions.height_mm <= 60:
+        return False
+    return True
+
+
 def _slot_clear(
     items: list[PlacedItem],
     cx: int, cz: int,
@@ -605,13 +631,16 @@ def _slot_clear(
     *,
     exclude_id: str | None = None,
 ) -> bool:
-    """True if a footprint at (cx, cz) clears every item except `exclude_id`.
+    """True if a footprint at (cx, cz) clears every floor obstacle except
+    `exclude_id`.
 
     `exclude_id` matters for MOVE/SCALE/ROTATE: the piece being re-placed must
     not be tested against its own old footprint, or it would always read as
     "blocked by itself"."""
     for i in items:
         if exclude_id is not None and i.id == exclude_id:
+            continue
+        if not _is_floor_obstacle(i):
             continue
         iw, id_ = _effective_footprint(i.dimensions.width_mm, i.dimensions.depth_mm, i.position.rotation_deg)
         if _aabb_overlaps(cx, cz, new_w, new_d, i.position.x_mm, i.position.z_mm, iw, id_):

@@ -67,6 +67,7 @@ def resolve_preset_via_engine(
     intake: Intake,
     philosophy: VisionPhilosophy,
     variant: int = 0,
+    brief: dict | None = None,
 ) -> tuple[list[PlacedItem], list[Opening]] | None:
     """Engine-driven preset resolution.
 
@@ -101,7 +102,16 @@ def resolve_preset_via_engine(
     spec_to_catalog: list = []  # parallel list of catalog items for re-attach
     spec_to_anchored: list[AnchoredItem] = []
 
-    for fi in layout.items:
+    # Profile-driven additions: the user's household (the design brief from
+    # who_lives_here) earns concrete pieces — an arm-chair for an elderly
+    # visitor, a closed cabinet for a storage-heavy home, an extra seat for a
+    # household that hosts. Appended to the layout spec so the engine places
+    # them with the same containment + overlap handling as authored items.
+    profile_extra = _profile_items(brief, layout, preset_catalog)
+    layout_items = list(layout.items) + profile_extra
+    profile_ids = {id(a) for a in profile_extra}
+
+    for fi in layout_items:
         catalog_item = preset_catalog.get(fi.sub_category)
         if catalog_item is None:
             continue
@@ -163,7 +173,7 @@ def resolve_preset_via_engine(
         item_id = f"{fi.sub_category}-{uuid.uuid4().hex[:6]}"
         sub_to_placed_id[fi.sub_category] = item_id
 
-        placed.append(PlacedItem(
+        _new = PlacedItem(
             id=item_id,
             catalog=CatalogRef(
                 sku=catalog_item.sku,
@@ -196,7 +206,14 @@ def resolve_preset_via_engine(
                 score=0.0,
                 vastu_compliant=vastu_compliant,
             ),
-        ))
+        )
+        # A profile-added piece only stays if the room actually has clear floor
+        # for it — a cramped layout honestly forgoes the extra cabinet/chair
+        # rather than stacking it onto the accent chair.
+        if id(fi) in profile_ids and not _slot_free_for(_new, placed):
+            sub_to_placed_id.pop(fi.sub_category, None)
+            continue
+        placed.append(_new)
 
     openings = [
         Opening(
@@ -216,6 +233,78 @@ def resolve_preset_via_engine(
     placed = apply_composition_rules(placed, intake, scene.openings)
 
     return placed, openings
+
+
+def _is_floor_obstacle(item: PlacedItem) -> bool:
+    """Floor space another piece must avoid — excludes wall/ceiling pieces and
+    flat mats (rugs, height ≤ 60mm) that furniture is meant to sit over."""
+    if item.catalog.placement_type in ("wall", "ceiling"):
+        return False
+    return item.dimensions.height_mm > 60
+
+
+def _slot_free_for(item: PlacedItem, existing: list[PlacedItem]) -> bool:
+    """True if `item`'s footprint clears every floor obstacle already placed."""
+    iw, idp = _eff_extent(item.dimensions.width_mm, item.dimensions.depth_mm, int(item.position.rotation_deg))
+    for o in existing:
+        if not _is_floor_obstacle(o):
+            continue
+        ow, odp = _eff_extent(o.dimensions.width_mm, o.dimensions.depth_mm, int(o.position.rotation_deg))
+        if abs(item.position.x_mm - o.position.x_mm) < (iw + ow) / 2 and \
+           abs(item.position.z_mm - o.position.z_mm) < (idp + odp) / 2:
+            return False
+    return True
+
+
+def _profile_items(
+    brief: dict | None,
+    layout: PresetLayout,
+    preset_catalog: dict,
+) -> list[AnchoredItem]:
+    """Translate the household brief into concrete pieces the room should gain.
+
+    This is what makes a room *aligned to what the user said*, not just well-
+    composed: an elderly visitor earns an arm-chair near the entrance, a
+    storage-heavy or child household earns closed storage, a household that
+    hosts earns an extra pull-in seat. Only adds a piece when (a) the brief
+    asks for it, (b) the preset doesn't already cover it, and (c) a curated
+    asset exists for it. Everything is `optional`, so the engine drops anything
+    that genuinely can't fit rather than forcing a clash.
+    """
+    if not brief:
+        return []
+    present = {fi.sub_category for fi in layout.items}
+    extra: list[AnchoredItem] = []
+
+    def add(candidates: tuple[str, ...], anchored_for) -> None:
+        already = present | {e.sub_category for e in extra}
+        # Need already met if the room has ANY of the suitable pieces — point
+        # to it in the reasoning rather than duplicating it.
+        if any(c in already for c in candidates):
+            return
+        for sub in candidates:
+            if sub in preset_catalog:
+                extra.append(anchored_for(sub))
+                return
+
+    # Elderly / reduced mobility → a chair WITH ARMS, near the entrance so it's
+    # the first easy seat. lounge_chair has arms; accent_chair is the fallback.
+    if brief.get("mobility_concern") or brief.get("has_elderly"):
+        add(("lounge_chair", "accent_chair"),
+            lambda sub: AnchoredItem(sub, anchor_x="E", offset_x_mm=-700, anchor_z="S", offset_z_mm=900, rotation_deg=0, optional=True))
+
+    # Storage-heavy home, or kids (toys/clutter need a closed home) → a cabinet
+    # with doors against a wall.
+    if brief.get("needs_storage") == "high" or brief.get("has_kids"):
+        add(("cabinet", "sideboard", "chest"),
+            lambda sub: AnchoredItem(sub, anchor_x="W", offset_x_mm=350, anchor_z="S", offset_z_mm=430, rotation_deg=0, optional=True))
+
+    # Frequent guests → a light extra seat that pulls into the circle.
+    if brief.get("entertains_guests") == "frequent":
+        add(("pouffe", "bench"),
+            lambda sub: AnchoredItem(sub, anchor_x="C", offset_x_mm=750, anchor_z="S", offset_z_mm=950, rotation_deg=0, optional=True))
+
+    return extra
 
 
 def build_design_intent_from_preset(

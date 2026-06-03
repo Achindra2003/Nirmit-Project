@@ -92,6 +92,8 @@ export interface RoomState {
   palette: Record<string, string>;
   flooring: string | null;
   wall_finish: string | null;
+  wall_finish_rate_inr_sqft?: number | null;
+  floor_rate_inr_sqft?: number | null;
   lighting_kelvin: number;
   openings?: Opening[];
 }
@@ -103,6 +105,7 @@ export interface FinishingPaintSwatch {
   color_name: string;
   hex: string;
   finish: string;
+  rate_inr_sqft: number;
 }
 export interface FinishingFlooringOption {
   id: string;
@@ -111,6 +114,7 @@ export interface FinishingFlooringOption {
   label: string;
   hex: string;
   type: string;
+  rate_inr_sqft: number;
 }
 export interface FinishingWarmthPreset {
   id: string;
@@ -150,6 +154,9 @@ export interface BudgetStory {
 export interface CostBreakdown {
   story: BudgetStory;
   line_items: CostLineItem[];
+  /** Wall paint + floor finish cost for the selected finishes. Included in
+   *  story.total_inr, so changing a finish moves the budget. */
+  materials_inr?: number;
 }
 
 export type VisionPhilosophy = "gathering" | "breath" | "keeper";

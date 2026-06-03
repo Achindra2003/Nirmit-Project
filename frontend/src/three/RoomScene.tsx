@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import type { Direction, Opening, RoomState } from "@/api/types";
+import type { Direction, Opening, PlacedItem, RoomState } from "@/api/types";
 import { GlbItem } from "./GlbItem";
 import { RoomShell, type WallRefs } from "./RoomShell";
 import { Lighting } from "./Lighting";
@@ -97,6 +97,7 @@ export function RoomScene({
         roomDmm={room.intake.room_dimensions.depth_mm}
         roomHmm={room.intake.room_dimensions.height_mm}
         entrance={room.intake.entrance_direction}
+        openings={room.openings ?? []}
         warmthK={warmthK}
       />
 
@@ -123,6 +124,11 @@ export function RoomScene({
           />
         ))}
         {showAtmosphere && <Atmosphere room={room} />}
+        {/* Furniture as light sources — lamps glow warm at their own height,
+            pendants/ceiling fixtures wash down from near the ceiling. This is
+            the "particular type of lighting using other light sources" the
+            real-design feedback asked for, on top of the window's daylight. */}
+        <FurnitureLights items={room.items} roomH={h} />
       </group>
 
       <ContactShadows position={[0, 0.004, 0]} opacity={0.45} scale={Math.max(w, d) * 1.5} blur={1.8} far={h} resolution={1024} color="#2a1e12" />
@@ -144,6 +150,53 @@ export function RoomScene({
       <PostProcess />
       {snapshotProbe}
     </Canvas>
+  );
+}
+
+// ---------- Furniture light sources ----------
+
+// Lamps / pendants / ceiling fixtures read as actual emitters, not just meshes.
+const OVERHEAD_RE = /pendant|chandelier|ceiling/i;
+const LIGHT_RE = /lamp|pendant|chandelier|sconce|ceiling[_\s-]?light|\blight\b/i;
+
+function isLightSource(item: PlacedItem): boolean {
+  const tag = `${item.category} ${item.name_en}`;
+  // Exclude false positives like "skylight" wall art etc. — narrow to the
+  // emitter words. Catalog categories (lamp / pendant_light / desk_lamp /
+  // ceiling_light) all match.
+  return LIGHT_RE.test(tag);
+}
+
+/**
+ * Places a warm point light at each lamp / pendant in the room. Floor and
+ * table lamps glow at roughly their own height; pendants and ceiling fixtures
+ * wash down from near the ceiling. Capped at a handful of emitters so a busy
+ * room can't tank the framerate or blow out the exposure. No shadow casting —
+ * the window sun owns the shadows; these are fill glow.
+ */
+function FurnitureLights({ items, roomH }: { items: PlacedItem[]; roomH: number }) {
+  const lights = useMemo(() => items.filter(isLightSource).slice(0, 4), [items]);
+  return (
+    <>
+      {lights.map((item) => {
+        const x = mmToM(item.position.x_mm);
+        const z = mmToM(item.position.z_mm);
+        const overhead = OVERHEAD_RE.test(`${item.category} ${item.name_en}`);
+        const y = overhead
+          ? roomH - 0.35
+          : Math.min(mmToM(item.dimensions.height_mm) * 0.85, roomH - 0.4);
+        return (
+          <pointLight
+            key={`light-${item.id}`}
+            position={[x, y, z]}
+            color={overhead ? "#ffe2b4" : "#ffcaa0"}
+            intensity={overhead ? 4.5 : 3}
+            distance={overhead ? roomH * 3.2 : roomH * 2.2}
+            decay={2}
+          />
+        );
+      })}
+    </>
   );
 }
 
