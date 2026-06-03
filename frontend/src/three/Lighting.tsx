@@ -23,10 +23,32 @@ interface Props {
   roomHmm: number;
   entrance: Direction;
   openings?: readonly Opening[];
+  /** Compass wall the daylight enters from — set by the user in the Materials
+   *  lighting tab. Overrides the window/entrance inference and drives the
+   *  natural-light character (morning / evening / bright / soft). */
+  lightDirection?: Direction | null;
   warmthK?: number; // 2700 (warm) - 4000 (cool)
 }
 
 type Cardinal = "N" | "S" | "E" | "W";
+
+// The CHARACTER of daylight by the compass wall it enters from. This is the
+// real-interior-design intuition: an east window gives warm low morning light,
+// a west window orange raking evening light, a south window bright high sun,
+// and a north window soft, cool, near-shadowless fill (no direct sun).
+//   kelvinBias  — shift vs the user's warmth (negative = warmer/oranger)
+//   sunMult     — direct-sun strength multiplier (north barely has any)
+//   hemiMult    — sky-fill multiplier (north leans on diffuse fill)
+//   elevation   — sun height factor (low = raking morning/evening, high = noon)
+interface DaylightProfile { kelvinBias: number; sunMult: number; hemiMult: number; elevation: number; tod: string }
+function daylightFor(dir: Cardinal): DaylightProfile {
+  switch (dir) {
+    case "E": return { kelvinBias: -200, sunMult: 1.12, hemiMult: 0.95, elevation: 1.15, tod: "warm morning light" };
+    case "W": return { kelvinBias: -550, sunMult: 1.02, hemiMult: 0.9,  elevation: 1.05, tod: "golden evening light" };
+    case "S": return { kelvinBias: 450,  sunMult: 1.30, hemiMult: 1.1,  elevation: 2.0,  tod: "bright midday light" };
+    case "N": return { kelvinBias: 1100, sunMult: 0.5,  hemiMult: 1.65, elevation: 1.7,  tod: "soft, even north light" };
+  }
+}
 
 // Collapse any Direction (incl. diagonals like NE) to the dominant cardinal so
 // the sun has a single wall to come from.
@@ -74,17 +96,22 @@ function hemiStrength(k: number): number {
   return 0.18 + t * 0.32;
 }
 
-export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, openings, warmthK = 3200 }: Props) {
+export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, openings, lightDirection, warmthK = 3200 }: Props) {
   const w = mmToM(roomWmm);
   const d = mmToM(roomDmm);
   const h = mmToM(roomHmm);
 
-  // Which wall the daylight comes through: the room's largest window if it has
-  // one, else the wall opposite the entrance (the old assumption, kept as a
-  // sane fallback). `frac` (0..1 along the wall) offsets the sun so an
-  // off-centre window lights the room from that side.
+  // Which wall the daylight comes through. Priority: the user's explicit
+  // light_direction → the room's largest window → the wall opposite the
+  // entrance. `frac` (0..1 along the wall) offsets the sun so an off-centre
+  // window lights the room from that side.
   const light = useMemo(() => {
     const windows = (openings ?? []).filter((o) => o.kind === "window");
+    if (lightDirection) {
+      const card = toCardinal(lightDirection);
+      const match = windows.find((o) => toCardinal(o.wall) === card);
+      return { wall: card, frac: match?.center_frac ?? 0.5 };
+    }
     if (windows.length > 0) {
       const primary = windows.reduce((a, b) =>
         b.width_mm * b.height_mm > a.width_mm * a.height_mm ? b : a,
@@ -92,15 +119,21 @@ export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, openings, warmth
       return { wall: toCardinal(primary.wall), frac: primary.center_frac };
     }
     return { wall: opposite(toCardinal(entrance)), frac: 0.5 };
-  }, [openings, entrance]);
+  }, [openings, entrance, lightDirection]);
 
-  const sunColor = useMemo(() => kelvinToHex(warmthK), [warmthK]);
+  // Daylight character for the wall it enters from, layered on the user's
+  // warmth: the slider still sets mood; direction shifts colour, strength, and
+  // sun height toward the real quality of that light.
+  const profile = useMemo(() => daylightFor(light.wall), [light.wall]);
+  const effKelvin = Math.max(2200, Math.min(6500, warmthK + profile.kelvinBias));
+
+  const sunColor = useMemo(() => kelvinToHex(effKelvin), [effKelvin]);
   // Sky is always cooler than the sun, but the gap shrinks at the warm end
-  // (candle scene shouldn't have a strong blue fill — that fights the mood).
+  // (an evening scene shouldn't have a strong blue fill — that fights the mood).
   const skyColor = useMemo(() => {
-    const offset = warmthK < 3000 ? 800 : 1500;
-    return kelvinToHex(Math.min(warmthK + offset, 6500));
-  }, [warmthK]);
+    const offset = effKelvin < 3000 ? 800 : 1500;
+    return kelvinToHex(Math.min(effKelvin + offset, 6500));
+  }, [effKelvin]);
   // Ambient picks up a tint at the warm end so deep shadows feel like firelit
   // rooms rather than the cool default off-white.
   const ambientColor = useMemo(() => {
@@ -111,21 +144,23 @@ export function Lighting({ roomWmm, roomDmm, roomHmm, entrance, openings, warmth
   }, [warmthK]);
 
   // Sun position: outside the window wall, pointing in. The along-wall offset
-  // (ox) places the light at the window's actual position on that wall.
+  // (ox) places the light at the window's actual position; the elevation factor
+  // rakes it low for morning/evening and lifts it high for midday.
   const sunPos = useMemo(() => {
     const reach = Math.max(w, d) * 1.5;
     const ox = light.frac - 0.5;
+    const y = h * profile.elevation;
     switch (light.wall) {
-      case "N": return [ox * w, h * 1.8, reach] as const;
-      case "S": return [ox * w, h * 1.8, -reach] as const;
-      case "E": return [reach, h * 1.8, ox * d] as const;
-      case "W": return [-reach, h * 1.8, ox * d] as const;
+      case "N": return [ox * w, y, reach] as const;
+      case "S": return [ox * w, y, -reach] as const;
+      case "E": return [reach, y, ox * d] as const;
+      case "W": return [-reach, y, ox * d] as const;
     }
-  }, [light, w, d, h]);
+  }, [light, w, d, h, profile]);
 
-  const sunIntensity = sunStrength(warmthK);
+  const sunIntensity = sunStrength(warmthK) * profile.sunMult;
   const bounceIntensity = bounceStrength(warmthK);
-  const hemiIntensity = hemiStrength(warmthK);
+  const hemiIntensity = hemiStrength(warmthK) * profile.hemiMult;
   const ambientIntensity = warmthK < 2800 ? 0.12 : 0.08;
 
   return (

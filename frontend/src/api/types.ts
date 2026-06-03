@@ -95,6 +95,9 @@ export interface RoomState {
   wall_finish_rate_inr_sqft?: number | null;
   floor_rate_inr_sqft?: number | null;
   lighting_kelvin: number;
+  /** Compass direction the primary daylight enters from. Drives the natural-
+   *  light character in the 3D scene. null = derive from window/entrance. */
+  light_direction?: Direction | null;
   openings?: Opening[];
 }
 

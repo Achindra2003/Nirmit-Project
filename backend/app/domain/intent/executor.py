@@ -289,6 +289,11 @@ def _recolor(room: RoomState, params: dict) -> RoomState:
     kelvin = params.get("lighting_kelvin")
     if isinstance(kelvin, (int, float)) and 2200 <= kelvin <= 6500:
         update["lighting_kelvin"] = int(kelvin)
+    # Daylight direction — the compass wall the room's main window faces. Drives
+    # the natural-light character in the 3D scene.
+    direction = params.get("light_direction")
+    if isinstance(direction, str) and direction.upper() in {"N", "NE", "E", "SE", "S", "SW", "W", "NW"}:
+        update["light_direction"] = direction.upper()
     return room.model_copy(update=update)
 
 

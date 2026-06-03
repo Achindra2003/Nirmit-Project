@@ -8,12 +8,22 @@
  */
 import { useEffect, useState } from "react";
 import type {
+  Direction,
   FinishingFlooringOption,
   FinishingOptions,
   FinishingPaintSwatch,
   Intent,
   RoomState,
 } from "@/api/types";
+
+// The four window orientations and the quality of light each gives — the
+// real-interior-design intuition behind directional daylight.
+const DAYLIGHT_DIRS: Array<{ id: Direction; label: string; desc: string }> = [
+  { id: "N", label: "North", desc: "Soft & even" },
+  { id: "E", label: "East",  desc: "Warm morning" },
+  { id: "S", label: "South", desc: "Bright midday" },
+  { id: "W", label: "West",  desc: "Golden evening" },
+];
 
 interface Props {
   room: RoomState;
@@ -62,6 +72,13 @@ export function FinishingPanel({ room, onApply, activeSection, philosophy }: Pro
       kind: "recolor_room",
       target_item_id: null,
       parameters: { lighting_kelvin: k },
+    });
+  }
+  function applyDirection(dir: Direction) {
+    void onApply({
+      kind: "recolor_room",
+      target_item_id: null,
+      parameters: { light_direction: dir },
     });
   }
 
@@ -192,6 +209,41 @@ export function FinishingPanel({ room, onApply, activeSection, philosophy }: Pro
               <span style={previewSub}>{room.lighting_kelvin} K</span>
             </div>
           </div>
+
+          {/* Daylight direction — which way the main window faces sets the
+              natural-light character (morning / evening / bright / soft). */}
+          <Section title="Daylight direction" sub="Which way your main window faces">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {DAYLIGHT_DIRS.map((dr) => {
+                const sel = room.light_direction === dr.id;
+                return (
+                  <button
+                    key={dr.id}
+                    onClick={() => applyDirection(dr.id)}
+                    title={`${dr.label}-facing window — ${dr.desc.toLowerCase()} light`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "10px 12px", cursor: "pointer", textAlign: "left" as const,
+                      border: `1.5px solid ${sel ? "var(--terra)" : "var(--line)"}`,
+                      background: sel ? "var(--terra-light)" : "transparent",
+                      transition: "all .18s ease",
+                    }}
+                  >
+                    <span style={{ fontFamily: "var(--fm)", fontSize: 13, fontWeight: 600, color: sel ? "var(--terra)" : "var(--ink-2)", width: 18, textAlign: "center" as const }}>{dr.id}</span>
+                    <span style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontFamily: "var(--fd)", fontSize: 14, fontWeight: 500, color: sel ? "var(--terra)" : "var(--ink)", lineHeight: 1.2 }}>{dr.label}</span>
+                      <span style={{ fontFamily: "var(--fb)", fontSize: 11, color: "var(--ink-3)" }}>{dr.desc}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 12, color: "var(--ink-3)", marginTop: 10, lineHeight: 1.5 }}>
+              {room.light_direction
+                ? "The room is lit as if its main window faces this way."
+                : "Not set — we’re lighting it from your floor-plan window. Pick a direction to match your real home."}
+            </p>
+          </Section>
 
           <Section title="Lighting warmth" sub="Scene temperature · sets the room's mood">
             {/* Visual gradient scrubber */}

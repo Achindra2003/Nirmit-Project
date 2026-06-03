@@ -122,3 +122,25 @@ def test_boq_uses_selected_floor_rate():
     boq = build_boq(room, city="Mumbai")
     floor_line = next(l for l in boq.materials if l.description.startswith("Flooring"))
     assert floor_line.rate_inr == 380
+
+
+def test_recolor_stores_light_direction():
+    room = _room()
+    assert room.light_direction is None
+    out = apply_intents(
+        room,
+        [Intent(kind=IntentKind.RECOLOR_ROOM, target_item_id=None, parameters={"light_direction": "E"})],
+    )
+    assert out is not None
+    assert out.light_direction == "E"
+
+
+def test_recolor_rejects_bad_light_direction():
+    room = _room()
+    out = apply_intents(
+        room,
+        [Intent(kind=IntentKind.RECOLOR_ROOM, target_item_id=None, parameters={"light_direction": "UP"})],
+    )
+    # Invalid value is ignored, not stored — and with no other change the intent
+    # is a no-op (apply_intents returns None when nothing applied).
+    assert out is None or out.light_direction is None

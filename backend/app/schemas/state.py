@@ -237,6 +237,10 @@ class RoomState(StrictModel):
         le=6500,
         description="Lighting colour temperature in Kelvin. Drives the 3D scene's sun warmth.",
     )
+    light_direction: Direction | None = Field(
+        default=None,
+        description="Compass direction the primary daylight enters from (the wall the main window faces). Drives the 3D scene's natural-light CHARACTER — east reads as warm morning, west as orange evening, south as bright, north as soft/cool. None = derive from the window opening, else the wall opposite the entrance.",
+    )
 
     @field_validator("lighting_kelvin", mode="before")
     @classmethod

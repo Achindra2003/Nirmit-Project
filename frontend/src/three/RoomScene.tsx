@@ -98,6 +98,7 @@ export function RoomScene({
         roomHmm={room.intake.room_dimensions.height_mm}
         entrance={room.intake.entrance_direction}
         openings={room.openings ?? []}
+        lightDirection={room.light_direction ?? null}
         warmthK={warmthK}
       />
 
