@@ -44,3 +44,7 @@ exception
   when duplicate_object then null;
   when undefined_object then null;  -- publication missing on very old projects
 end $$;
+
+-- Deliver the FULL row on every UPDATE (not just changed columns), so the
+-- realtime payload always carries room_state and the PK filter resolves.
+alter table public.designs replica identity full;

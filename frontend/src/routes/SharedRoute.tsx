@@ -38,15 +38,23 @@ export function SharedRoute({ token }: { token: string }) {
         setRoom(d.room_state);
         setName(d.name);
         api.cost({ room_state: d.room_state }).then(setCost).catch(() => {});
-        unsub = api.subscribeSharedDesign(token, (incoming) => {
-          // Ignore the echo of our own write; apply genuine remote edits.
-          if (JSON.stringify(incoming) !== JSON.stringify(roomRef.current)) {
-            setRoom(incoming);
-            setSelectedId(null);
-            api.cost({ room_state: incoming }).then(setCost).catch(() => {});
-          }
-        });
-        setSynced("live");
+        // Subscribe by the design's PRIMARY KEY (the reliable filter column).
+        unsub = api.subscribeSharedDesign(
+          d.id,
+          (incoming) => {
+            // Ignore the echo of our own write; apply genuine remote edits.
+            if (JSON.stringify(incoming) !== JSON.stringify(roomRef.current)) {
+              setRoom(incoming);
+              setSelectedId(null);
+              api.cost({ room_state: incoming }).then(setCost).catch(() => {});
+            }
+          },
+          (status) => {
+            // eslint-disable-next-line no-console
+            console.log("[share] realtime status:", status);
+            setSynced(status === "SUBSCRIBED" ? "live" : "off");
+          },
+        );
       })
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
     return () => unsub();

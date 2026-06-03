@@ -216,20 +216,29 @@ async function supabaseUpdateSharedDesign(token: string, room_state: RoomState):
   if (error) throw new Error(`Couldn't sync the change — ${error.message}`);
 }
 
-/** Subscribe to live edits from other collaborators. Returns an unsubscribe. */
-function supabaseSubscribeSharedDesign(token: string, onRoom: (room: RoomState) => void): () => void {
+/** Subscribe to live edits from other collaborators. Filters on the PRIMARY
+ *  KEY `id` (not share_token) — Supabase only replicates changed columns on an
+ *  UPDATE (we change room_state, not share_token), so a share_token filter
+ *  would never match and the event would be dropped. The PK is always present.
+ *  `onStatus` reports the channel state ('SUBSCRIBED' once live). Returns an
+ *  unsubscribe. */
+function supabaseSubscribeSharedDesign(
+  designId: string,
+  onRoom: (room: RoomState) => void,
+  onStatus?: (status: string) => void,
+): () => void {
   if (!supabase) return () => {};
   const channel = supabase
-    .channel(`design-${token}`)
+    .channel(`design-${designId}`)
     .on(
       "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "designs", filter: `share_token=eq.${token}` },
+      { event: "UPDATE", schema: "public", table: "designs", filter: `id=eq.${designId}` },
       (payload) => {
         const room = (payload.new as { room_state?: RoomState } | null)?.room_state;
         if (room) onRoom(room);
       },
     )
-    .subscribe();
+    .subscribe((status) => onStatus?.(status));
   return () => { void supabase!.removeChannel(channel); };
 }
 
