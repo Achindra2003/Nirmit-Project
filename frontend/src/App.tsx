@@ -12,6 +12,7 @@ import { PlannerRoute } from "@/routes/PlannerRoute";
 import { StyleRoute } from "@/routes/StyleRoute";
 import { ExportRoute } from "@/routes/ExportRoute";
 import { ThreeDFrontRoute } from "@/routes/ThreeDFrontRoute";
+import { SharedRoute } from "@/routes/SharedRoute";
 
 const ROUTE_MAP: Record<Stage, React.ReactElement> = {
   home:       <HomeRoute />,
@@ -78,6 +79,14 @@ export function App() {
     }
     window.history.pushState({ stage }, "");
   }, [stage]);
+
+  // Share link: ?share=<token> opens the collaborative shared room — its own
+  // self-contained surface, outside the intake→export flow. Checked before the
+  // auth splash so a recipient with the link lands straight in the room.
+  if (typeof window !== "undefined") {
+    const shareToken = new URLSearchParams(window.location.search).get("share");
+    if (shareToken) return <SharedRoute token={shareToken} />;
+  }
 
   // Dev escape hatch: ?dev=3dfront renders the raw 3D-FRONT viewer outside the
   // normal stage flow. Not part of the user experience.

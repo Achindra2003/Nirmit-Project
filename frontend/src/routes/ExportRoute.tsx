@@ -79,6 +79,10 @@ export function ExportRoute() {
   // page-wide / global) so a save failure doesn't blow up the whole
   // page and a save success has somewhere quiet to land. */
   const [saveMsg, setSaveMsg]   = useState<string | null>(null);
+  // Share / collaborate — saves the design (needs auth), mints a share link,
+  // copies it. Anyone with the link can view + edit the same room live.
+  const [sharing, setSharing]   = useState(false);
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
   // Captured 3D render dataURL, embedded as <img> in the document and the
   // share card so html2canvas can rasterise it cleanly (WebGL canvases are
   // unreliable to capture directly).
@@ -194,6 +198,34 @@ export function ExportRoute() {
       setSaveMsg(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function share() {
+    if (!vision || sharing) return;
+    // Sharing needs a saved row (it lives in Supabase) → auth required.
+    if (!user) { setPendingReturn("export"); setStage("login"); return; }
+    setSharing(true);
+    setShareMsg(null);
+    try {
+      let id = savedId;
+      if (!id) {
+        const r = await api.saveDesign({ name: vision.name, philosophy: vision.philosophy, room_state: vision.room_state });
+        id = r.id;
+        setSavedId(id);
+      }
+      const { url } = await api.shareDesign(id);
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareMsg("Link copied — anyone with it can view and edit.");
+      } catch {
+        setShareMsg(url); // clipboard blocked — show the link to copy by hand
+      }
+      setTimeout(() => setShareMsg(null), 7000);
+    } catch (e) {
+      setShareMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSharing(false);
     }
   }
 
@@ -601,6 +633,15 @@ export function ExportRoute() {
                   ? "Saved ✓"
                   : "Save design"}
           </button>
+          <button
+            className="btn-secondary"
+            onClick={share}
+            disabled={sharing}
+            style={{ padding: "8px 18px", flexShrink: 0 }}
+            title="Create a link so family or your contractor can view and edit this room with you"
+          >
+            {sharing ? "Sharing…" : "Share / collaborate"}
+          </button>
           {/* Back-link to the planner so the bill isn't a dead end — a user
               reading the line items here can return to change a piece (and the
               live Bill of Items there) instead of feeling stuck on the export. */}
@@ -621,23 +662,27 @@ export function ExportRoute() {
           {/* Inline feedback next to the buttons — green-ish ink for
            *  success, terra for errors. Truncates if the message is
            *  long so the bottom bar height stays steady. */}
-          {saveMsg && (
-            <span
-              style={{
-                fontFamily: "var(--fd)",
-                fontStyle: "italic",
-                fontSize: 13,
-                color: saveMsg.startsWith("Saved") ? "var(--ink-2)" : "var(--terra-dk)",
-                marginLeft: 4,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                maxWidth: 360,
-              }}
-            >
-              {saveMsg}
-            </span>
-          )}
+          {(saveMsg || shareMsg) && (() => {
+            const msg = shareMsg || saveMsg || "";
+            const good = msg.startsWith("Saved") || msg.startsWith("Link copied");
+            return (
+              <span
+                style={{
+                  fontFamily: "var(--fd)",
+                  fontStyle: "italic",
+                  fontSize: 13,
+                  color: good ? "var(--ink-2)" : "var(--terra-dk)",
+                  marginLeft: 4,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: 420,
+                }}
+              >
+                {msg}
+              </span>
+            );
+          })()}
         </div>
         {boq && !hidePrices && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>

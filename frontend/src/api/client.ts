@@ -176,6 +176,63 @@ async function supabaseDeleteDesign(id: string): Promise<{ deleted: string }> {
   return { deleted: id };
 }
 
+// ── Sharing / collaboration (Supabase) ──────────────────────────────────
+// A shared design is reachable by an opaque token (uuid). Anyone with the
+// link can view AND edit (last-write-wins); edits + a Realtime subscription
+// keep collaborators in sync. See supabase/migrations/0002_share.sql.
+
+export interface ShareInfo { token: string; url: string }
+export interface SharedDesign { id: string; name: string; philosophy: string | null; room_state: RoomState }
+
+/** Owner action: ensure the design has a share token, return the link. */
+async function supabaseShareDesign(id: string): Promise<ShareInfo> {
+  const { uid } = requireAuthedSupabase();
+  const { data: existing } = await supabase!
+    .from("designs").select("share_token").eq("id", id).eq("user_id", uid).single();
+  let token = (existing as { share_token: string | null } | null)?.share_token ?? null;
+  if (!token) {
+    token = crypto.randomUUID();
+    const { error } = await supabase!
+      .from("designs").update({ share_token: token }).eq("id", id).eq("user_id", uid);
+    if (error) throw new Error(`Couldn't create a share link — ${error.message}`);
+  }
+  return { token, url: `${window.location.origin}/?share=${token}` };
+}
+
+/** Anyone-with-the-link: read a shared design by token. */
+async function supabaseGetSharedDesign(token: string): Promise<SharedDesign> {
+  if (!supabase) throw new Error("Sharing needs a Supabase project configured.");
+  const { data, error } = await supabase
+    .from("designs").select("id, name, philosophy, room_state").eq("share_token", token).single();
+  if (error) throw new Error(`Couldn't open the shared room — ${error.message}`);
+  return data as SharedDesign;
+}
+
+/** Anyone-with-the-link: patch the shared room_state (last-write-wins). */
+async function supabaseUpdateSharedDesign(token: string, room_state: RoomState): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from("designs").update({ room_state }).eq("share_token", token);
+  if (error) throw new Error(`Couldn't sync the change — ${error.message}`);
+}
+
+/** Subscribe to live edits from other collaborators. Returns an unsubscribe. */
+function supabaseSubscribeSharedDesign(token: string, onRoom: (room: RoomState) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel(`design-${token}`)
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "designs", filter: `share_token=eq.${token}` },
+      (payload) => {
+        const room = (payload.new as { room_state?: RoomState } | null)?.room_state;
+        if (room) onRoom(room);
+      },
+    )
+    .subscribe();
+  return () => { void supabase!.removeChannel(channel); };
+}
+
 export const api = {
   generate: (req: GenerateRequest) => post<GenerateRequest, GenerateResponse>("/generate", req),
   chat: (req: ChatRequest) => post<ChatRequest, ChatResponse>("/chat", req),
@@ -189,6 +246,12 @@ export const api = {
   listDesigns:  supabaseListDesigns,
   loadDesign:   supabaseLoadDesign,
   deleteDesign: supabaseDeleteDesign,
+
+  // Collaboration — share link + live sync. See 0002_share.sql.
+  shareDesign:          supabaseShareDesign,
+  getSharedDesign:      supabaseGetSharedDesign,
+  updateSharedDesign:   supabaseUpdateSharedDesign,
+  subscribeSharedDesign: supabaseSubscribeSharedDesign,
 
   sessionId,
 };
