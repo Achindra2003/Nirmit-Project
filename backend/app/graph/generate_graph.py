@@ -313,6 +313,36 @@ _PHILOSOPHY_IDX: dict[VisionPhilosophy, int] = {
     VisionPhilosophy.KEEPER: 2,
 }
 
+# Order in which pieces are trimmed when a room's all-in exceeds the budget —
+# least essential first. Core pieces (sofa, bed, desk, dining_table, tv_unit,
+# coffee_table, wardrobe, primary storage) are NEVER trimmed: a tight budget
+# gets fewer extras, not a broken room. The trimmed extras resurface as
+# in-budget cross-sell suggestions in the planner.
+_TRIM_ORDER: tuple[str, ...] = (
+    "mirror", "wall_art", "floating_shelf", "fireplace", "plant",
+    "pendant_light", "lamp", "pouffe", "bench", "side_table",
+    "rug", "lounge_chair", "accent_chair", "diwan",
+    "cabinet", "sideboard", "chest",
+)
+
+
+def _fit_to_budget(items: list, room: RoomState, target_ratio: float = 0.98) -> list:
+    """Trim least-essential pieces until the all-in fits the budget (or only the
+    core remains). Returns the (possibly shorter) item list."""
+    budget = room.intake.budget_inr
+
+    def all_in(its: list) -> int:
+        return build_cost_breakdown(room.model_copy(update={"items": its})).story.total_inr
+
+    out = list(items)
+    if all_in(out) <= budget:
+        return out
+    for prefix in _TRIM_ORDER:
+        if all_in(out) <= budget * target_ratio:
+            break
+        out = [i for i in out if i.id.split("-")[0] != prefix]
+    return out
+
 
 def _build_vision(
     intake: Intake,
@@ -372,6 +402,15 @@ def _build_vision(
         design_intent=design_intent,
     )
     cost = build_cost_breakdown(room)
+
+    # Budget fit — never hand back an over-budget room. Trim the least essential
+    # pieces until the all-in fits; the extras return as in-budget suggestions.
+    if cost.story.remaining_inr < 0:
+        trimmed = _fit_to_budget(placed_items, room)
+        if len(trimmed) < len(placed_items):
+            placed_items = trimmed
+            room = room.model_copy(update={"items": placed_items})
+            cost = build_cost_breakdown(room)
 
     name, tagline = _name_and_tagline(intake, philosophy)
     reasoning = _deterministic_reasoning(intake, brief, philosophy, room)
