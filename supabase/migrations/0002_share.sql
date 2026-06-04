@@ -20,6 +20,15 @@
 alter table public.designs
   add column if not exists share_token uuid unique;
 
+-- Table-level privileges. RLS decides WHICH rows; these GRANTs decide whether
+-- the role may touch the table at all. A collaborator opening a share link is
+-- usually the `anon` role (not signed in), so anon needs SELECT + UPDATE — the
+-- single most common reason a shared edit silently affects 0 rows is a missing
+-- UPDATE grant here. (authenticated already has these from project defaults;
+-- granted again for safety.)
+grant select, update on public.designs to anon;
+grant select, update on public.designs to authenticated;
+
 -- READ: anyone (incl. anonymous) may read a shared row. The frontend always
 -- filters by the exact token, so a viewer only ever sees the room they were
 -- given the link to.
