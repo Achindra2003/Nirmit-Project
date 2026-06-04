@@ -9,6 +9,7 @@ import { TopNav } from "@/components/shell/TopNav";
 export function HomeRoute() {
   const setStage = useAppStore((s) => s.setStage);
   const setVisions = useAppStore((s) => s.setVisions);
+  const setPendingReturn = useAppStore((s) => s.setPendingReturn);
   // Saved-rooms section is auth-gated: anonymous visitors see only the
   // hero + CTA (no archive section at all — the empty-state for a
   // never-signed-in visitor is noise). Signed-in users see their archive
@@ -142,10 +143,25 @@ export function HomeRoute() {
           </p>
 
           <div className="appear-4">
-            <button className="btn-primary btn-lg" onClick={() => setStage("intake")}>
-              {designs.length === 0 ? "Start designing" : "Design a new room"}
+            {/* Designing is gated on sign-in so the work can be saved — an
+                anonymous run would generate rooms the user could never keep.
+                Unsigned visitors go to sign-up first (which routes back here
+                into intake via pendingReturn); signed-in users go straight in. */}
+            <button
+              className="btn-primary btn-lg"
+              onClick={() => {
+                if (!user) { setPendingReturn("intake"); setStage("signup"); }
+                else setStage("intake");
+              }}
+            >
+              {!user ? "Sign up & start designing" : designs.length === 0 ? "Start designing" : "Design a new room"}
               <span style={{ fontWeight: 300, lineHeight: 1 }}>&rarr;</span>
             </button>
+            {!user && (
+              <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 13, color: "var(--ink-3)", marginTop: 12 }}>
+                A free account keeps your rooms — design, save, and pick up where you left off.
+              </p>
+            )}
           </div>
 
           {error && (

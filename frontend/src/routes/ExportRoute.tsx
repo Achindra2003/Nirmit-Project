@@ -83,6 +83,10 @@ export function ExportRoute() {
   // copies it. Anyone with the link can view + edit the same room live.
   const [sharing, setSharing]   = useState(false);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
+  // Naming a save — the three visions share similar names, so let the user
+  // give each save a label they'll recognise in their archive.
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveName, setSaveName] = useState("");
   // Captured 3D render dataURL, embedded as <img> in the document and the
   // share card so html2canvas can rasterise it cleanly (WebGL canvases are
   // unreliable to capture directly).
@@ -174,23 +178,31 @@ export function ExportRoute() {
     }
   }
 
-  async function save() {
+  /** Save button → either route anonymous users to auth, or open the name
+   *  dialog so they can label this save (the three visions look alike in the
+   *  archive otherwise). */
+  function onSaveClick() {
     if (!vision || saving) return;
-    // Anonymous users can't save — api.saveDesign would throw "Sign in
-    // to save…" with no UI feedback. Route them to login, stashing the
-    // current stage in pendingReturn so they land back HERE after auth
-    // (LoginRoute / SignupRoute consume that flag on success).
     if (!user) {
+      // Stash the stage so LoginRoute/SignupRoute bring them back here.
       setPendingReturn("export");
       setStage("login");
       return;
     }
+    setSaveName(saveName || vision.name);
+    setShowSaveDialog(true);
+  }
+
+  async function doSave() {
+    if (!vision || saving) return;
+    const name = saveName.trim() || vision.name;
+    setShowSaveDialog(false);
     setSaving(true);
     setSaveMsg(null);
     try {
-      const r = await api.saveDesign({ name: vision.name, philosophy: vision.philosophy, room_state: vision.room_state, existing_id: savedId });
+      const r = await api.saveDesign({ name, philosophy: vision.philosophy, room_state: vision.room_state, existing_id: savedId });
       setSavedId(r.id);
-      setSaveMsg("Saved to your archive.");
+      setSaveMsg(`Saved as “${name}”.`);
       // Clear the success message after a beat so the bar doesn't stay
       // shouting "saved!" forever.
       setTimeout(() => setSaveMsg(null), 4500);
@@ -210,7 +222,7 @@ export function ExportRoute() {
     try {
       let id = savedId;
       if (!id) {
-        const r = await api.saveDesign({ name: vision.name, philosophy: vision.philosophy, room_state: vision.room_state });
+        const r = await api.saveDesign({ name: saveName.trim() || vision.name, philosophy: vision.philosophy, room_state: vision.room_state });
         id = r.id;
         setSavedId(id);
       }
@@ -619,7 +631,7 @@ export function ExportRoute() {
         <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
           <button
             className="btn-secondary"
-            onClick={save}
+            onClick={onSaveClick}
             disabled={saving}
             style={{ padding: "8px 18px", flexShrink: 0 }}
           >
@@ -693,6 +705,38 @@ export function ExportRoute() {
           </div>
         )}
       </div>
+
+      {/* Save-name dialog — lets the user label each save (the three visions
+          read alike in the archive otherwise). */}
+      {showSaveDialog && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSaveDialog(false); }}
+          style={{ position: "fixed", inset: 0, zIndex: 200, display: "grid", placeItems: "center", background: "rgba(20,16,12,0.55)", backdropFilter: "blur(2px)" }}
+        >
+          <div style={{ width: "calc(100vw - 48px)", maxWidth: 440, background: "var(--paper)", border: "1px solid var(--line)", padding: "28px 30px 24px", boxShadow: "0 24px 60px rgba(0,0,0,.32)" }}>
+            <span className="eyebrow" style={{ display: "block", marginBottom: 10 }}>Name this save</span>
+            <p style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)", marginBottom: 18, lineHeight: 1.5 }}>
+              Give it a name you'll recognise later — e.g. “Mum's living room, warm option”.
+            </p>
+            <input
+              autoFocus
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void doSave(); if (e.key === "Escape") setShowSaveDialog(false); }}
+              placeholder={vision.name}
+              style={{ width: "100%", border: "none", borderBottom: "2px solid var(--ink)", background: "transparent", padding: "8px 0", fontFamily: "var(--fd)", fontSize: 20, color: "var(--ink)", outline: "none" }}
+              onFocus={(e) => { e.currentTarget.style.borderBottomColor = "var(--terra)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderBottomColor = "var(--ink)"; }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 14, marginTop: 26, alignItems: "center" }}>
+              <button onClick={() => setShowSaveDialog(false)} className="tool-action-lnk" style={{ fontFamily: "var(--fd)", fontStyle: "italic", fontSize: 14, color: "var(--ink-2)" }}>Cancel</button>
+              <button onClick={() => void doSave()} className="btn-primary" style={{ padding: "10px 20px", fontSize: 12 }}>Save room</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
