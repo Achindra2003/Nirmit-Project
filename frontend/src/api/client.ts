@@ -208,12 +208,20 @@ async function supabaseGetSharedDesign(token: string): Promise<SharedDesign> {
   return data as SharedDesign;
 }
 
-/** Anyone-with-the-link: patch the shared room_state (last-write-wins). */
+/** Anyone-with-the-link: patch the shared room_state (last-write-wins).
+ *  `.select()` is required: Supabase returns NO error when RLS silently blocks
+ *  an update — it just affects 0 rows. We read the affected row back and treat
+ *  "0 rows" as the real failure it is (edit access not granted). */
 async function supabaseUpdateSharedDesign(token: string, room_state: RoomState): Promise<void> {
   if (!supabase) return;
-  const { error } = await supabase
-    .from("designs").update({ room_state }).eq("share_token", token);
-  if (error) throw new Error(`Couldn't sync the change — ${error.message}`);
+  const { data, error } = await supabase
+    .from("designs").update({ room_state }).eq("share_token", token).select("id");
+  if (error) throw new Error(`Couldn't save the change — ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error(
+      "Edit didn't save — the link doesn't have write access. Re-run 0002_share.sql and confirm the \"anyone edits shared designs\" policy exists.",
+    );
+  }
 }
 
 /** Subscribe to live edits from other collaborators. Filters on the PRIMARY

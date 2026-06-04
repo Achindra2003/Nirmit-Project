@@ -119,6 +119,14 @@ export function SharedRoute({ token }: { token: string }) {
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", width: "100%", height: "100vh", background: "var(--basalt)" }}>
+      {/* Error banner — write/AI failures surface here instead of vanishing,
+          so a blocked edit (e.g. missing RLS policy) is obvious. */}
+      {error && (
+        <div style={{ position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 100, background: "var(--terra-dk)", color: "var(--paper)", padding: "10px 16px", borderRadius: 4, maxWidth: "76%", fontFamily: "var(--fb)", fontSize: 13, lineHeight: 1.45, boxShadow: "0 4px 16px rgba(0,0,0,.35)", display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <span>{error}</span>
+          <button onClick={() => setError(null)} style={{ background: "transparent", border: "none", color: "var(--paper)", cursor: "pointer", fontSize: 16, lineHeight: 1, flexShrink: 0 }} aria-label="Dismiss">×</button>
+        </div>
+      )}
       {/* Canvas */}
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ height: 56, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderBottom: "1px solid rgba(242,235,221,.08)", background: "rgba(26,23,20,.97)" }}>
