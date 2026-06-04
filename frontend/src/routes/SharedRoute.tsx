@@ -33,8 +33,10 @@ export function SharedRoute({ token }: { token: string }) {
   // Load + subscribe.
   useEffect(() => {
     let unsub = () => {};
+    let cancelled = false;
     api.getSharedDesign(token)
       .then((d) => {
+        if (cancelled) return; // unmounted (or StrictMode re-ran) before load resolved
         setRoom(d.room_state);
         setName(d.name);
         api.cost({ room_state: d.room_state }).then(setCost).catch(() => {});
@@ -56,8 +58,8 @@ export function SharedRoute({ token }: { token: string }) {
           },
         );
       })
-      .catch((e) => setError(e instanceof Error ? e.message : String(e)));
-    return () => unsub();
+      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : String(e)); });
+    return () => { cancelled = true; unsub(); };
   }, [token]);
 
   /** Single write-path: update local, recompute cost, push to everyone. */

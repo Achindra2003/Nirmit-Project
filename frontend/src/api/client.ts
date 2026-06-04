@@ -236,8 +236,13 @@ function supabaseSubscribeSharedDesign(
   onStatus?: (status: string) => void,
 ): () => void {
   if (!supabase) return () => {};
+  // Unique channel name per subscription. `supabase.channel(name)` returns the
+  // EXISTING channel for a reused name — and adding `.on()` to one that's
+  // already `subscribe()`d throws "Cannot add postgres_changes callbacks …
+  // after subscribe()" (hit under React's dev double-mount). A fresh name per
+  // call sidesteps it; cleanup removes this exact channel.
   const channel = supabase
-    .channel(`design-${designId}`)
+    .channel(`design-${designId}-${Math.random().toString(36).slice(2)}`)
     .on(
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "designs", filter: `id=eq.${designId}` },
