@@ -19,20 +19,21 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str | None = None
 
     # Generation pipeline — each vision triggers up to 3 LLM calls (interpret +
-    # style + ranker). The ranker is now on by default because the deterministic
-    # vision names ("The Long Wall" / "The Open Centre" / "The Working Walls")
-    # felt repetitive across sessions — the LLM ranker generates fresh names +
-    # tagline + per-vision reasoning that actually references the household's
-    # specifics. Interpret + Style remain off because they're luxuries; the
-    # deterministic fallbacks for those are good enough.
+    # style + ranker). All OFF by default: generation is fully deterministic.
     #
-    # If you hit Groq quota issues, flip LLM_RANKER_ON_GENERATE back to False
-    # — the deterministic naming table + reasoning still ships a respectable
-    # baseline. The quota gate (LlmQuotaGate) also auto-disables LLM calls
-    # when the API starts refusing.
+    # The ranker WAS on (LLM-authored names/taglines/reasoning), but it has two
+    # problems that hurt a live demo: (1) it's nondeterministic and routinely
+    # returns the SAME or near-same name/tagline across all three visions (the
+    # curated table below is deliberately distinct — "The Long Wall" / "The Open
+    # Centre" / "The Working Walls" — and reads better than the LLM's mushy
+    # "gather around the coffee table" taglines); (2) it adds a Groq round-trip
+    # to the reveal, so a rate-limit stalls the single most important screen.
+    # Off → curated distinct names + authored, household-aware reasoning, fast
+    # and identical every run. Flip the ranker back on post-demo if you want the
+    # cross-session name variety it was added for.
     LLM_INTERPRET_ON_GENERATE: bool = False
     LLM_STYLE_ON_GENERATE: bool = False
-    LLM_RANKER_ON_GENERATE: bool = True
+    LLM_RANKER_ON_GENERATE: bool = False
     ANTHROPIC_API_KEY: str | None = None
     OPENAI_API_KEY: str | None = None
 

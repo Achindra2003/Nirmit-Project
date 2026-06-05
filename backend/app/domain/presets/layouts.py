@@ -81,8 +81,11 @@ LIVING_GATHERING_0 = PresetLayout(
         # Pendant over the coffee table — ceiling-mounted, so it never fights a
         # floor footprint. Reads instantly as intentional lighting.
         A("pendant_light", anchor_x="C", offset_x_mm=-300, anchor_z="C", offset_z_mm=0,    rotation_deg=0,   optional=True),
-        # Framed art on the north wall, above the bookshelf line.
-        A("wall_art",      anchor_x="C", offset_x_mm=300,  anchor_z="N", offset_z_mm=-40,  rotation_deg=180, optional=True),
+        # NOTE: wall_art removed — the only curated frame asset (scopia_frame1)
+        # is a tiny ~145mm near-cube whose bounding box doesn't sit flush, so it
+        # rendered as a small block floating at eye height ("the floating photo
+        # frame"). Until a proper flat-frame asset exists, the room reads cleaner
+        # without it; the bookshelf + plant + lamp already dress the north/east.
         # A potted plant softens the SE corner near the entrance.
         A("plant",         anchor_x="E", offset_x_mm=-340, anchor_z="S", offset_z_mm=460,  rotation_deg=0,   optional=True),
         # Floor lamp anchors the NE corner (the earlier NW spot fought the
