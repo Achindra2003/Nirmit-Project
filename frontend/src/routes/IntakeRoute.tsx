@@ -78,11 +78,11 @@ interface UseChip { label: string; consequence: string }
 const USE_BY_ROOM: Record<string, UseChip[]> = {
   living: [
     { label: "Just the two of us",    consequence: "an intimate seating cluster, nothing oversized" },
-    { label: "Young children",        consequence: "rounded edges, closed storage, no glass" },
-    { label: "Elderly parent visits", consequence: "a firm armchair with arms, near the door" },
-    { label: "Joint family",          consequence: "generous, flexible seating" },
-    { label: "Frequent guests",       consequence: "an extra seat that pulls in" },
-    { label: "Vastu matters",         consequence: "mandir & heavy storage placed by direction" },
+    { label: "Young children",        consequence: "closed storage to keep toys off the floor" },
+    { label: "Elderly parent visits", consequence: "a firm armchair with arms, easy to rise from" },
+    { label: "Joint family",          consequence: "extra closed storage and seating for a full house" },
+    { label: "Frequent guests",       consequence: "an extra seat that pulls into the circle" },
+    { label: "Vastu matters",         consequence: "key pieces placed by the compass" },
   ],
   bedroom: [
     { label: "Couple",         consequence: "a balanced room, both sides reachable" },

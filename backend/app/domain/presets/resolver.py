@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import math
 import uuid
+from dataclasses import replace
 
 from app.domain.catalog import CatalogQuery, get_catalog
 from app.domain.catalog.presets import get_preset_catalog
@@ -109,6 +110,23 @@ def resolve_preset_via_engine(
     # them with the same containment + overlap handling as authored items.
     profile_extra = _profile_items(brief, layout, preset_catalog)
     layout_items = list(layout.items) + profile_extra
+
+    # Elderly / reduced mobility → guarantee a chair WITH ARMS (easier to rise
+    # from than an armless accent chair or a low sofa). Done as an in-place swap
+    # of an existing accent_chair so it reuses the preset's validated slot and
+    # always lands; only falls back to an add if there's no accent_chair to
+    # upgrade. Honest delivery of the intake's "a firm armchair with arms" promise.
+    if brief and (brief.get("has_elderly") or brief.get("mobility_concern")) and "lounge_chair" in preset_catalog:
+        if not any(a.sub_category == "lounge_chair" for a in layout_items):
+            for idx, a in enumerate(layout_items):
+                if a.sub_category == "accent_chair":
+                    layout_items[idx] = replace(a, sub_category="lounge_chair")
+                    break
+            else:
+                layout_items.append(AnchoredItem(
+                    "lounge_chair", anchor_x="E", offset_x_mm=-700, anchor_z="S",
+                    offset_z_mm=900, rotation_deg=0, optional=True))
+
     profile_ids = {id(a) for a in profile_extra}
 
     for fi in layout_items:
@@ -287,11 +305,11 @@ def _profile_items(
                 extra.append(anchored_for(sub))
                 return
 
-    # Elderly / reduced mobility → a chair WITH ARMS, near the entrance so it's
-    # the first easy seat. lounge_chair has arms; accent_chair is the fallback.
-    if brief.get("mobility_concern") or brief.get("has_elderly"):
-        add(("lounge_chair", "accent_chair"),
-            lambda sub: AnchoredItem(sub, anchor_x="E", offset_x_mm=-700, anchor_z="S", offset_z_mm=900, rotation_deg=0, optional=True))
+    # NOTE: the elderly / reduced-mobility "arms chair" is handled by an in-place
+    # SWAP in resolve_preset_via_engine (upgrade an armless accent_chair to a
+    # lounge_chair in its already-validated slot) rather than an add here — adding
+    # into an already-full gathering preset got dropped by the engine for lack of
+    # a clear, collision-free slot. The swap always lands.
 
     # Storage-heavy home, or kids (toys/clutter need a closed home) → a cabinet
     # with doors against a wall.

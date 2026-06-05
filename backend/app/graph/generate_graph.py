@@ -123,13 +123,34 @@ Be conservative: only set a flag true if the text clearly supports it."""
                 brief = json.loads(m.group(0))
                 return {**state, "design_brief": brief}
 
-    # Fallback: keyword matching
-    text_lower = intake.who_lives_here.lower()
-    has_kids = any(k in text_lower for k in ("kid", "child", "son", "daughter", "baby", "toddler"))
-    has_elderly = any(
-        k in text_lower
-        for k in ("mother-in-law", "mother in law", "grand", "elder", "parents", "father-in-law")
+    # Fallback: phrase matching over who_lives_here. The intake sends the exact
+    # structured "use" chip labels (joined by ". "), so these phrases map onto
+    # the brief RELIABLY — this is what makes the household description actually
+    # drive the room (via _profile_items) instead of just flavouring the copy.
+    # Keep each signal aligned to a concrete consequence the engine delivers.
+    t = intake.who_lives_here.lower()
+
+    def has(*subs: str) -> bool:
+        return any(s in t for s in subs)
+
+    has_kids = has("kid", "child", "son", "daughter", "baby", "toddler")
+    has_elderly = has("elder", "grand", "mother-in-law", "mother in law", "father-in-law", "in-law", "parent")
+    # Hosting: "frequent" earns an extra pull-in seat. Joint family / "seats 6+"
+    # / explicit hosting all read as frequent; a bare "guest" mention is occasional.
+    entertains = (
+        "frequent" if has("frequent guest", "guests often", "host", "joint family", "seats 6")
+        else "occasional" if has("guest", "visitor", "entertain")
+        else "rare"
     )
+    # Storage-heavy earns a closed cabinet. Joint family, kids' clutter, an
+    # explicit "lots to store", hosting (serving ware) and book-heavy rooms all
+    # push to high.
+    needs_storage = (
+        "high" if has_kids or has("lots to store", "joint family", "we host", "reading & books", "seats 6")
+        else "medium"
+    )
+    spiritual = "daily_mandir" if has("mandir", "pooja", "prayer", "temple") else "none"
+    wfh = has("work from home", "wfh", "work-from-home", "video call", "deep focus", "homework", "office")
     return {
         **state,
         "design_brief": {
@@ -137,10 +158,10 @@ Be conservative: only set a flag true if the text clearly supports it."""
             "has_elderly": has_elderly,
             "kid_age": "none",
             "mobility_concern": has_elderly,
-            "entertains_guests": "occasional",
-            "needs_storage": "medium",
-            "spiritual_practice": "none",
-            "works_from_home": False,
+            "entertains_guests": entertains,
+            "needs_storage": needs_storage,
+            "spiritual_practice": spiritual,
+            "works_from_home": wfh,
             "avoid_glass_surfaces": has_kids,
             "vibe": intake.vibe.value,
             "vastu_enabled": intake.vastu_matters,
@@ -557,9 +578,17 @@ def _deterministic_reasoning(
         elif kw["school_kid"]:
             bullets.append("Floor space is kept clear in the middle so kids can pull books or a board game out without rearranging the room.")
         if kw["elders"]:
-            bullets.append("Seating sits at a slightly higher hip-point and every chair has arms — easier on knees for older family members.")
+            arms_chair = next((i for i in room.items if i.id.startswith("lounge_chair")), None)
+            if arms_chair:
+                bullets.append("A firm armchair with arms joins the seating — at an easy hip-height, so a visiting parent has a chair to rise from without fighting out of a low sofa.")
+            else:
+                bullets.append("Seating sits at a slightly higher hip-point with arms to push up from — easier on knees for older family members.")
         if kw["guests"]:
-            bullets.append("Two accent chairs face the sofa — when guests come, you don't have to drag dining chairs in.")
+            # Only claim the seating that's actually in the room — never invent a
+            # count. Pouffe/bench/extra chair all read as "pull-in" seating.
+            extra_seats = [i for i in room.items if i.id.startswith(("pouffe", "bench", "lounge_chair", "accent_chair"))]
+            if len(extra_seats) >= 1:
+                bullets.append("Light seating beyond the sofa — a piece that pulls into the circle when guests come, so you're not dragging dining chairs in.")
 
     # ── Breath — minimal, airy, restrained ─────────────────────────────────
     elif philosophy is VisionPhilosophy.BREATH:
