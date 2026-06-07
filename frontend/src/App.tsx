@@ -13,6 +13,7 @@ import { StyleRoute } from "@/routes/StyleRoute";
 import { ExportRoute } from "@/routes/ExportRoute";
 import { ThreeDFrontRoute } from "@/routes/ThreeDFrontRoute";
 import { SharedRoute } from "@/routes/SharedRoute";
+import { LiveSync } from "@/components/LiveSync";
 
 const ROUTE_MAP: Record<Stage, React.ReactElement> = {
   home:       <HomeRoute />,
@@ -121,6 +122,10 @@ export function App() {
           {ROUTE_MAP[stage]}
         </motion.div>
       </AnimatePresence>
+      {/* Live collaboration: when bound to a saved design, a collaborator's
+       *  share-link edits flow into the planner / materials / quotation live.
+       *  Renders nothing; only active once a design is saved/shared/opened. */}
+      <LiveSync />
       {/* Phone fallback. CSS-driven (see .small-screen-gate in styles.css)
        *  so the underlying route stays mounted — resizing back to tablet
        *  / desktop simply hides this gate, no state is lost. Nirmit is a

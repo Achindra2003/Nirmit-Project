@@ -32,6 +32,14 @@ interface AppState {
   selectedVisionId: string | null;
   visionsLoaded: boolean;
 
+  // ── Live collaboration binding ──
+  // The Supabase `designs` row id the current session is bound to — set once a
+  // design is saved, shared, or opened from the archive. When present, <LiveSync>
+  // subscribes to that row and patches the active vision on a collaborator's
+  // edit, so the planner / materials / quotation update in real time. Null for a
+  // freshly generated, never-saved session (nothing to sync to yet).
+  activeDesignId: string | null;
+
   // ── Auth-return memory ──
   // Where to send the user after a successful sign-in or sign-up, when
   // they were promoted to auth mid-flow. Today only the export page's
@@ -49,6 +57,7 @@ interface AppState {
   setVisions: (v: Vision[]) => void;
   selectVision: (id: string) => void;
   setPendingReturn: (s: Stage | null) => void;
+  setActiveDesignId: (id: string | null) => void;
 
   setSelectedItem: (id: string | null) => void;
   setEditMode: (m: EditMode) => void;
@@ -72,6 +81,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedVisionId: null,
   visionsLoaded: false,
   pendingReturn: null,
+  activeDesignId: null,
 
   selectedItemId: null,
   editMode: "browse",
@@ -79,9 +89,12 @@ export const useAppStore = create<AppState>((set) => ({
 
   setStage: (stage) => set({ stage }),
   setIntake: (intake) => set({ intake }),
-  setVisions: (visions) => set({ visions, selectedVisionId: visions[0]?.id ?? null, visionsLoaded: true }),
+  // A fresh vision set is a NEW, unsaved session — drop any prior live-sync
+  // binding so we don't keep listening to a design we've navigated away from.
+  setVisions: (visions) => set({ visions, selectedVisionId: visions[0]?.id ?? null, visionsLoaded: true, activeDesignId: null }),
   selectVision: (selectedVisionId) => set({ selectedVisionId }),
   setPendingReturn: (pendingReturn) => set({ pendingReturn }),
+  setActiveDesignId: (activeDesignId) => set({ activeDesignId }),
 
   setSelectedItem: (selectedItemId) =>
     // Deselecting always drops you back to browse mode (no orphaned move mode).
@@ -118,6 +131,7 @@ export const useAppStore = create<AppState>((set) => ({
       selectedVisionId: null,
       visionsLoaded: false,
       pendingReturn: null,
+      activeDesignId: null,
       selectedItemId: null,
       editMode: "browse",
       layoutEditMode: false,

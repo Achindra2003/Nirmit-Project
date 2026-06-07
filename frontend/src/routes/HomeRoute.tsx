@@ -10,6 +10,7 @@ export function HomeRoute() {
   const setStage = useAppStore((s) => s.setStage);
   const setVisions = useAppStore((s) => s.setVisions);
   const setPendingReturn = useAppStore((s) => s.setPendingReturn);
+  const setActiveDesignId = useAppStore((s) => s.setActiveDesignId);
   // Saved-rooms section is auth-gated: anonymous visitors see only the
   // hero + CTA (no archive section at all — the empty-state for a
   // never-signed-in visitor is noise). Signed-in users see their archive
@@ -65,6 +66,9 @@ export function HomeRoute() {
         },
       };
       setVisions([fakeVision]);
+      // Bind the session to this saved row AFTER setVisions (which clears it),
+      // so a collaborator's share-link edits sync straight into the planner.
+      setActiveDesignId(d.id);
       setStage("planner");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

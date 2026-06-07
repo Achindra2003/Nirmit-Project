@@ -64,6 +64,7 @@ export function ExportRoute() {
   const { visions, selectedVisionId, reset } = useAppStore();
   const setStage = useAppStore((s) => s.setStage);
   const setPendingReturn = useAppStore((s) => s.setPendingReturn);
+  const setActiveDesignId = useAppStore((s) => s.setActiveDesignId);
   // Save targets Supabase — needs an authed user. The Save button's
   // label / click handler / inline message all switch on this.
   const user = useAuthStore((s) => s.user);
@@ -101,7 +102,10 @@ export function ExportRoute() {
       .then((r) => { if (!r.ok) throw new Error(`/export ${r.status}`); return r.json(); })
       .then((d: BOQResponse) => setBoq(d))
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
-  }, [vision?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Re-fetch on room_state too (not just vision id): a collaborator's live
+    // edit (LiveSync) replaces room_state in place, and the quotation must
+    // reflect it. patchActiveVision gives a fresh room_state ref on each change.
+  }, [vision?.id, vision?.room_state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Render the visible BOQ preview to a multi-page A4 PDF.
    * Used for both the Full Quotation and the Contractor variant — the only
@@ -202,6 +206,7 @@ export function ExportRoute() {
     try {
       const r = await api.saveDesign({ name, philosophy: vision.philosophy, room_state: vision.room_state, existing_id: savedId });
       setSavedId(r.id);
+      setActiveDesignId(r.id); // bind the session so collaborator edits sync in live
       setSaveMsg(`Saved as “${name}”.`);
       // Clear the success message after a beat so the bar doesn't stay
       // shouting "saved!" forever.
@@ -226,6 +231,7 @@ export function ExportRoute() {
         id = r.id;
         setSavedId(id);
       }
+      setActiveDesignId(id); // bind the session so the collaborator's link edits sync in live
       const { url } = await api.shareDesign(id);
       try {
         await navigator.clipboard.writeText(url);
