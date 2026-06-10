@@ -223,7 +223,8 @@ function GlbMesh({
   selected: boolean;
   draggable: boolean;
 }) {
-  const { scene } = useGLTF(`/models/${assetUrl}`);
+  const assetBaseUrl = import.meta.env.VITE_ASSET_BASE_URL || "/models";
+  const { scene } = useGLTF(`${assetBaseUrl}/${assetUrl}`);
 
   const cloned = useMemo(() => {
     const c = scene.clone(true);
@@ -366,9 +367,10 @@ function categoryColor(category: string, accent: string): string {
 // Preload the highest-traffic SH3D GLBs (Sweet Home 3D Packs, CC-BY/CC-0/Free
 // Art licenses) so the first render doesn't stall. Paths come from the v1
 // picks in scripts/curate_from_sh3d.py — regenerate if the picks change.
-useGLTF.preload("/models/sh3d/blendswap_cc_0_couch.glb");
-useGLTF.preload("/models/sh3d/blendswap_cc_by_tvstand.glb");
-useGLTF.preload("/models/sh3d/contributions_tablebasse.glb");
-useGLTF.preload("/models/sh3d/blendswap_cc_by_fotel.glb");
-useGLTF.preload("/models/sh3d/blendswap_cc_by_bedsidetable.glb");
-useGLTF.preload("/models/sh3d/blendswap_cc_by_bookcase.glb");
+const assetBaseUrl = import.meta.env.VITE_ASSET_BASE_URL || "/models";
+useGLTF.preload(`${assetBaseUrl}/sh3d/blendswap_cc_0_couch.glb`);
+useGLTF.preload(`${assetBaseUrl}/sh3d/blendswap_cc_by_tvstand.glb`);
+useGLTF.preload(`${assetBaseUrl}/sh3d/contributions_tablebasse.glb`);
+useGLTF.preload(`${assetBaseUrl}/sh3d/blendswap_cc_by_fotel.glb`);
+useGLTF.preload(`${assetBaseUrl}/sh3d/blendswap_cc_by_bedsidetable.glb`);
+useGLTF.preload(`${assetBaseUrl}/sh3d/blendswap_cc_by_bookcase.glb`);

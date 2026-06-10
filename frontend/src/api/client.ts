@@ -35,7 +35,7 @@ import type {
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/useAuthStore";
 
-const BASE = "/api"; // proxied to http://127.0.0.1:8000 (vite.config.ts)
+const BASE = import.meta.env.VITE_API_URL || "/api"; // proxied locally, or deployed backend
 
 const SESSION_KEY = "nirmit-session";
 function sessionId(): string {
