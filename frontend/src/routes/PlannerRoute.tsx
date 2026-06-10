@@ -235,7 +235,8 @@ export function PlannerRoute() {
   // Backend health check — single ping on mount so the user knows immediately if
   // the server isn't running (shows red dot in header, explains API errors).
   useEffect(() => {
-    fetch("/health").then((r) => setBackendUp(r.ok)).catch(() => setBackendUp(false));
+    const baseUrl = import.meta.env.VITE_API_URL || "/api";
+    fetch(`${baseUrl}/health`).then((r) => setBackendUp(r.ok)).catch(() => setBackendUp(false));
   }, []);
 
   // Build the sku → name_en cache from the same curated menu the catalogue
@@ -246,7 +247,8 @@ export function PlannerRoute() {
     const params = new URLSearchParams({ room_type: room.intake.room_type, limit: "120" });
     if (room.intake.vibe) params.set("vibe", room.intake.vibe);
     if (baseVision?.philosophy) params.set("philosophy", baseVision.philosophy);
-    fetch(`/api/catalog?${params}`)
+    const baseUrl = import.meta.env.VITE_API_URL || "/api";
+    fetch(`${baseUrl}/catalog?${params}`)
       .then((r) => r.json())
       .then((data) => {
         const m = new Map<string, string>();
@@ -263,7 +265,8 @@ export function PlannerRoute() {
     if (!room) return;
     setFirstLookSuggestions([]);
     setDismissedSuggestions(new Set());
-    fetch("/api/chat/first-look", {
+    const baseUrl = import.meta.env.VITE_API_URL || "/api";
+    fetch(`${baseUrl}/chat/first-look`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ room_state: room, history: [], message: "__FIRST_LOOK__", available_visions: visions }),

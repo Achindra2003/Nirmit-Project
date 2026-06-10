@@ -42,7 +42,8 @@ export function FinishingPanel({ room, onApply, activeSection, philosophy }: Pro
     const params = new URLSearchParams({ room_type: room.intake.room_type });
     if (philosophy) params.set("philosophy", philosophy);
     if (room.intake.vibe) params.set("vibe", room.intake.vibe);
-    fetch(`/api/finishing/options?${params}`)
+    const baseUrl = import.meta.env.VITE_API_URL || "/api";
+    fetch(`${baseUrl}/finishing/options?${params}`)
       .then((r) => r.json())
       .then(setOptions)
       .catch(() => setOptions(null));

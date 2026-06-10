@@ -98,7 +98,8 @@ export function ExportRoute() {
   useEffect(() => {
     if (!vision) return;
     const req: ExportRequest = { room_state: vision.room_state, format: "json", include_hindi_section: true };
-    fetch("/api/export", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(req) })
+    const baseUrl = import.meta.env.VITE_API_URL || "/api";
+    fetch(`${baseUrl}/export`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(req) })
       .then((r) => { if (!r.ok) throw new Error(`/export ${r.status}`); return r.json(); })
       .then((d: BOQResponse) => setBoq(d))
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
