@@ -1424,7 +1424,8 @@ function CatalogueDrawer({
     // philosophy selects the curated menu for this room character; the backend
     // falls back to the global hero catalog if it's missing.
     if (philosophy) params.set("philosophy", philosophy);
-    fetch(`/api/catalog?${params}`)
+    const baseUrl = import.meta.env.VITE_API_URL || "/api";
+    fetch(`${baseUrl}/catalog?${params}`)
       .then((r) => r.json())
       .then((data) => setItems(data.items ?? []))
       .catch(() => setItems([]))
